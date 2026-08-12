@@ -4,7 +4,15 @@ Turn a Bayesian estimate of "quality" (a stat, or a pre-computed score for a spe
 
 ## Status
 
-Design phase. No implementation yet. This README captures the architecture as sketched so far.
+Module skeleton scaffolded — data models and stubbed interfaces are in place for every module below (`die_scouting/`), verified with a smoke test (`tests/test_imports.py`). No statistical logic implemented yet: every stat-bearing function raises `NotImplementedError` until it's actually built.
+
+## Development
+
+```
+uv venv
+uv pip install -e ".[dev]"
+.venv/Scripts/pytest tests/
+```
 
 ## Core idea
 
