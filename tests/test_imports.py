@@ -10,7 +10,6 @@ from die_scouting import (
     PriorParams,
     Record,
     build_die,
-    discretize,
     fit_prior,
     resolve_prior,
     select_family,
@@ -69,11 +68,14 @@ def test_quality_source_stubs_raise():
         bootstrap.sample("player-1", 100)
 
 
-def test_discretize_stub_raises():
-    with pytest.raises(NotImplementedError):
-        discretize([0.1, 0.2, 0.3], n_faces=6)
+def test_build_die_builds_a_real_die():
+    samples = [float(i) for i in range(100)]
+    die = build_die(samples, n_faces=6)
+    assert len(die.faces) == 6
+    assert sum(f.weight for f in die.faces) == pytest.approx(1.0)
 
 
-def test_build_die_propagates_discretize_notimplemented():
-    with pytest.raises(NotImplementedError):
-        build_die([0.1, 0.2, 0.3])
+def test_build_die_supports_d20():
+    samples = [float(i) for i in range(1000)]
+    die = build_die(samples, n_faces=20)
+    assert len(die.faces) == 20
