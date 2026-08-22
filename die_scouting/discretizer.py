@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Literal
 
+import numpy as np
+
 from .models import Face
 
 
@@ -9,22 +11,39 @@ def discretize(
     samples: list[float],
     n_faces: int,
     strategy: Literal["equal_mass", "equal_width"] = "equal_mass",
+    clip: tuple[float, float] | None = (0.01, 0.99),
 ) -> list[Face]:
     """Bin `samples` into `n_faces` weighted faces by the given strategy.
 
     `equal_mass` gives every face an equal share of the samples; `equal_width` gives
     every face an equal slice of the observed value range.
+
+    `clip` is a pair of quantiles, and samples falling outside them are dropped before
+    binning. Without it an outer face reports the single most extreme draw as its bound,
+    which moves with the number of draws taken rather than describing the distribution.
+    Pass `None` to bin every sample.
     """
     if n_faces < 1:
         raise ValueError("n_faces must be at least 1")
     if not samples:
         raise ValueError("samples must not be empty")
 
+    if clip is not None:
+        samples = _clip(samples, clip)
+
     if strategy == "equal_mass":
         return _discretize_equal_mass(samples, n_faces)
     if strategy == "equal_width":
         return _discretize_equal_width(samples, n_faces)
     raise ValueError(f"unknown strategy: {strategy!r}")
+
+
+def _clip(samples: list[float], quantiles: tuple[float, float]) -> list[float]:
+    lower, upper = quantiles
+    if not 0.0 <= lower < upper <= 1.0:
+        raise ValueError("clip quantiles must satisfy 0 <= lower < upper <= 1")
+    low, high = np.quantile(samples, [lower, upper])
+    return [s for s in samples if low <= s <= high]
 
 
 def _discretize_equal_mass(samples: list[float], n_faces: int) -> list[Face]:
