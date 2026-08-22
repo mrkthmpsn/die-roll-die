@@ -4,7 +4,7 @@ Turn a Bayesian estimate of "quality" (a stat, or a pre-computed score for a spe
 
 ## Status
 
-Module skeleton scaffolded — data models and stubbed interfaces are in place for every module below (`die_scouting/`), verified with a smoke test (`tests/test_imports.py`). No statistical logic implemented yet: every stat-bearing function raises `NotImplementedError` until it's actually built.
+Module skeleton scaffolded — data models and stubbed interfaces are in place for every module below (`die_scouting/`), verified with a smoke test (`tests/test_imports.py`). `Discretizer` and `AnalyticSource`'s gamma path are implemented; `PriorDiscovery`, `PriorStore.resolve_prior` and `BootstrapSource` still raise `NotImplementedError`, and no concrete `DataAdapter` exists yet.
 
 ## Development
 
@@ -16,7 +16,9 @@ uv pip install -e ".[dev]"
 
 ## Core idea
 
-Any per-match value for a player (a raw stat like goals, or an externally-modeled score like "inverted full-back suitability out of 10") is treated as a stream of observations. Bayesian updating turns "prior belief + this player's own matches" into a posterior distribution over their true quality. That posterior gets discretized into weighted die faces and rolled.
+Any value for a player (a raw stat like goals, or an externally-modeled score like "inverted full-back suitability out of 10") is treated as a stream of observations, each pairing a value with the exposure it accumulated over — twelve goals across thirty nineties, say. Bayesian updating turns "prior belief + this player's own record" into a posterior distribution over their true quality. That posterior gets discretized into weighted die faces and rolled.
+
+The exposure denominator is what makes the die worth looking at: four goals in ten appearances and forty in a hundred imply the same rate, and only the second is evidence you can lean on. Two questions can be asked of the posterior — what the player's underlying rate is, and how many they would record over a stated amount of future playing time.
 
 ## Modules
 
@@ -26,9 +28,9 @@ Any per-match value for a player (a raw stat like goals, or an externally-modele
 
 Scope is optional and composable — a prior can be global, or narrowed by any combination of dimensions (e.g. position group, competition). Stored as `PriorParams` keyed by `(stat_id, scope)`. Read-time lookup falls back to a broader/global scope if nothing's been discovered yet for a narrow slice.
 
-**QualitySource** (online, per player/roll) — uniform interface: `sample(entity_id, n_draws) -> float[]`. Two implementations behind it:
+**QualitySource** (online, per player/roll) — uniform interface: `sample(entity_id, n_draws) -> float[]`, returning draws of the player's underlying rate. Two implementations behind it:
 
-- `AnalyticSource` — closed-form posterior (conjugate update of the discovered prior with this player's own match observations)
+- `AnalyticSource` — closed-form posterior (conjugate update of the discovered prior with this player's own observations). The gamma family is implemented as a Gamma-Poisson update, summing the observations' values and exposures onto the prior's `alpha` and `beta`. It also offers `sample_predictive(entity_id, n_draws, exposure)`, which draws a rate and then a Poisson count at that rate over the given exposure, so the die is over goals-next-season rather than goals-per-ninety. That exposure is supplied by the caller and held fixed, so the answer is "if they play thirty nineties" rather than "next season" — playing time is not itself modelled.
 - `BootstrapSource` — resample this player's own match records with replacement, recompute, repeat — no named distribution family required
 
 Reads the relevant `PriorParams` as config; never invokes `PriorDiscovery` itself.
@@ -57,3 +59,5 @@ Online (per player, per roll):
 ## Possible data source
 
 [empty-head-data](../empty-head-data) (sibling repo) exposes StatsBomb-derived football data via a Core REST API, including a `PlayerTeamSeasonStat` aggregate table and an 8-group position classification (`core/stats/positions.py`) that would make a natural first `DataAdapter` and a natural first "position group" prior scope.
+
+Season aggregates are the right grain, not a compromise forced by what happens to be pre-computed: a Poisson update depends only on total count and total exposure, so a player's five seasons and the hundred-odd matches inside them produce an identical posterior. Collecting season totals is the cheaper route to the same answer.
