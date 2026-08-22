@@ -29,14 +29,14 @@ def test_equal_mass_bins_are_ordered_and_contiguous():
 
 def test_equal_width_face_count_and_weight_sum():
     samples = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 9.0, 9.5]
-    faces = discretize(samples, n_faces=5, strategy="equal_width", clip=None)
+    faces = discretize(samples, n_faces=5, strategy="equal_width")
     assert len(faces) == 5
     assert sum(f.weight for f in faces) == pytest.approx(1.0)
 
 
 def test_equal_width_bins_are_equal_size():
     samples = [0.0, 10.0, 5.0]
-    faces = discretize(samples, n_faces=5, strategy="equal_width", clip=None)
+    faces = discretize(samples, n_faces=5, strategy="equal_width")
     widths = [f.value_range[1] - f.value_range[0] for f in faces]
     assert all(w == pytest.approx(widths[0]) for w in widths)
 
@@ -101,3 +101,28 @@ def test_weights_still_sum_to_one_after_clipping():
 def test_rejects_clip_quantiles_out_of_order():
     with pytest.raises(ValueError, match="clip quantiles"):
         discretize([1.0, 2.0, 3.0], n_faces=2, clip=(0.9, 0.1))
+
+
+def test_small_arrays_are_not_clipped():
+    """Below a hundred samples the 1st percentile sits between the two lowest values, so
+    clipping would delete the minimum as an interpolation artefact.
+    """
+    samples = [0.0, 10.0, 5.0]
+    faces = discretize(samples, n_faces=2, strategy="equal_width")
+    assert faces[0].value_range[0] == 0.0
+    assert faces[-1].value_range[1] == 10.0
+
+
+def test_clipping_applies_from_a_hundred_samples():
+    samples = [-1000.0] + [float(i) for i in range(98)] + [1000.0]
+    assert len(samples) == 100
+    faces = discretize(samples, n_faces=5)
+    assert faces[0].value_range[0] > -1000.0
+    assert faces[-1].value_range[1] < 1000.0
+
+
+def test_full_range_quantiles_are_a_no_op():
+    samples = [float(i) for i in range(1000)]
+    faces = discretize(samples, n_faces=6, clip=(0.0, 1.0))
+    assert faces[0].value_range[0] == 0.0
+    assert faces[-1].value_range[1] == 999.0

@@ -21,7 +21,9 @@ def discretize(
     `clip` is a pair of quantiles, and samples falling outside them are dropped before
     binning. Without it an outer face reports the single most extreme draw as its bound,
     which moves with the number of draws taken rather than describing the distribution.
-    Pass `None` to bin every sample.
+    Clipping is skipped where the sample count is too small for the tails to hold a whole
+    sample, so `(0.01, 0.99)` applies from a hundred samples upward. Pass `None` to bin
+    every sample.
     """
     if n_faces < 1:
         raise ValueError("n_faces must be at least 1")
@@ -39,9 +41,14 @@ def discretize(
 
 
 def _clip(samples: list[float], quantiles: tuple[float, float]) -> list[float]:
+    """Drop samples outside `quantiles`, or return them untouched when the narrower tail
+    holds less than one sample and there is nothing meaningful to exclude.
+    """
     lower, upper = quantiles
     if not 0.0 <= lower < upper <= 1.0:
         raise ValueError("clip quantiles must satisfy 0 <= lower < upper <= 1")
+    if min(lower, 1.0 - upper) * len(samples) < 1:
+        return samples
     low, high = np.quantile(samples, [lower, upper])
     return [s for s in samples if low <= s <= high]
 
