@@ -11,14 +11,15 @@ class PriorStore(Protocol):
     def save(self, params: PriorParams) -> None: ...
 
     def get(self, stat_id: str, scope: dict[str, str]) -> PriorParams | None:
-        """Exact lookup only — no fallback. Fallback lives in `resolve_prior`."""
+        """Return the prior stored for exactly this `stat_id` and `scope`, or None."""
         ...
 
 
 def resolve_prior(store: PriorStore, stat_id: str, scope: dict[str, str]) -> PriorParams:
-    """Look up the most specific prior matching `scope`, falling back to progressively
-    broader scopes and finally the global (unscoped) prior.
+    """Look up the prior for `stat_id` whose scope most closely matches `scope`, falling
+    back to broader scopes and finally the unscoped prior.
 
-    Raises if no prior has been discovered for this stat at any scope, including global.
+    Raises:
+        LookupError: if no prior exists for this stat at any scope.
     """
     raise NotImplementedError

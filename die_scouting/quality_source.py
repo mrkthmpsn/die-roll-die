@@ -7,7 +7,7 @@ from .models import PriorParams
 
 
 class QualitySource(Protocol):
-    """Uniform sampling interface. Implementations differ in mechanism, never in contract."""
+    """Protocol for producing draws of an entity's quality."""
 
     def sample(self, entity_id: str, n_draws: int) -> list[float]:
         """Draw n_draws plausible values of this entity's true quality."""
@@ -15,8 +15,9 @@ class QualitySource(Protocol):
 
 
 class AnalyticSource:
-    """Closed-form posterior: conjugate update of a discovered prior with the entity's
-    own observations (e.g. Beta-Binomial, Normal-Normal — depends on the prior's family).
+    """Produces draws from a closed-form posterior, by conjugate update of `prior` with
+    the entity's own observations. The update rule follows the prior's family, e.g.
+    Beta-Binomial or Normal-Normal.
     """
 
     def __init__(self, prior: PriorParams, data_adapter: DataAdapter, stat_id: str) -> None:
@@ -29,8 +30,8 @@ class AnalyticSource:
 
 
 class BootstrapSource:
-    """Resamples the entity's own observations with replacement and recomputes a stat
-    function each time. No named distribution family required.
+    """Produces draws by resampling the entity's own observations with replacement and
+    recomputing the stat each time.
     """
 
     def __init__(self, data_adapter: DataAdapter, stat_id: str) -> None:

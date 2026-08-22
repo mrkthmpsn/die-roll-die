@@ -10,9 +10,10 @@ def discretize(
     n_faces: int,
     strategy: Literal["equal_mass", "equal_width"] = "equal_mass",
 ) -> list[Face]:
-    """Bin a sample array into weighted die faces. Pure stats, no domain knowledge —
-    doesn't know or care whether the samples came from an AnalyticSource or a
-    BootstrapSource. `n_faces` is caller-chosen (6 for a D6, 20 for a D20, etc).
+    """Bin `samples` into `n_faces` weighted faces by the given strategy.
+
+    `equal_mass` gives every face an equal share of the samples; `equal_width` gives
+    every face an equal slice of the observed value range.
     """
     if n_faces < 1:
         raise ValueError("n_faces must be at least 1")

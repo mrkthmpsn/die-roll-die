@@ -33,7 +33,9 @@ Scope is optional and composable — a prior can be global, or narrowed by any c
 
 Reads the relevant `PriorParams` as config; never invokes `PriorDiscovery` itself.
 
-**Discretizer** — pure stats, no domain knowledge: bins a sample array into weighted die faces (`{label, weight, value_range}`), by equal-mass, equal-width, or custom bin strategy.
+**Discretizer** — pure stats, no domain knowledge: bins a sample array into weighted die faces (`{label, weight, value_range}`), by equal-mass or equal-width bin strategy. The face count is caller-chosen, so the same sample array can produce a D6, a D20, or any other die.
+
+Implemented. `equal_mass` splits sorted samples into evenly-sized chunks, so every face carries roughly equal probability and the faces differ in how wide a value range they cover. `equal_width` splits the observed range into fixed-width bins, so the faces differ in weight instead.
 
 **Die** — the contract handed to a frontend: `{faces, metadata}`. The rolling UI never touches raw stats, priors, or resampling.
 
