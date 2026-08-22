@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "Mark Thompson" }]
 dependencies = [
+    "numpy>=1.26",
     "pydantic>=2",
 ]
 

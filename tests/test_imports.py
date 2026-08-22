@@ -57,7 +57,7 @@ def test_prior_store_resolve_stub_raises():
         resolve_prior(FakeStore(), "goals_per_90", {})
 
 
-def test_quality_source_stubs_raise():
+def test_bootstrap_source_stub_raises():
     class FakeAdapter:
         def get_entity_observations(self, entity_id, stat_id, scope=None):
             return []
@@ -65,11 +65,7 @@ def test_quality_source_stubs_raise():
         def get_population_observations(self, stat_id, scope=None):
             return []
 
-    prior = PriorParams(stat_id="goals_per_90", family="beta", params={"alpha": 2.0, "beta": 5.0})
-    analytic = AnalyticSource(prior=prior, data_adapter=FakeAdapter(), stat_id="goals_per_90")
     bootstrap = BootstrapSource(data_adapter=FakeAdapter(), stat_id="goals_per_90")
-    with pytest.raises(NotImplementedError):
-        analytic.sample("player-1", 100)
     with pytest.raises(NotImplementedError):
         bootstrap.sample("player-1", 100)
 

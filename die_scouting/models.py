@@ -25,6 +25,9 @@ class PriorParams(BaseModel):
 
     `scope` is a set of optional, composable filter dimensions (e.g. position group,
     competition); an empty dict means the global, unscoped prior for this stat.
+
+    `params` holds the family's parameters by name: `alpha` and `beta` for gamma, where
+    `beta` is a rate in units of 1/exposure.
     """
 
     stat_id: str
