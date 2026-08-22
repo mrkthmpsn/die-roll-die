@@ -6,10 +6,17 @@ from pydantic import BaseModel
 
 
 class Record(BaseModel):
-    """Representation of a single entity's single value."""
+    """Representation of a single entity's single value, and the exposure it accumulated
+    over.
+
+    `value` is a count or measurement and `exposure` its denominator; twelve goals across
+    thirty nineties is `value=12.0, exposure=30.0`. An exposure of `1.0` states that the
+    value stands on its own.
+    """
 
     entity_id: str
     value: float
+    exposure: float
     context: dict[str, Any] = {}
 
 
