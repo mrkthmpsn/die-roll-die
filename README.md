@@ -4,7 +4,13 @@ Turn a Bayesian estimate of "quality" (a stat, or a pre-computed score for a spe
 
 ## Status
 
-Module skeleton scaffolded — data models and stubbed interfaces are in place for every module below (`die_scouting/`), verified with a smoke test (`tests/test_imports.py`). `Discretizer` and `AnalyticSource`'s gamma path are implemented; `PriorDiscovery`, `PriorStore.resolve_prior` and `BootstrapSource` still raise `NotImplementedError`, and no concrete `DataAdapter` exists yet.
+The pipeline runs end to end on real data: `CsvDataAdapter` reads the Premier League extract in [data/](data/), `PriorDiscovery` fits a prior from it, and `AnalyticSource`'s gamma path updates that prior for one player and feeds `Discretizer`. [examples/roll_goals.py](examples/roll_goals.py) does all of it for a named player.
+
+`PriorStore.resolve_prior` and `BootstrapSource` still raise `NotImplementedError`, and only the gamma family is implemented in either `fit_prior` or `AnalyticSource`. Near-term work is in [UPCOMING_WORK.md](UPCOMING_WORK.md).
+
+```
+python examples/roll_goals.py "Harry Kane" --scope position_general=Forward
+```
 
 ## Development
 
@@ -22,9 +28,13 @@ The exposure denominator is what makes the die worth looking at: four goals in t
 
 ## Modules
 
-**DataAdapter** — the only provider/domain-aware module. Supplies per-match values for one player, and population-wide values across many players (for prior discovery). Everything else is domain-agnostic.
+**DataAdapter** — the only provider/domain-aware module. Supplies per-observation values for one player, and population-wide values across many players (for prior discovery). Everything else is domain-agnostic.
+
+`CsvDataAdapter` implements it over a player-season CSV, reading any numeric column as the stat and any column as a scope filter, so the same class serves both the goals example and a future modelled score.
 
 **PriorDiscovery** (offline, periodic) — empirical Bayes: fits a prior distribution's parameters from the population-wide spread of a stat, rather than requiring someone to hand-pick numbers. Family selection is a small heuristic by stat type (Beta for bounded rates/proportions, Gamma for non-negative counts/rates, Normal for symmetric continuous values), fit via method of moments.
+
+The fit corrects for the noise in its own inputs. A season's goals-per-ninety is spread both by how much players genuinely differ and by the randomness of scoring itself, the second contributing `mean / exposure` to the variance of an observed rate; subtracting its average leaves the spread a prior should carry. Over the 1,721 forward-seasons of five or more nineties in this extract, more than half the apparent spread is that randomness, and correcting for it takes the prior from 7.6 to 16.6 nineties' worth of evidence — the difference between a player with three goals in four nineties reading as a genuine 0.6-per-90 striker or not. Seasons under five nineties are excluded from the fit outright, their rates being dominated by the small denominator.
 
 Scope is optional and composable — a prior can be global, or narrowed by any combination of dimensions (e.g. position group, competition). Stored as `PriorParams` keyed by `(stat_id, scope)`. Read-time lookup falls back to a broader/global scope if nothing's been discovered yet for a narrow slice.
 
@@ -58,8 +68,8 @@ Online (per player, per roll):
 - How a per-match "modeled score" (e.g. combining tackles, pass success, halfspace receptions into a role-suitability number) actually gets computed. Assume it already exists as an input value per match.
 - A `Combinator` module that combines separately-drawn samples from multiple stats — considered and dropped. If a composite value is ever built by combining raw features, that belongs upstream of the Bayesian layer (as a pre-computed value per match), not as a distribution-combination step downstream of it.
 
-## Possible data source
+## Data
 
-[empty-head-data](../empty-head-data) (sibling repo) exposes StatsBomb-derived football data via a Core REST API, including a `PlayerTeamSeasonStat` aggregate table and an 8-group position classification (`core/stats/positions.py`) that would make a natural first `DataAdapter` and a natural first "position group" prior scope.
+[data/player_seasons.csv](data/) holds 10,723 Premier League player-seasons from 2006/07 to 2025/26, extracted from the Pulselive API by [empty-head-data](../empty-head-data) (sibling repo, where provider ingestion lives) and described in [research/premier-league-pulselive-api.md](research/premier-league-pulselive-api.md). Its `position_general` column is populated on every row, which makes it the first prior scope; the granular `position` column is blank on 14% of rows.
 
 Season aggregates are the right grain, not a compromise forced by what happens to be pre-computed: a Poisson update depends only on total count and total exposure, so a player's five seasons and the hundred-odd matches inside them produce an identical posterior. Collecting season totals is the cheaper route to the same answer.
