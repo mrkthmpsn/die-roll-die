@@ -81,3 +81,16 @@ def test_build_die_supports_d20():
     samples = [float(i) for i in range(1000)]
     die = build_die(samples, n_faces=20)
     assert len(die.faces) == 20
+
+
+def test_build_die_passes_the_strategy_through():
+    samples = [float(i) for i in range(100)] + [50.0] * 100
+
+    equal_mass = build_die(samples, n_faces=4)
+    equal_width = build_die(samples, n_faces=4, strategy="equal_width")
+
+    mass_weights = {round(f.weight, 6) for f in equal_mass.faces}
+    width_widths = {round(f.value_range[1] - f.value_range[0], 6) for f in equal_width.faces}
+    assert len(mass_weights) == 1
+    assert len(width_widths) == 1
+    assert len({round(f.weight, 6) for f in equal_width.faces}) > 1

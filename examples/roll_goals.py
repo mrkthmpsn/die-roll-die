@@ -33,6 +33,9 @@ def main() -> None:
     parser.add_argument("--scope", nargs="*", default=[], help="column=value, repeatable")
     parser.add_argument("--nineties", type=float, default=30.0, help="exposure to predict over")
     parser.add_argument("--faces", type=int, default=6)
+    parser.add_argument(
+        "--strategy", choices=["equal_mass", "equal_width"], default="equal_mass"
+    )
     parser.add_argument("--draws", type=int, default=100_000)
     args = parser.parse_args()
 
@@ -60,12 +63,19 @@ def main() -> None:
     print(f"  posterior: {alpha / beta:.3f} per ninety")
 
     samples = source.sample_predictive(entity_id, args.draws, args.nineties)
-    die = build_die(samples, n_faces=args.faces, metadata={"entity_id": entity_id})
+    die = build_die(
+        samples,
+        n_faces=args.faces,
+        metadata={"entity_id": entity_id, "strategy": args.strategy},
+        strategy=args.strategy,
+    )
 
-    print(f"\n  a D{args.faces} over {args.stat} in the next {args.nineties:.0f} nineties:")
+    print(f"\n  a D{args.faces} ({args.strategy}) over {args.stat} "
+          f"in the next {args.nineties:.0f} nineties:")
     for face in die.faces:
         low, high = face.value_range
-        span = f"{low:.0f}" if low == high else f"{low:.0f}-{high:.0f}"
+        places = 0 if low == int(low) and high == int(high) else 1
+        span = f"{low:.{places}f}" if low == high else f"{low:.{places}f}-{high:.{places}f}"
         print(f"    {face.label:>3}  {span:>9}  {face.weight:6.1%}")
 
 
