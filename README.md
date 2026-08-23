@@ -49,6 +49,8 @@ Reads the relevant `PriorParams` as config; never invokes `PriorDiscovery` itsel
 
 Implemented. `equal_mass` splits sorted samples into evenly-sized chunks, so every face carries roughly equal probability and the faces differ in how wide a value range they cover. `equal_width` splits the observed range into fixed-width bins, so the faces differ in weight instead.
 
+On whole-number samples, adjacent `equal_mass` faces can report the same integer as their bounds — a D20 over predicted goals showed faces of `21`, `21-22` and `22`, so 22 goals is an outcome on three faces of twenty. That is the die being honest about a count distribution having fewer distinct values than it has faces, and the weights stay correct.
+
 Samples outside the 1st and 99th percentiles are dropped before binning, by default. Without that, an outer face reports the single most extreme draw as its bound — a die over predicted goals showed a top face of `14-73` where that outcome had probability 2e-6, and the bound climbed from 46 to 73 as the draw count went from a thousand to half a million. Clipping is skipped where the sample count is too small for the tails to hold a whole sample, so the default applies from a hundred samples upward. Pass `clip=None` to bin every sample.
 
 **Die** — the contract handed to a frontend: `{faces, metadata}`. The rolling UI never touches raw stats, priors, or resampling.
