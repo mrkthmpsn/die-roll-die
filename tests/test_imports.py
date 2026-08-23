@@ -38,10 +38,10 @@ def test_face_and_die_instantiate():
     assert die.metadata == {}
 
 
-def test_prior_discovery_stubs_raise():
-    with pytest.raises(NotImplementedError):
+def test_prior_discovery_rejects_an_unregistered_stat():
+    with pytest.raises(ValueError):
         select_family("goals_per_90")
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(ValueError):
         fit_prior([], "goals_per_90")
 
 
