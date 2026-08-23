@@ -1,3 +1,4 @@
+from .csv_adapter import CsvDataAdapter
 from .data_adapter import DataAdapter
 from .die import build_die
 from .discretizer import discretize
@@ -9,6 +10,7 @@ from .quality_source import AnalyticSource, BootstrapSource, QualitySource
 __all__ = [
     "AnalyticSource",
     "BootstrapSource",
+    "CsvDataAdapter",
     "DataAdapter",
     "Die",
     "Face",
