@@ -6,7 +6,7 @@ Turn a Bayesian estimate of "quality" (a stat, or a pre-computed score for a spe
 
 The pipeline runs end to end on real data: `CsvDataAdapter` reads the Premier League extract in [data/](data/), `PriorDiscovery` fits a prior from it, and `AnalyticSource`'s gamma path updates that prior for one player and feeds `Discretizer`. [examples/roll_goals.py](examples/roll_goals.py) does all of it for a named player.
 
-`PriorStore.resolve_prior` and `BootstrapSource` still raise `NotImplementedError`, and only the gamma family is implemented in either `fit_prior` or `AnalyticSource`. Near-term work is in [UPCOMING_WORK.md](UPCOMING_WORK.md).
+`PriorStore.resolve_prior` and `BootstrapSource` still raise `NotImplementedError`, and only the gamma family is implemented in either `fit_prior` or `AnalyticSource`.
 
 ```
 python examples/roll_goals.py "Harry Kane" --scope position_general=Forward
