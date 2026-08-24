@@ -1,47 +1,26 @@
 from __future__ import annotations
 
 import statistics
+from typing import Literal
 
 from .models import PriorParams, Record
-
-STAT_FAMILIES: dict[str, str] = {
-    "appearances": "gamma",
-    "assists": "gamma",
-    "goals": "gamma",
-    "headed_shots": "gamma",
-    "non_penalty_goals": "gamma",
-    "penalty_goals": "gamma",
-    "shots": "gamma",
-}
 
 MIN_EXPOSURE = 5.0
 
 
-def select_family(stat_id: str) -> str:
-    """Return the prior distribution family registered for `stat_id` in `STAT_FAMILIES`:
-    "beta" for bounded rates/proportions, "gamma" for non-negative counts or rates,
-    "normal" for roughly symmetric continuous values.
-
-    Raises:
-        ValueError: if `stat_id` has no entry in `STAT_FAMILIES`.
-    """
-    try:
-        return STAT_FAMILIES[stat_id]
-    except KeyError:
-        raise ValueError(
-            f"no prior family is registered for stat {stat_id!r}; "
-            f"registered stats are {', '.join(sorted(STAT_FAMILIES))}"
-        ) from None
-
-
 def fit_prior(
     observations: list[Record],
+    family: Literal["beta", "gamma", "normal"],
     stat_id: str,
     scope: dict[str, str] | None = None,
     min_exposure: float = MIN_EXPOSURE,
 ) -> PriorParams:
     """Fit prior parameters for a stat from population-wide observations, by method of
-    moments against the family given by `select_family`.
+    moments against `family`.
+
+    `family` is supplied by the caller: it states which values the stat can take at all,
+    which no sample establishes, since an unobserved value and an impossible one look
+    alike in data.
 
     Observations with an exposure below `min_exposure` are excluded from the fit, their
     rates being dominated by the small denominator.
@@ -50,9 +29,8 @@ def fit_prior(
     per call.
 
     Raises:
-        NotImplementedError: if the family for `stat_id` is anything other than "gamma".
+        NotImplementedError: if `family` is anything other than "gamma".
     """
-    family = select_family(stat_id)
     if family != "gamma":
         raise NotImplementedError(f"fitting a prior of family {family!r} is not implemented")
     return PriorParams(

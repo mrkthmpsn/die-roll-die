@@ -34,6 +34,12 @@ def main() -> None:
     parser.add_argument("--nineties", type=float, default=30.0, help="exposure to predict over")
     parser.add_argument("--faces", type=int, default=6)
     parser.add_argument(
+        "--family",
+        choices=["beta", "gamma", "normal"],
+        default="gamma",
+        help="prior distribution family for this stat; only gamma is implemented",
+    )
+    parser.add_argument(
         "--strategy", choices=["equal_mass", "equal_width"], default="equal_mass"
     )
     parser.add_argument("--draws", type=int, default=100_000)
@@ -47,7 +53,9 @@ def main() -> None:
         raise SystemExit(f"no player matching {args.player!r}")
     entity_id = matches[0]
 
-    prior = fit_prior(adapter.get_population_observations(args.stat, scope), args.stat, scope)
+    prior = fit_prior(
+        adapter.get_population_observations(args.stat, scope), args.family, args.stat, scope
+    )
     source = AnalyticSource(prior, adapter, args.stat)
     observations = adapter.get_entity_observations(entity_id, args.stat, scope)
     alpha, beta = source.posterior_params(entity_id)
@@ -58,7 +66,7 @@ def main() -> None:
 
     print(f"{name} ({entity_id}) - {args.stat}, scope {scope or 'none'}")
     print(f"  record:    {recorded:.0f} in {played:.1f} nineties across {len(observations)} seasons")
-    print(f"  prior:     {prior.params['alpha'] / prior.params['beta']:.3f} per ninety "
+    print(f"  prior:     {prior.family}, {prior.params['alpha'] / prior.params['beta']:.3f} per ninety "
           f"(worth {prior.params['beta']:.1f} nineties of evidence)")
     print(f"  posterior: {alpha / beta:.3f} per ninety")
 

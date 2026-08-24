@@ -13,7 +13,6 @@ from die_scouting import (
     build_die,
     fit_prior,
     resolve_prior,
-    select_family,
 )
 
 
@@ -38,11 +37,9 @@ def test_face_and_die_instantiate():
     assert die.metadata == {}
 
 
-def test_prior_discovery_rejects_an_unregistered_stat():
+def test_fit_prior_needs_observations():
     with pytest.raises(ValueError):
-        select_family("goals_per_90")
-    with pytest.raises(ValueError):
-        fit_prior([], "goals_per_90")
+        fit_prior([], "gamma", "goals_per_90")
 
 
 def test_prior_store_resolve_stub_raises():

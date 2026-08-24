@@ -3,8 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from die_scouting import Record, fit_prior, select_family
-from die_scouting.prior_discovery import STAT_FAMILIES
+from die_scouting import Record, fit_prior
 
 
 def gamma_poisson_observations(alpha: float, beta: float, n: int, seed: int = 7) -> list[Record]:
@@ -21,18 +20,9 @@ def gamma_poisson_observations(alpha: float, beta: float, n: int, seed: int = 7)
     ]
 
 
-def test_select_family_returns_the_registered_family():
-    assert select_family("goals") == "gamma"
-
-
-def test_select_family_rejects_an_unregistered_stat():
-    with pytest.raises(ValueError, match="halfspace_receptions"):
-        select_family("halfspace_receptions")
-
-
 def test_fit_prior_records_the_stat_and_scope():
     scope = {"position_general": "Forward"}
-    prior = fit_prior(gamma_poisson_observations(5.0, 16.0, 200), "goals", scope)
+    prior = fit_prior(gamma_poisson_observations(5.0, 16.0, 200), "gamma", "goals", scope)
     assert prior.stat_id == "goals"
     assert prior.scope == scope
     assert prior.family == "gamma"
@@ -40,7 +30,7 @@ def test_fit_prior_records_the_stat_and_scope():
 
 
 def test_fit_prior_recovers_a_known_gamma():
-    prior = fit_prior(gamma_poisson_observations(5.0, 16.0, 4000), "goals")
+    prior = fit_prior(gamma_poisson_observations(5.0, 16.0, 4000), "gamma", "goals")
     alpha, beta = prior.params["alpha"], prior.params["beta"]
     assert alpha / beta == pytest.approx(5.0 / 16.0, rel=0.05)
     assert alpha == pytest.approx(5.0, rel=0.15)
@@ -52,7 +42,7 @@ def test_correcting_for_poisson_noise_narrows_the_prior():
     rates = np.array([o.value / o.exposure for o in observations])
     uncorrected_alpha = rates.mean() ** 2 / rates.var(ddof=1)
 
-    prior = fit_prior(observations, "goals")
+    prior = fit_prior(observations, "gamma", "goals")
     assert prior.params["alpha"] > uncorrected_alpha
     assert uncorrected_alpha < 0.75 * 5.0
 
@@ -63,8 +53,8 @@ def test_min_exposure_excludes_short_observations():
         Record(entity_id="2", value=3.0, exposure=10.0),
         Record(entity_id="3", value=9.0, exposure=20.0),
     ]
-    with_cameo = fit_prior(observations, "goals", min_exposure=0.5)
-    without = fit_prior(observations, "goals")
+    with_cameo = fit_prior(observations, "gamma", "goals", min_exposure=0.5)
+    without = fit_prior(observations, "gamma", "goals")
     assert with_cameo.params["alpha"] / with_cameo.params["beta"] > (
         without.params["alpha"] / without.params["beta"]
     )
@@ -76,16 +66,15 @@ def test_fit_prior_needs_two_observations_above_min_exposure():
         Record(entity_id="2", value=3.0, exposure=10.0),
     ]
     with pytest.raises(ValueError, match="at least two observations"):
-        fit_prior(observations, "goals")
+        fit_prior(observations, "gamma", "goals")
 
 
 def test_fit_prior_rejects_observations_that_are_all_zero():
     observations = [Record(entity_id=str(i), value=0.0, exposure=10.0) for i in range(5)]
     with pytest.raises(ValueError, match="mean rate is zero"):
-        fit_prior(observations, "goals")
+        fit_prior(observations, "gamma", "goals")
 
 
-def test_fit_prior_rejects_a_family_it_cannot_fit(monkeypatch):
-    monkeypatch.setitem(STAT_FAMILIES, "pass_completion", "beta")
+def test_fit_prior_rejects_a_family_it_cannot_fit():
     with pytest.raises(NotImplementedError, match="beta"):
-        fit_prior(gamma_poisson_observations(5.0, 16.0, 50), "pass_completion")
+        fit_prior(gamma_poisson_observations(5.0, 16.0, 50), "beta", "pass_completion")
