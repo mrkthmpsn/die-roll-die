@@ -1,5 +1,6 @@
 from .csv_adapter import CsvDataAdapter
 from .data_adapter import DataAdapter
+from .errors import InsufficientData, PriorFitError, UnsuitableFamily
 from .die import build_die
 from .discretizer import discretize
 from .models import Die, Face, PriorParams, Record
@@ -14,10 +15,13 @@ __all__ = [
     "DataAdapter",
     "Die",
     "Face",
+    "InsufficientData",
     "PriorParams",
+    "PriorFitError",
     "PriorStore",
     "QualitySource",
     "Record",
+    "UnsuitableFamily",
     "build_die",
     "discretize",
     "fit_prior",

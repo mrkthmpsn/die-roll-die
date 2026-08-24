@@ -17,11 +17,11 @@ from die_scouting import (
 
 
 def test_record_instantiates():
-    record = Record(entity_id="player-1", value=12.0, exposure=30.0)
+    record = Record(entity_id="player-1", value=12.0, denominator=30.0)
     assert record.context == {}
 
 
-def test_record_requires_exposure():
+def test_record_requires_a_denominator():
     with pytest.raises(ValidationError):
         Record(entity_id="player-1", value=12.0)
 

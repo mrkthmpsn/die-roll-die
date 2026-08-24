@@ -6,17 +6,20 @@ from pydantic import BaseModel
 
 
 class Record(BaseModel):
-    """Representation of a single entity's single value, and the exposure it accumulated
-    over.
+    """Representation of a single entity's single value, and the denominator it was
+    measured against.
 
-    `value` is a count or measurement and `exposure` its denominator; twelve goals across
-    thirty nineties is `value=12.0, exposure=30.0`. An exposure of `1.0` states that the
-    value stands on its own.
+    What the pair means follows the prior family it is fitted or updated under: a count
+    over the opportunity it accumulated in, as twelve goals across thirty nineties
+    (`value=12.0, denominator=30.0`); successes over attempts, as thirty headers from a
+    hundred shots; or a measurement over the weight it carries, where `value / denominator`
+    is the measured quantity per unit. A denominator of `1.0` states that the value stands
+    on its own.
     """
 
     entity_id: str
     value: float
-    exposure: float
+    denominator: float
     context: dict[str, Any] = {}
 
 
@@ -27,7 +30,7 @@ class PriorParams(BaseModel):
     competition); an empty dict means the global, unscoped prior for this stat.
 
     `params` holds the family's parameters by name: `alpha` and `beta` for gamma, where
-    `beta` is a rate in units of 1/exposure.
+    `beta` is a rate in units of 1/denominator.
     """
 
     stat_id: str

@@ -13,35 +13,35 @@ class CsvDataAdapter:
     """Reads Records from a player-season CSV, one row per entity per season.
 
     `stat_id` names the column read into `Record.value` and must be one of
-    `numeric_columns`; `exposure_column` names the column read into `Record.exposure`.
+    `numeric_columns`; `denominator_column` names the column read into `Record.denominator`.
     A `scope` filters rows by exact string match, keyed by column name.
 
-    Rows whose exposure is zero, blank or unparseable are dropped when the file is read,
+    Rows whose denominator is zero, blank or unparseable are dropped when the file is read,
     as are rows whose `stat_id` column is blank when records are requested.
 
     Raises:
-        ValueError: if `exposure_column` is not a column of the file.
+        ValueError: if `denominator_column` is not a column of the file.
     """
 
-    def __init__(self, path: str | Path, exposure_column: str = "nineties") -> None:
+    def __init__(self, path: str | Path, denominator_column: str = "nineties") -> None:
         self.path = Path(path)
-        self.exposure_column = exposure_column
+        self.denominator_column = denominator_column
 
         with self.path.open(newline="", encoding="utf-8") as handle:
             reader = csv.DictReader(handle)
             self.columns: tuple[str, ...] = tuple(reader.fieldnames or ())
             rows = list(reader)
 
-        if exposure_column not in self.columns:
+        if denominator_column not in self.columns:
             raise ValueError(
-                f"exposure column {exposure_column!r} is not in the file; "
+                f"denominator column {denominator_column!r} is not in the file; "
                 f"columns are {', '.join(self.columns)}"
             )
 
         self._rows = []
         for row in rows:
-            exposure = _as_float(row[exposure_column])
-            if exposure is not None and exposure > 0:
+            denominator = _as_float(row[denominator_column])
+            if denominator is not None and denominator > 0:
                 self._rows.append(row)
 
         self.numeric_columns: tuple[str, ...] = tuple(
@@ -98,7 +98,7 @@ class CsvDataAdapter:
                 Record(
                     entity_id=row[ENTITY_COLUMN],
                     value=value,
-                    exposure=float(row[self.exposure_column]),
+                    denominator=float(row[self.denominator_column]),
                     context={column: row[column] for column in CONTEXT_COLUMNS if column in row},
                 )
             )

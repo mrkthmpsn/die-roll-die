@@ -25,7 +25,7 @@ def gamma_prior(alpha: float = 3.0, beta: float = 10.0) -> PriorParams:
 
 
 def season(entity_id: str, goals: float, nineties: float) -> Record:
-    return Record(entity_id=entity_id, value=goals, exposure=nineties)
+    return Record(entity_id=entity_id, value=goals, denominator=nineties)
 
 
 def source(observations: dict[str, list[Record]], prior: PriorParams | None = None, seed: int = 0):
@@ -42,7 +42,7 @@ def test_no_observations_returns_the_prior():
     assert analytic.posterior_params("unknown-player") == (3.0, 10.0)
 
 
-def test_posterior_sums_values_and_exposures():
+def test_posterior_sums_values_and_denominators():
     analytic = source({"striker": [season("striker", 20, 50), season("striker", 20, 50)]})
     assert analytic.posterior_params("striker") == (43.0, 110.0)
 
@@ -53,7 +53,7 @@ def test_posterior_mean_sits_between_prior_and_observed_rate():
     assert 0.3 < alpha / beta < 0.4
 
 
-def test_posterior_moves_toward_the_observed_rate_as_exposure_grows():
+def test_posterior_moves_toward_the_observed_rate_as_the_denominator_grows():
     thin = source({"p": [season("p", 4, 10)]}).posterior_params("p")
     thick = source({"p": [season("p", 40, 100)]}).posterior_params("p")
     thin_mean = thin[0] / thin[1]
@@ -61,7 +61,7 @@ def test_posterior_moves_toward_the_observed_rate_as_exposure_grows():
     assert abs(thick_mean - 0.4) < abs(thin_mean - 0.4)
 
 
-def test_same_rate_with_less_exposure_gives_a_wider_die():
+def test_same_rate_with_a_smaller_denominator_gives_a_wider_die():
     """The property the tool exists to show: ten nineties cannot tell you what a hundred can."""
     thin = source({"p": [season("p", 4, 10)]}).sample("p", 50_000)
     thick = source({"p": [season("p", 40, 100)]}).sample("p", 50_000)
@@ -76,28 +76,28 @@ def test_sample_draws_positive_rates():
 
 def test_predictive_draws_are_whole_numbers():
     draws = source({"striker": [season("striker", 40, 100)]}).sample_predictive(
-        "striker", 1000, exposure=30.0
+        "striker", 1000, denominator=30.0
     )
     assert all(d == int(d) for d in draws)
 
 
-def test_predictive_mean_tracks_posterior_mean_times_exposure():
+def test_predictive_mean_tracks_posterior_mean_times_denominator():
     analytic = source({"striker": [season("striker", 40, 100)]})
     alpha, beta = analytic.posterior_params("striker")
-    draws = analytic.sample_predictive("striker", 50_000, exposure=30.0)
+    draws = analytic.sample_predictive("striker", 50_000, denominator=30.0)
     assert np.mean(draws) == pytest.approx((alpha / beta) * 30.0, rel=0.05)
 
 
-def test_predictive_at_zero_exposure_scores_nothing():
+def test_predictive_at_a_zero_denominator_scores_nothing():
     draws = source({"striker": [season("striker", 40, 100)]}).sample_predictive(
-        "striker", 100, exposure=0.0
+        "striker", 100, denominator=0.0
     )
     assert set(draws) == {0.0}
 
 
-def test_predictive_rejects_negative_exposure():
-    with pytest.raises(ValueError, match="exposure"):
-        source({}).sample_predictive("striker", 10, exposure=-1.0)
+def test_predictive_rejects_a_negative_denominator():
+    with pytest.raises(ValueError, match="denominator"):
+        source({}).sample_predictive("striker", 10, denominator=-1.0)
 
 
 def test_a_seeded_generator_repeats_its_draws():
@@ -163,7 +163,7 @@ def test_normal_draws_can_be_either_side_of_the_mean():
     assert min(draws) < 10.0 < max(draws)
 
 
-def test_normal_predictive_totals_over_the_exposure():
+def test_normal_predictive_totals_over_the_denominator():
     draws = source({}, prior=normal_prior()).sample_predictive("runner", 2000, 10.0)
     assert np.mean(draws) == pytest.approx(100.0, rel=0.05)
 

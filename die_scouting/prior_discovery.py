@@ -4,9 +4,10 @@ import math
 import statistics
 from typing import Literal
 
+from .errors import InsufficientData, UnsuitableFamily
 from .models import PriorParams, Record
 
-MIN_EXPOSURE = 5.0
+MIN_DENOMINATOR = 5.0
 
 
 def fit_prior(
@@ -14,7 +15,7 @@ def fit_prior(
     family: Literal["beta", "gamma", "normal"],
     stat_id: str,
     scope: dict[str, str] | None = None,
-    min_exposure: float = MIN_EXPOSURE,
+    min_denominator: float = MIN_DENOMINATOR,
 ) -> PriorParams:
     """Fit prior parameters for a stat from population-wide observations, by method of
     moments against `family`.
@@ -23,36 +24,36 @@ def fit_prior(
     which no sample establishes, since an unobserved value and an impossible one look
     alike in data.
 
-    Observations with an exposure below `min_exposure` are excluded from the fit, their
+    Observations with a denominator below `min_denominator` are excluded from the fit, their
     rates being dominated by the small denominator.
 
     Output is intended to be persisted via a `PriorStore` and re-read, not recomputed
     per call.
 
     Raises:
-        ValueError: if the observations cannot support a prior of `family`; the message
-            names which condition failed.
+        InsufficientData: if there are too few observations to fit `family`.
+        UnsuitableFamily: if the observations contradict `family`.
     """
     fit = {"beta": _fit_beta, "gamma": _fit_gamma, "normal": _fit_normal}[family]
     return PriorParams(
         stat_id=stat_id,
         scope=scope or {},
         family=family,
-        params=fit(observations, min_exposure),
+        params=fit(observations, min_denominator),
     )
 
 
-def _usable(observations: list[Record], min_exposure: float, family: str) -> list[Record]:
-    """Return the observations whose exposure reaches `min_exposure`.
+def _usable(observations: list[Record], min_denominator: float, family: str) -> list[Record]:
+    """Return the observations whose denominator reaches `min_denominator`.
 
     Raises:
-        ValueError: if fewer than two do.
+        InsufficientData: if fewer than two do.
     """
-    usable = [o for o in observations if o.exposure >= min_exposure]
+    usable = [o for o in observations if o.denominator >= min_denominator]
     if len(usable) < 2:
-        raise ValueError(
-            f"fitting a {family} prior needs at least two observations of exposure "
-            f"{min_exposure} or more; got {len(usable)}"
+        raise InsufficientData(
+            f"fitting a {family} prior needs at least two observations of denominator "
+            f"{min_denominator} or more; got {len(usable)}"
         )
     return usable
 
@@ -62,46 +63,46 @@ def _corrected_variance(observed: float, noise: float) -> float:
     not positive, which gives a wider prior.
 
     Raises:
-        ValueError: if `observed` is not positive either.
+        UnsuitableFamily: if `observed` is not positive either.
     """
     variance = observed - noise
     if variance <= 0:
         variance = observed
     if variance <= 0:
-        raise ValueError("the observations' rates are all equal, so no prior fits them")
+        raise UnsuitableFamily("the observations' rates are all equal, so no prior fits them")
     return variance
 
 
-def _fit_gamma(observations: list[Record], min_exposure: float) -> dict[str, float]:
+def _fit_gamma(observations: list[Record], min_denominator: float) -> dict[str, float]:
     """Return `alpha` and `beta` for a gamma over the observations' rates, matched to the
     rates' mean and to their variance less the variance a Poisson count contributes.
 
-    A rate `value / exposure` varies both with the spread of true rates and with the
-    randomness of the count itself, the latter contributing `mean / exposure`. Subtracting
+    A rate `value / denominator` varies both with the spread of true rates and with the
+    randomness of the count itself, the latter contributing `mean / denominator`. Subtracting
     its average across the observations leaves the spread the prior should carry; where
     the subtraction is not positive, the uncorrected variance is used, giving a wider
     prior.
 
     Raises:
-        ValueError: if fewer than two observations reach `min_exposure`, or if their rates
-            have a mean or a variance of zero.
+        InsufficientData: if fewer than two observations reach `min_denominator`.
+        UnsuitableFamily: if their rates have a mean or a variance of zero.
     """
-    usable = _usable(observations, min_exposure, "gamma")
+    usable = _usable(observations, min_denominator, "gamma")
 
-    rates = [o.value / o.exposure for o in usable]
+    rates = [o.value / o.denominator for o in usable]
     mean = statistics.fmean(rates)
     if mean <= 0:
-        raise ValueError("the observations' mean rate is zero, so no gamma fits them")
+        raise UnsuitableFamily("the observations' mean rate is zero, so no gamma fits them")
 
-    poisson_variance = mean * statistics.fmean(1.0 / o.exposure for o in usable)
+    poisson_variance = mean * statistics.fmean(1.0 / o.denominator for o in usable)
     variance = _corrected_variance(statistics.variance(rates), poisson_variance)
 
     return {"alpha": mean**2 / variance, "beta": mean / variance}
 
 
-def _fit_beta(observations: list[Record], min_exposure: float) -> dict[str, float]:
+def _fit_beta(observations: list[Record], min_denominator: float) -> dict[str, float]:
     """Return `alpha` and `beta` for a beta over the observations' proportions, where
-    `value` is a count of successes and `exposure` the attempts they came from.
+    `value` is a count of successes and `denominator` the attempts they came from.
 
     A proportion observed over `n` attempts carries binomial noise of `p * (1 - p) / n` on
     top of the spread of true proportions; subtracting its average across the observations
@@ -109,52 +110,56 @@ def _fit_beta(observations: list[Record], min_exposure: float) -> dict[str, floa
     uncorrected variance is used.
 
     Raises:
-        ValueError: if any observation's value is negative or exceeds its exposure, if
-            fewer than two observations reach `min_exposure`, if their mean proportion is 0
-            or 1, or if their spread exceeds what a beta with that mean can produce.
+        InsufficientData: if fewer than two observations reach `min_denominator`.
+        UnsuitableFamily: if any observation's value is negative or exceeds its
+            denominator, if their mean proportion is 0 or 1, or if their spread exceeds
+            what a beta with that mean can produce.
     """
     for o in observations:
-        if o.value < 0 or o.value > o.exposure:
-            raise ValueError(
-                f"entity {o.entity_id!r} has value {o.value} against exposure {o.exposure}; "
+        if o.value < 0 or o.value > o.denominator:
+            raise UnsuitableFamily(
+                f"entity {o.entity_id!r} has value {o.value} against denominator {o.denominator}; "
                 "a beta prior needs successes counted out of attempts"
             )
 
-    usable = _usable(observations, min_exposure, "beta")
+    usable = _usable(observations, min_denominator, "beta")
 
-    proportions = [o.value / o.exposure for o in usable]
+    proportions = [o.value / o.denominator for o in usable]
     mean = statistics.fmean(proportions)
     if not 0 < mean < 1:
-        raise ValueError(f"the observations' mean proportion is {mean}, so no beta fits them")
+        raise UnsuitableFamily(
+            f"the observations' mean proportion is {mean}, so no beta fits them"
+        )
 
-    binomial_variance = mean * (1 - mean) * statistics.fmean(1.0 / o.exposure for o in usable)
+    binomial_variance = mean * (1 - mean) * statistics.fmean(1.0 / o.denominator for o in usable)
     variance = _corrected_variance(statistics.variance(proportions), binomial_variance)
 
     concentration = mean * (1 - mean) / variance - 1
     if concentration <= 0:
-        raise ValueError(
+        raise UnsuitableFamily(
             "the observations' proportions are more spread than any beta with their mean"
         )
 
     return {"alpha": mean * concentration, "beta": (1 - mean) * concentration}
 
 
-def _fit_normal(observations: list[Record], min_exposure: float) -> dict[str, float]:
+def _fit_normal(observations: list[Record], min_denominator: float) -> dict[str, float]:
     """Return `mu`, `sigma` and `sigma_obs` for a normal over the observations' rates,
     where `sigma` is the spread of rates between entities and `sigma_obs` the spread of one
-    entity's rates around its own mean, per unit of exposure.
+    entity's rates around its own mean, per unit of denominator.
 
     `sigma_obs` is estimated by pooling the within-entity spread across every entity with
-    two or more observations, weighting each observation by its exposure; a normal's spread
+    two or more observations, weighting each observation by its denominator; a normal's spread
     is not implied by its mean, unlike a Poisson's or a binomial's, so it has to be measured
     from entities that appear more than once.
 
     Raises:
-        ValueError: if fewer than two observations reach `min_exposure`, if no entity has
-            two or more of them, if every repeated observation is identical, or if the
-            rates have no spread.
+        InsufficientData: if fewer than two observations reach `min_denominator`, or if no
+            entity has two or more of them.
+        UnsuitableFamily: if every repeated observation is identical, or if the rates have
+            no spread.
     """
-    usable = _usable(observations, min_exposure, "normal")
+    usable = _usable(observations, min_denominator, "normal")
 
     by_entity: dict[str, list[Record]] = {}
     for o in usable:
@@ -165,25 +170,25 @@ def _fit_normal(observations: list[Record], min_exposure: float) -> dict[str, fl
     for records in by_entity.values():
         if len(records) < 2:
             continue
-        exposure = sum(r.exposure for r in records)
-        entity_mean = sum(r.value for r in records) / exposure
-        weighted_squares += sum(r.exposure * (r.value / r.exposure - entity_mean) ** 2 for r in records)
+        denominator = sum(r.denominator for r in records)
+        entity_mean = sum(r.value for r in records) / denominator
+        weighted_squares += sum(r.denominator * (r.value / r.denominator - entity_mean) ** 2 for r in records)
         degrees_of_freedom += len(records) - 1
 
     if degrees_of_freedom == 0:
-        raise ValueError(
+        raise InsufficientData(
             "fitting a normal prior needs at least one entity with two or more "
             "observations, to estimate how much one entity's values vary around its own mean"
         )
     observation_variance = weighted_squares / degrees_of_freedom
     if observation_variance <= 0:
-        raise ValueError(
+        raise UnsuitableFamily(
             "every entity's repeated observations are identical, so their spread is zero"
         )
 
-    rates = [o.value / o.exposure for o in usable]
+    rates = [o.value / o.denominator for o in usable]
     mean = statistics.fmean(rates)
-    noise = observation_variance * statistics.fmean(1.0 / o.exposure for o in usable)
+    noise = observation_variance * statistics.fmean(1.0 / o.denominator for o in usable)
     variance = _corrected_variance(statistics.variance(rates), noise)
 
     return {

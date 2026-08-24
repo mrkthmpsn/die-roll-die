@@ -24,7 +24,7 @@ def adapter(tmp_path):
 def test_entity_observations_are_limited_to_that_entity(adapter):
     records = adapter.get_entity_observations("1", "goals")
     assert [r.entity_id for r in records] == ["1", "1"]
-    assert [(r.value, r.exposure) for r in records] == [(5.0, 10.0), (8.0, 20.0)]
+    assert [(r.value, r.denominator) for r in records] == [(5.0, 10.0), (8.0, 20.0)]
 
 
 def test_records_carry_context_columns(adapter):
@@ -50,7 +50,7 @@ def test_scope_dimensions_compose(adapter):
     assert [r.value for r in records] == [8.0]
 
 
-def test_zero_exposure_rows_are_dropped(adapter):
+def test_zero_denominator_rows_are_dropped(adapter):
     assert not adapter.get_entity_observations("3", "goals")
 
 
@@ -78,8 +78,8 @@ def test_unknown_scope_key_is_rejected(adapter):
         adapter.get_population_observations("goals", {"team_name": "Anywhere"})
 
 
-def test_unknown_exposure_column_is_rejected(tmp_path):
+def test_unknown_denominator_column_is_rejected(tmp_path):
     path = tmp_path / "player_seasons.csv"
     path.write_text(CSV, encoding="utf-8")
     with pytest.raises(ValueError, match="minutes"):
-        CsvDataAdapter(path, exposure_column="minutes")
+        CsvDataAdapter(path, denominator_column="minutes")

@@ -23,10 +23,10 @@ class AnalyticSource:
     the entity's own observations.
 
     Three families are implemented, each with its own update and its own reading of a
-    `Record`: gamma with Poisson counts, where `value` is a count and `exposure` the
+    `Record`: gamma with Poisson counts, where `value` is a count and `denominator` the
     opportunity it accumulated over; beta with binomial successes, where `value` is
-    successes and `exposure` attempts; and normal, where `value / exposure` is a measured
-    quantity per unit of exposure.
+    successes and `denominator` attempts; and normal, where `value / denominator` is a measured
+    quantity per unit of denominator.
     """
 
     def __init__(
@@ -58,53 +58,53 @@ class AnalyticSource:
             self._require("alpha", "beta")
             return (
                 self.prior.params["alpha"] + sum(o.value for o in observations),
-                self.prior.params["beta"] + sum(o.exposure for o in observations),
+                self.prior.params["beta"] + sum(o.denominator for o in observations),
             )
         if self.prior.family == "beta":
             self._require("alpha", "beta")
             return (
                 self.prior.params["alpha"] + sum(o.value for o in observations),
-                self.prior.params["beta"] + sum(o.exposure - o.value for o in observations),
+                self.prior.params["beta"] + sum(o.denominator - o.value for o in observations),
             )
         self._require("mu", "sigma", "sigma_obs")
         mu, sigma = self.prior.params["mu"], self.prior.params["sigma"]
         observation_variance = self.prior.params["sigma_obs"] ** 2
-        precision = 1.0 / sigma**2 + sum(o.exposure for o in observations) / observation_variance
+        precision = 1.0 / sigma**2 + sum(o.denominator for o in observations) / observation_variance
         weighted = mu / sigma**2 + sum(o.value for o in observations) / observation_variance
         return weighted / precision, math.sqrt(1.0 / precision)
 
     def sample(self, entity_id: str, n_draws: int) -> list[float]:
         """Draw n_draws values of the entity's underlying quality from the posterior: a
-        rate per unit of exposure for gamma and normal, a proportion for beta.
+        rate per unit of denominator for gamma and normal, a proportion for beta.
         """
         first, second = self.posterior_params(entity_id)
         return self._draw(first, second, n_draws).tolist()
 
-    def sample_predictive(self, entity_id: str, n_draws: int, exposure: float) -> list[float]:
-        """Draw n_draws totals the entity would record over `exposure`: a Poisson count for
-        gamma, a binomial count of successes out of `exposure` attempts for beta, and a
+    def sample_predictive(self, entity_id: str, n_draws: int, denominator: float) -> list[float]:
+        """Draw n_draws totals the entity would record over `denominator`: a Poisson count for
+        gamma, a binomial count of successes out of `denominator` attempts for beta, and a
         summed value carrying its own observation noise for normal.
 
-        `exposure` is held fixed across the draws, so the spread reflects uncertainty about
+        `denominator` is held fixed across the draws, so the spread reflects uncertainty about
         the entity's quality at a stated amount of opportunity.
 
         Raises:
-            ValueError: if `exposure` is negative, or is not a whole number of attempts for
+            ValueError: if `denominator` is negative, or is not a whole number of attempts for
                 a beta prior.
         """
-        if exposure < 0:
-            raise ValueError("exposure must not be negative")
+        if denominator < 0:
+            raise ValueError("denominator must not be negative")
         first, second = self.posterior_params(entity_id)
         draws = self._draw(first, second, n_draws)
 
         if self.prior.family == "gamma":
-            return self.rng.poisson(draws * exposure).astype(float).tolist()
+            return self.rng.poisson(draws * denominator).astype(float).tolist()
         if self.prior.family == "beta":
-            if exposure != int(exposure):
+            if denominator != int(denominator):
                 raise ValueError("a beta prior predicts over a whole number of attempts")
-            return self.rng.binomial(int(exposure), draws).astype(float).tolist()
-        noise = self.prior.params["sigma_obs"] * math.sqrt(exposure)
-        return (draws * exposure + self.rng.normal(0.0, noise, size=n_draws)).tolist()
+            return self.rng.binomial(int(denominator), draws).astype(float).tolist()
+        noise = self.prior.params["sigma_obs"] * math.sqrt(denominator)
+        return (draws * denominator + self.rng.normal(0.0, noise, size=n_draws)).tolist()
 
     def _draw(self, first: float, second: float, n_draws: int) -> np.ndarray:
         if self.prior.family == "gamma":
