@@ -107,13 +107,65 @@ def test_a_seeded_generator_repeats_its_draws():
     assert first == second
 
 
-def test_unimplemented_family_raises():
-    prior = PriorParams(
-        stat_id="pass_completion", family="beta", params={"alpha": 2.0, "beta": 5.0}
+def beta_prior(alpha: float = 2.0, beta: float = 8.0) -> PriorParams:
+    """Mean proportion of 0.2."""
+    return PriorParams(
+        stat_id="pass_completion", family="beta", params={"alpha": alpha, "beta": beta}
     )
-    analytic = source({}, prior=prior)
-    with pytest.raises(NotImplementedError, match="beta"):
-        analytic.sample("striker", 10)
+
+
+def normal_prior(mu: float = 10.0, sigma: float = 1.0, sigma_obs: float = 2.0) -> PriorParams:
+    return PriorParams(
+        stat_id="distance",
+        family="normal",
+        params={"mu": mu, "sigma": sigma, "sigma_obs": sigma_obs},
+    )
+
+
+def test_beta_posterior_adds_successes_and_failures():
+    observations = {"passer": [season("passer", 30, 100), season("passer", 10, 50)]}
+    alpha, beta = source(observations, prior=beta_prior()).posterior_params("passer")
+    assert (alpha, beta) == (2.0 + 40, 8.0 + 110)
+
+
+def test_beta_draws_stay_within_zero_and_one():
+    observations = {"passer": [season("passer", 30, 100)]}
+    draws = source(observations, prior=beta_prior()).sample("passer", 500)
+    assert all(0.0 <= d <= 1.0 for d in draws)
+
+
+def test_beta_predictive_counts_successes_out_of_attempts():
+    observations = {"passer": [season("passer", 30, 100)]}
+    draws = source(observations, prior=beta_prior()).sample_predictive("passer", 500, 40)
+    assert all(0.0 <= d <= 40.0 and d == int(d) for d in draws)
+    assert np.mean(draws) == pytest.approx(40 * 32 / 118, rel=0.15)
+
+
+def test_beta_predictive_rejects_fractional_attempts():
+    with pytest.raises(ValueError, match="whole number of attempts"):
+        source({}, prior=beta_prior()).sample_predictive("passer", 10, 12.5)
+
+
+def test_normal_posterior_moves_towards_the_observations():
+    observations = {"runner": [season("runner", 130.0, 10.0)]}
+    mu, sigma = source(observations, prior=normal_prior()).posterior_params("runner")
+    assert 10.0 < mu < 13.0
+    assert sigma < 1.0
+
+
+def test_normal_posterior_with_no_observations_returns_the_prior():
+    mu, sigma = source({}, prior=normal_prior()).posterior_params("runner")
+    assert (mu, sigma) == (10.0, 1.0)
+
+
+def test_normal_draws_can_be_either_side_of_the_mean():
+    draws = source({}, prior=normal_prior()).sample("runner", 1000)
+    assert min(draws) < 10.0 < max(draws)
+
+
+def test_normal_predictive_totals_over_the_exposure():
+    draws = source({}, prior=normal_prior()).sample_predictive("runner", 2000, 10.0)
+    assert np.mean(draws) == pytest.approx(100.0, rel=0.05)
 
 
 def test_gamma_prior_missing_a_parameter_raises():

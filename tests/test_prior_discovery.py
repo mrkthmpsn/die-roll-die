@@ -75,6 +75,78 @@ def test_fit_prior_rejects_observations_that_are_all_zero():
         fit_prior(observations, "gamma", "goals")
 
 
-def test_fit_prior_rejects_a_family_it_cannot_fit():
-    with pytest.raises(NotImplementedError, match="beta"):
-        fit_prior(gamma_poisson_observations(5.0, 16.0, 50), "beta", "pass_completion")
+def beta_binomial_observations(
+    alpha: float, beta: float, n: int, seed: int = 11
+) -> list[Record]:
+    """Draw `n` observations whose true proportions come from Beta(alpha, beta) and whose
+    values are binomial successes over attempts spanning 20 to 200.
+    """
+    rng = np.random.default_rng(seed)
+    proportions = rng.beta(alpha, beta, size=n)
+    attempts = rng.integers(20, 200, size=n)
+    successes = rng.binomial(attempts, proportions)
+    return [
+        Record(entity_id=str(i), value=float(s), exposure=float(a))
+        for i, (s, a) in enumerate(zip(successes, attempts))
+    ]
+
+
+def normal_observations(
+    mu: float, sigma: float, sigma_obs: float, entities: int, seasons: int, seed: int = 13
+) -> list[Record]:
+    """Draw `seasons` observations each for `entities` entities, whose true levels come from
+    Normal(mu, sigma) and whose values are that level over an exposure, plus noise of
+    `sigma_obs` per unit of exposure.
+    """
+    rng = np.random.default_rng(seed)
+    records = []
+    for entity in range(entities):
+        level = rng.normal(mu, sigma)
+        for _ in range(seasons):
+            exposure = float(rng.uniform(10.0, 30.0))
+            rate = level + rng.normal(0.0, sigma_obs / np.sqrt(exposure))
+            records.append(
+                Record(entity_id=str(entity), value=rate * exposure, exposure=exposure)
+            )
+    return records
+
+
+def test_fit_prior_recovers_a_known_beta():
+    prior = fit_prior(beta_binomial_observations(6.0, 14.0, 3000), "beta", "pass_completion")
+    alpha, beta = prior.params["alpha"], prior.params["beta"]
+    assert alpha / (alpha + beta) == pytest.approx(6.0 / 20.0, rel=0.05)
+    assert alpha == pytest.approx(6.0, rel=0.25)
+    assert beta == pytest.approx(14.0, rel=0.25)
+
+
+def test_beta_correction_narrows_the_prior():
+    observations = beta_binomial_observations(6.0, 14.0, 3000)
+    proportions = np.array([o.value / o.exposure for o in observations])
+    m, v = proportions.mean(), proportions.var(ddof=1)
+    uncorrected = m * (m * (1 - m) / v - 1)
+
+    prior = fit_prior(observations, "beta", "pass_completion")
+    assert prior.params["alpha"] > uncorrected
+
+
+def test_beta_rejects_values_above_their_exposure():
+    observations = [
+        Record(entity_id="over", value=12.0, exposure=10.0),
+        Record(entity_id="fine", value=3.0, exposure=10.0),
+    ]
+    with pytest.raises(ValueError, match="over"):
+        fit_prior(observations, "beta", "pass_completion")
+
+
+def test_fit_prior_recovers_a_known_normal():
+    observations = normal_observations(10.0, 1.0, 2.0, entities=400, seasons=4)
+    prior = fit_prior(observations, "normal", "distance", min_exposure=0.0)
+    assert prior.params["mu"] == pytest.approx(10.0, rel=0.02)
+    assert prior.params["sigma"] == pytest.approx(1.0, rel=0.15)
+    assert prior.params["sigma_obs"] == pytest.approx(2.0, rel=0.15)
+
+
+def test_normal_needs_an_entity_with_repeated_observations():
+    observations = normal_observations(10.0, 1.0, 2.0, entities=50, seasons=1)
+    with pytest.raises(ValueError, match="two or more"):
+        fit_prior(observations, "normal", "distance", min_exposure=0.0)
