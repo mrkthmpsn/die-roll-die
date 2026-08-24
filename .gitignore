@@ -8,3 +8,9 @@ node_modules/
 Thumbs.db
 .vscode/
 .idea/
+
+# Management and process docs — kept locally, out of the forkable repo
+.claude/
+work_reviews/
+UPCOMING_WORK.md
+MANAGEMENT.md
