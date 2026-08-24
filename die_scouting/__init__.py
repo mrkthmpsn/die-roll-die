@@ -1,25 +1,25 @@
 from .csv_adapter import CsvDataAdapter
 from .data_adapter import DataAdapter
-from .errors import InsufficientData, PriorFitError, UnsuitableFamily
 from .die import build_die
 from .discretizer import discretize
+from .errors import InsufficientData, PriorFitError, UnsuitableFamily
 from .models import Die, Face, PriorParams, Record
 from .prior_discovery import fit_prior
 from .prior_store import PriorStore, resolve_prior
-from .quality_source import AnalyticSource, BootstrapSource, QualitySource
+from .quality_sampler import BootstrapSampler, PosteriorSampler, QualitySampler
 
 __all__ = [
-    "AnalyticSource",
-    "BootstrapSource",
+    "BootstrapSampler",
     "CsvDataAdapter",
     "DataAdapter",
     "Die",
     "Face",
     "InsufficientData",
-    "PriorParams",
+    "PosteriorSampler",
     "PriorFitError",
+    "PriorParams",
     "PriorStore",
-    "QualitySource",
+    "QualitySampler",
     "Record",
     "UnsuitableFamily",
     "build_die",

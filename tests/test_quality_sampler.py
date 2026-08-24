@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from die_scouting import AnalyticSource, PriorParams, Record
+from die_scouting import PosteriorSampler, PriorParams, Record
 
 
 class FakeAdapter:
@@ -29,7 +29,7 @@ def season(entity_id: str, goals: float, nineties: float) -> Record:
 
 
 def source(observations: dict[str, list[Record]], prior: PriorParams | None = None, seed: int = 0):
-    return AnalyticSource(
+    return PosteriorSampler(
         prior=prior or gamma_prior(),
         data_adapter=FakeAdapter(observations),
         stat_id="non_penalty_goals",

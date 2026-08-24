@@ -11,7 +11,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from die_scouting import AnalyticSource, CsvDataAdapter, PriorFitError, build_die, fit_prior
+from die_scouting import CsvDataAdapter, PosteriorSampler, PriorFitError, build_die, fit_prior
 
 DATA = Path(__file__).resolve().parent.parent / "data" / "player_seasons.csv"
 
@@ -87,9 +87,9 @@ def main() -> None:
             "try a different --family, a broader --scope, or a different "
             "--denominator-column"
         ) from None
-    source = AnalyticSource(prior, adapter, args.stat)
+    sampler = PosteriorSampler(prior, adapter, args.stat)
     observations = adapter.get_entity_observations(entity_id, args.stat, scope)
-    alpha, beta = source.posterior_params(entity_id)
+    alpha, beta = sampler.posterior_params(entity_id)
 
     name = observations[0].context["player_name"] if observations else args.player
     recorded = sum(o.value for o in observations)
@@ -103,7 +103,7 @@ def main() -> None:
     print(f"  prior:     {prior.family}, {_summarise(prior.family, *_prior_pair(prior))}")
     print(f"  posterior: {_summarise(prior.family, alpha, beta)}")
 
-    samples = source.sample_predictive(entity_id, args.draws, args.denominator)
+    samples = sampler.sample_predictive(entity_id, args.draws, args.denominator)
     die = build_die(
         samples,
         n_faces=args.faces,

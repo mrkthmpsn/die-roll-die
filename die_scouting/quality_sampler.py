@@ -10,7 +10,7 @@ from .data_adapter import DataAdapter
 from .models import PriorParams
 
 
-class QualitySource(Protocol):
+class QualitySampler(Protocol):
     """Protocol for producing draws of an entity's quality."""
 
     def sample(self, entity_id: str, n_draws: int) -> list[float]:
@@ -18,7 +18,7 @@ class QualitySource(Protocol):
         ...
 
 
-class AnalyticSource:
+class PosteriorSampler:
     """Produces draws from a closed-form posterior, by conjugate update of `prior` with
     the entity's own observations.
 
@@ -119,7 +119,7 @@ class AnalyticSource:
                 raise ValueError(f"a {self.prior.family} prior's params must contain {key!r}")
 
 
-class BootstrapSource:
+class BootstrapSampler:
     """Produces draws by resampling the entity's own observations with replacement and
     recomputing the stat each time.
     """

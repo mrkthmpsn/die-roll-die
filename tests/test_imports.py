@@ -4,8 +4,8 @@ import pytest
 from pydantic import ValidationError
 
 from die_scouting import (
-    AnalyticSource,
-    BootstrapSource,
+    PosteriorSampler,
+    BootstrapSampler,
     Die,
     Face,
     PriorParams,
@@ -62,7 +62,7 @@ def test_bootstrap_source_stub_raises():
         def get_population_observations(self, stat_id, scope=None):
             return []
 
-    bootstrap = BootstrapSource(data_adapter=FakeAdapter(), stat_id="goals_per_90")
+    bootstrap = BootstrapSampler(data_adapter=FakeAdapter(), stat_id="goals_per_90")
     with pytest.raises(NotImplementedError):
         bootstrap.sample("player-1", 100)
 

@@ -4,9 +4,9 @@ Turn a Bayesian estimate of "quality" (a stat, or a pre-computed score for a spe
 
 ## Status
 
-The pipeline runs end to end on real data: `CsvDataAdapter` reads the Premier League extract in [data/](data/), `PriorDiscovery` fits a prior from it, and `AnalyticSource`'s gamma path updates that prior for one player and feeds `Discretizer`. [examples/roll.py](examples/roll.py) does all of it for a named player and any stat.
+The pipeline runs end to end on real data: `CsvDataAdapter` reads the Premier League extract in [data/](data/), `PriorDiscovery` fits a prior from it, and `PosteriorSampler` updates that prior for one player and feeds `Discretizer`. [examples/roll.py](examples/roll.py) does all of it for a named player and any stat.
 
-`PriorStore.resolve_prior` and `BootstrapSource` still raise `NotImplementedError`, and only the gamma family is implemented in either `fit_prior` or `AnalyticSource`.
+`PriorStore.resolve_prior` and `BootstrapSampler` still raise `NotImplementedError`. All three prior families are implemented in `fit_prior` and `PosteriorSampler`.
 
 ```
 uv run python examples/roll.py "Harry Kane" --scope position_general=Forward
@@ -39,10 +39,10 @@ The gamma fit corrects for the noise in its own inputs. A season's goals-per-nin
 
 Scope is optional and composable — a prior can be global, or narrowed by any combination of dimensions (e.g. position group, competition). Stored as `PriorParams` keyed by `(stat_id, scope)`. Read-time lookup falls back to a broader/global scope if nothing's been discovered yet for a narrow slice.
 
-**QualitySource** (online, per player/roll) — uniform interface: `sample(entity_id, n_draws) -> float[]`, returning draws of the player's underlying rate. Two implementations behind it:
+**QualitySampler** (online, per player/roll) — uniform interface: `sample(entity_id, n_draws) -> float[]`, returning draws of the player's underlying rate. Two implementations behind it:
 
-- `AnalyticSource` — closed-form posterior (conjugate update of the discovered prior with this player's own observations). Gamma updates as Gamma-Poisson, summing values and denominators onto `alpha` and `beta`; beta updates as Beta-Binomial, summing successes onto `alpha` and misses onto `beta`; normal updates by precision-weighting the prior's mean against the observations. It also offers `sample_predictive(entity_id, n_draws, denominator)`, which draws a rate and then a Poisson count at that rate over the given denominator, so the die is over goals-next-season rather than goals-per-ninety. That denominator is supplied by the caller and held fixed, so the answer is "if they play thirty nineties" rather than "next season" — playing time is not itself modelled.
-- `BootstrapSource` — resample this player's own match records with replacement, recompute, repeat — no named distribution family required
+- `PosteriorSampler` — closed-form posterior (conjugate update of the discovered prior with this player's own observations). Gamma updates as Gamma-Poisson, summing values and denominators onto `alpha` and `beta`; beta updates as Beta-Binomial, summing successes onto `alpha` and misses onto `beta`; normal updates by precision-weighting the prior's mean against the observations. It also offers `sample_predictive(entity_id, n_draws, denominator)`, which draws the player's underlying quality and then what they would record over the given denominator — a Poisson count for gamma, binomial successes for beta, a summed value for normal — so the die is over goals-next-season rather than goals-per-ninety. That denominator is supplied by the caller and held fixed, so the answer is "if they play thirty nineties" rather than "next season" — playing time is not itself modelled.
+- `BootstrapSampler` — resample this player's own match records with replacement, recompute, repeat — no named distribution family required
 
 Reads the relevant `PriorParams` as config; never invokes `PriorDiscovery` itself.
 
@@ -63,7 +63,7 @@ Offline (periodic):
   DataAdapter (population-wide) -> PriorDiscovery -> PriorParams (stored, keyed by stat + scope)
 
 Online (per player, per roll):
-  PriorParams + DataAdapter (per-player) -> QualitySource -> Discretizer -> Die
+  PriorParams + DataAdapter (per-player) -> QualitySampler -> Discretizer -> Die
 ```
 
 ## Explicitly deferred / out of scope for now
