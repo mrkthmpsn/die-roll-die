@@ -49,7 +49,6 @@ Narrative framing can smuggle in claims the code doesn't support. `Record`'s ori
 ## Development
 
 ```
-uv venv
-uv pip install -e ".[dev]"
-.venv/Scripts/python -m pytest tests/
+uv sync
+uv run pytest
 ```

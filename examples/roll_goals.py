@@ -1,8 +1,8 @@
 """Build a goals die for one Premier League player from the extract in `data/`.
 
 Usage:
-    python examples/roll_goals.py "Harry Kane"
-    python examples/roll_goals.py "Virgil van Dijk" --scope position_general=Defender --nineties 34
+    uv run python examples/roll_goals.py "Harry Kane"
+    uv run python examples/roll_goals.py "Virgil van Dijk" --scope position_general=Defender --nineties 34
 """
 
 from __future__ import annotations

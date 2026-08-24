@@ -9,15 +9,14 @@ The pipeline runs end to end on real data: `CsvDataAdapter` reads the Premier Le
 `PriorStore.resolve_prior` and `BootstrapSource` still raise `NotImplementedError`, and only the gamma family is implemented in either `fit_prior` or `AnalyticSource`.
 
 ```
-python examples/roll_goals.py "Harry Kane" --scope position_general=Forward
+uv run python examples/roll_goals.py "Harry Kane" --scope position_general=Forward
 ```
 
 ## Development
 
 ```
-uv venv
-uv pip install -e ".[dev]"
-.venv/Scripts/pytest tests/
+uv sync
+uv run pytest
 ```
 
 ## Core idea
