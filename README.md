@@ -66,11 +66,6 @@ Online (per player, per roll):
   PriorParams + DataAdapter (per-player) -> QualitySampler -> Discretizer -> Die
 ```
 
-## Explicitly deferred / out of scope for now
-
-- How a per-match "modeled score" (e.g. combining tackles, pass success, halfspace receptions into a role-suitability number) actually gets computed. Assume it already exists as an input value per match.
-- A `Combinator` module that combines separately-drawn samples from multiple stats — considered and dropped. If a composite value is ever built by combining raw features, that belongs upstream of the Bayesian layer (as a pre-computed value per match), not as a distribution-combination step downstream of it.
-
 ## Data
 
 No dataset ships with this repo. `CsvDataAdapter` reads any CSV of one row per entity per period, given the column names to treat as the entity, the denominator and the label; football player-seasons are what it was built against, but nothing in `die_scouting/` knows that.
