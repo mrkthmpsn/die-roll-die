@@ -21,3 +21,4 @@ RELEASE_READINESS.md
 data/player_seasons.csv
 data/README.md
 research/
+data/priors.json

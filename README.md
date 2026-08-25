@@ -6,7 +6,7 @@ Turn a Bayesian estimate of "quality" (a stat, or a pre-computed score for a spe
 
 The pipeline runs end to end on real data: `CsvDataAdapter` reads the Premier League extract in [data/](data/), `PriorDiscovery` fits a prior from it, and `PosteriorSampler` updates that prior for one player and feeds `Discretizer`. [examples/roll.py](examples/roll.py) does all of it for a named player and any stat.
 
-`PriorStore.resolve_prior` and `BootstrapSampler` still raise `NotImplementedError`. All three prior families are implemented in `fit_prior` and `PosteriorSampler`.
+All three prior families are implemented in `fit_prior` and `PosteriorSampler`, and priors can be fitted once and stored. `BootstrapSampler` still raises `NotImplementedError`.
 
 ```
 uv run python examples/roll.py "Harry Kane" --scope position_general=Forward
@@ -37,7 +37,9 @@ Each family corrects for the noise in its own inputs, and where that noise comes
 
 The gamma fit corrects for the noise in its own inputs. A season's goals-per-ninety is spread both by how much players genuinely differ and by the randomness of scoring itself, the second contributing `mean / denominator` to the variance of an observed rate; subtracting its average leaves the spread a prior should carry. Over the 1,721 forward-seasons of five or more nineties in this extract, more than half the apparent spread is that randomness, and correcting for it takes the prior from 7.6 to 16.6 nineties' worth of evidence — the difference between a player with three goals in four nineties reading as a genuine 0.6-per-90 striker or not. Seasons under five nineties are excluded from the fit outright, their rates being dominated by the small denominator.
 
-Scope is optional and composable — a prior can be global, or narrowed by any combination of dimensions (e.g. position group, competition). Stored as `PriorParams` keyed by `(stat_id, scope)`. Read-time lookup falls back to a broader/global scope if nothing's been discovered yet for a narrow slice.
+Scope is optional and composable — a prior can be global, or narrowed by any combination of dimensions (e.g. position group, competition). Stored as `PriorParams` keyed by `(stat_id, scope)`, in an `InMemoryPriorStore` or a `JsonPriorStore`.
+
+Which scopes exist is a list someone writes down rather than something the system derives. `scopes_for` builds that list from the distinct values of a column, and `fit_scopes` fits each one, saving what fits and reporting the slices too thin to fit. A scope nobody fitted is a miss at read time, not a silent fall back to a broader prior: `list_scopes` tells a caller what is available so the choice stays theirs.
 
 **QualitySampler** (online, per player/roll) — uniform interface: `sample(entity_id, n_draws) -> float[]`, returning draws of the player's underlying rate. Two implementations behind it:
 
@@ -65,6 +67,15 @@ Offline (periodic):
 Online (per player, per roll):
   PriorParams + DataAdapter (per-player) -> QualitySampler -> Discretizer -> Die
 ```
+
+Each half is a script:
+
+```
+uv run python examples/fit_priors.py
+uv run python examples/roll.py "Harry Kane" --scope position_general=Forward --priors data/priors.json
+```
+
+Without `--priors`, `roll.py` fits the prior inline and discards it, which is fine for one die and wrong for anything answering requests.
 
 ## Data
 

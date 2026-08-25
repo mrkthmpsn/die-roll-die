@@ -14,7 +14,14 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from die_scouting import CsvDataAdapter, PosteriorSampler, PriorFitError, build_die, fit_prior
+from die_scouting import (
+    CsvDataAdapter,
+    JsonPriorStore,
+    PosteriorSampler,
+    PriorFitError,
+    build_die,
+    fit_prior,
+)
 
 DATA = Path(__file__).resolve().parent.parent / "data" / "player_seasons.csv"
 
@@ -46,6 +53,20 @@ def _summarise(family: str, first: float, second: float) -> str:
     return f"{first:.3f} per unit, spread {second:.3f}"
 
 
+def read_prior(path: Path, stat_id: str, scope: dict[str, str]):
+    """Return the stored prior for `stat_id` and `scope`, or exit listing what is stored."""
+    store = JsonPriorStore(path)
+    prior = store.get(stat_id, scope)
+    if prior is not None:
+        return prior
+    available = store.list_scopes(stat_id)
+    listed = "\n".join(f"  {s or 'global'}" for s in available) or "  (none)"
+    raise SystemExit(
+        f"{path} holds no prior for {stat_id!r} scoped to {scope or 'global'}\n"
+        f"scopes fitted for {stat_id!r}:\n{listed}"
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("player", help="part of a player's name, matched case-insensitively")
@@ -69,6 +90,11 @@ def main() -> None:
     parser.add_argument(
         "--strategy", choices=["equal_mass", "equal_width"], default="equal_mass"
     )
+    parser.add_argument(
+        "--priors",
+        type=Path,
+        help="read the prior from this store instead of fitting it from the population",
+    )
     parser.add_argument("--draws", type=int, default=100_000)
     args = parser.parse_args()
 
@@ -86,16 +112,22 @@ def main() -> None:
         raise SystemExit(f"no player matching {args.player!r}")
     entity_id = matches[0]
 
-    try:
-        prior = fit_prior(
-            adapter.get_population_observations(args.stat, scope), args.family, args.stat, scope
-        )
-    except PriorFitError as error:
-        raise SystemExit(
-            f"cannot fit a {args.family} prior for {args.stat!r}: {error}\n"
-            "try a different --family, a broader --scope, or a different "
-            "--denominator-column"
-        ) from None
+    if args.priors:
+        prior = read_prior(args.priors, args.stat, scope)
+    else:
+        try:
+            prior = fit_prior(
+                adapter.get_population_observations(args.stat, scope),
+                args.family,
+                args.stat,
+                scope,
+            )
+        except PriorFitError as error:
+            raise SystemExit(
+                f"cannot fit a {args.family} prior for {args.stat!r}: {error}\n"
+                "try a different --family, a broader --scope, or a different "
+                "--denominator-column"
+            ) from None
     sampler = PosteriorSampler(prior, adapter, args.stat)
     observations = adapter.get_entity_observations(entity_id, args.stat, scope)
     alpha, beta = sampler.posterior_params(entity_id)
