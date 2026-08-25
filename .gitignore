@@ -17,8 +17,8 @@ MANAGEMENT.md
 CLAUDE.md
 RELEASE_READINESS.md
 
-# Data and research kept locally, not redistributable
-data/player_seasons.csv
-data/README.md
+# Research notes kept locally
 research/
+
+# Generated output
 data/priors.json
