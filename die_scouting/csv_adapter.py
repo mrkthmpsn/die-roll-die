@@ -23,7 +23,7 @@ class CsvDataAdapter:
         ValueError: if `denominator_column` is not a column of the file.
     """
 
-    def __init__(self, path: str | Path, denominator_column: str = "nineties") -> None:
+    def __init__(self, path: str | Path, denominator_column: str = "appearances") -> None:
         self.path = Path(path)
         self.denominator_column = denominator_column
 

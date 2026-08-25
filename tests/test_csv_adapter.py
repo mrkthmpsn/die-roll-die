@@ -5,7 +5,7 @@ import pytest
 from die_scouting.csv_adapter import CsvDataAdapter
 
 CSV = """\
-player_source_id,player_name,season_name,position,position_general,nineties,goals,total_xg
+player_source_id,player_name,season_name,position,position_general,appearances,goals,total_xg
 1,Alice Adeyemi,2023/24,Forward,Forward,10,5,
 1,Alice Adeyemi,2024/25,Forward,Forward,20,8,
 2,Bo Bergstrom,2023/24,Centre Back,Defender,30,1,
@@ -83,3 +83,16 @@ def test_unknown_denominator_column_is_rejected(tmp_path):
     path.write_text(CSV, encoding="utf-8")
     with pytest.raises(ValueError, match="minutes"):
         CsvDataAdapter(path, denominator_column="minutes")
+
+
+def test_appearances_is_the_default_denominator(adapter):
+    """The shipped dataset counts appearances, having no minutes to make a per-90 rate from."""
+    assert adapter.denominator_column == "appearances"
+
+
+def test_an_explicit_denominator_column_overrides_the_default(tmp_path):
+    path = tmp_path / "player_seasons.csv"
+    path.write_text(CSV, encoding="utf-8")
+    adapter = CsvDataAdapter(path, denominator_column="goals")
+    record = adapter.get_entity_observations("2", "appearances")[0]
+    assert (record.value, record.denominator) == (30.0, 1.0)

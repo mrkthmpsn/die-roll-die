@@ -1,12 +1,13 @@
 """Build a die for one entity from a CSV in `data/`, one row per entity per period.
 
-No dataset ships with this repo, so this needs a file at `data/player_seasons.csv` whose
-columns match the flags below.
+Reads `data/player_seasons.csv`, which ships with the repo: Premier League goals and
+appearances per player per season.
 
 Usage:
-    uv run python examples/roll.py "Harry Kane"
-    uv run python examples/roll.py "Kevin De Bruyne" --stat assists --scope position_general=Midfielder
-    uv run python examples/roll.py "Peter Crouch" --stat headed_shots --denominator-column shots --family beta
+    uv run python examples/roll.py "Erling Haaland"
+    uv run python examples/roll.py "Bukayo Saka" --scope position_general=Forward
+    uv run python examples/roll.py "Mohamed Salah" --scope season_name=2024/25 --faces 8
+    uv run python examples/roll.py "Cole Palmer" --denominator-column starts
 """
 
 from __future__ import annotations
@@ -83,7 +84,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--denominator-column",
-        default="nineties",
+        default="appearances",
         help="column the stat is measured against; attempts rather than time for a beta",
     )
     parser.add_argument("--faces", type=int, default=6)

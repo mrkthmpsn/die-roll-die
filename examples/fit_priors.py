@@ -31,7 +31,7 @@ def main() -> None:
     parser.add_argument("--stat", default="goals")
     parser.add_argument("--family", choices=["beta", "gamma", "normal"], default="gamma")
     parser.add_argument("--scope-column", default="position_general")
-    parser.add_argument("--denominator-column", default="nineties")
+    parser.add_argument("--denominator-column", default="appearances")
     parser.add_argument("--priors", type=Path, default=PRIORS)
     parser.add_argument("--data", type=Path, default=DATA)
     args = parser.parse_args()
