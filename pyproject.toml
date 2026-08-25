@@ -11,8 +11,14 @@ dependencies = [
 ]
 
 [dependency-groups]
+scrape = [
+    "requests>=2.31",
+    "beautifulsoup4>=4.12",
+    "lxml>=5",
+]
 dev = [
     "pytest>=8",
+    { include-group = "scrape" },
 ]
 
 [build-system]
