@@ -4,15 +4,14 @@ import pytest
 from pydantic import ValidationError
 
 from die_scouting import (
-    PosteriorSampler,
     BootstrapSampler,
     Die,
     Face,
+    PosteriorSampler,
     PriorParams,
     Record,
     build_die,
     fit_prior,
-    resolve_prior,
 )
 
 
@@ -40,18 +39,6 @@ def test_face_and_die_instantiate():
 def test_fit_prior_needs_observations():
     with pytest.raises(ValueError):
         fit_prior([], "gamma", "goals_per_90")
-
-
-def test_prior_store_resolve_stub_raises():
-    class FakeStore:
-        def save(self, params):
-            pass
-
-        def get(self, stat_id, scope):
-            return None
-
-    with pytest.raises(NotImplementedError):
-        resolve_prior(FakeStore(), "goals_per_90", {})
 
 
 def test_bootstrap_source_stub_raises():

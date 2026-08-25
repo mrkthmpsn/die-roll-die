@@ -3,9 +3,10 @@ from .data_adapter import DataAdapter
 from .die import build_die
 from .discretizer import discretize
 from .errors import InsufficientData, PriorFitError, UnsuitableFamily
+from .fitting import FitReport, fit_scopes, scopes_for
 from .models import Die, Face, PriorParams, Record
 from .prior_discovery import fit_prior
-from .prior_store import PriorStore, resolve_prior
+from .prior_store import InMemoryPriorStore, JsonPriorStore, PriorStore
 from .quality_sampler import BootstrapSampler, PosteriorSampler, QualitySampler
 
 __all__ = [
@@ -14,7 +15,10 @@ __all__ = [
     "DataAdapter",
     "Die",
     "Face",
+    "FitReport",
+    "InMemoryPriorStore",
     "InsufficientData",
+    "JsonPriorStore",
     "PosteriorSampler",
     "PriorFitError",
     "PriorParams",
@@ -25,5 +29,6 @@ __all__ = [
     "build_die",
     "discretize",
     "fit_prior",
-    "resolve_prior",
+    "fit_scopes",
+    "scopes_for",
 ]
