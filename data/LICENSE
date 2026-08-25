@@ -1,0 +1,39 @@
+The files in this directory are licensed under the Creative Commons
+Attribution-ShareAlike 4.0 International Licence (CC BY-SA 4.0).
+
+    https://creativecommons.org/licenses/by-sa/4.0/
+    Full legal code: https://creativecommons.org/licenses/by-sa/4.0/legalcode
+
+Section 3(a)(1) of that licence is satisfied by a link rather than a copy of the
+text, which is why the legal code is referenced above rather than reproduced here.
+
+This licence applies to this directory only. The rest of the repository —
+`die_scouting/`, `examples/`, `tools/` and `tests/` — is under the MIT licence in
+the LICENSE file at the root.
+
+
+WHY
+
+`player_seasons.csv` is derived from the squad statistics tables of English
+Wikipedia's Premier League club-season articles. Wikipedia's text is licensed
+CC BY-SA 4.0, and an adapted database built from it carries the same terms.
+
+
+ATTRIBUTION
+
+Source articles are listed in `sources.json`, each with its title, URL and the
+revision id the figures were read from. Attribution to the authors of a Wikipedia
+article is given by linking the article, whose page history is its author list.
+
+Changes made: the per-competition appearance and goal figures were extracted from
+each article's squad statistics tables, the Premier League columns kept and the
+cup and European columns discarded, starts and substitute appearances separated
+where the article distinguished them, and the result reshaped into one row per
+player per season per club. Rows whose competition figures did not sum to the
+article's own stated total were dropped.
+
+
+IF YOU REDISTRIBUTE THIS FILE
+
+Modified or not, it stays under CC BY-SA 4.0, and this notice and `sources.json`
+should travel with it. Nothing here restricts what you may do with the code.
