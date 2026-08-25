@@ -3,6 +3,8 @@ name = "die-scouting"
 version = "0.0.1"
 description = "Bayesian quality distributions turned into weighted dice, illustrating uncertainty in per-entity estimates."
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 authors = [{ name = "Mark Thompson" }]
 dependencies = [

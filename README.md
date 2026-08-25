@@ -4,12 +4,12 @@ Turn a Bayesian estimate of "quality" (a stat, or a pre-computed score for a spe
 
 ## Status
 
-The pipeline runs end to end on real data: `CsvDataAdapter` reads the Premier League extract in [data/](data/), `PriorDiscovery` fits a prior from it, and `PosteriorSampler` updates that prior for one player and feeds `Discretizer`. [examples/roll.py](examples/roll.py) does all of it for a named player and any stat.
+The pipeline runs end to end on the dataset in [data/](data/), which ships with the repo: `CsvDataAdapter` reads it, `PriorDiscovery` fits a prior from it, and `PosteriorSampler` updates that prior for one player and feeds `Discretizer`. [examples/roll.py](examples/roll.py) does all of it for a named player and any stat.
 
 All three prior families are implemented in `fit_prior` and `PosteriorSampler`, and priors can be fitted once and stored. `BootstrapSampler` still raises `NotImplementedError`.
 
 ```
-uv run python examples/roll.py "Harry Kane" --scope position_general=Forward
+uv run python examples/roll.py "Erling Haaland" --scope position_general=Forward
 ```
 
 ## Development
@@ -23,7 +23,7 @@ uv run pytest
 
 Any value for a player (a raw stat like goals, or an externally-modeled score like "inverted full-back suitability out of 10") is treated as a stream of observations, each pairing a value with the denominator it accumulated over — twelve goals across thirty nineties, say. Bayesian updating turns "prior belief + this player's own record" into a posterior distribution over their true quality. That posterior gets discretized into weighted die faces and rolled.
 
-The denominator denominator is what makes the die worth looking at: four goals in ten appearances and forty in a hundred imply the same rate, and only the second is evidence you can lean on. Two questions can be asked of the posterior — what the player's underlying rate is, and how many they would record over a stated amount of future playing time.
+The denominator is what makes the die worth looking at: four goals in ten appearances and forty in a hundred imply the same rate, and only the second is evidence you can lean on. Two questions can be asked of the posterior — what the player's underlying rate is, and how many they would record over a stated amount of future playing time.
 
 ## Modules
 
@@ -35,7 +35,7 @@ The denominator denominator is what makes the die worth looking at: four goals i
 
 Each family corrects for the noise in its own inputs, and where that noise comes from differs. A Poisson's spread is fixed by its mean and a binomial's by its mean and its attempts, so both can be calculated and subtracted; a normal's is free, so `fit_prior` estimates it by pooling how much each entity's observations vary around that entity's own mean, which needs entities appearing more than once and is stored as the prior's third parameter, `sigma_obs`.
 
-The gamma fit corrects for the noise in its own inputs. A season's goals-per-ninety is spread both by how much players genuinely differ and by the randomness of scoring itself, the second contributing `mean / denominator` to the variance of an observed rate; subtracting its average leaves the spread a prior should carry. Over the 1,721 forward-seasons of five or more nineties in this extract, more than half the apparent spread is that randomness, and correcting for it takes the prior from 7.6 to 16.6 nineties' worth of evidence — the difference between a player with three goals in four nineties reading as a genuine 0.6-per-90 striker or not. Seasons under five nineties are excluded from the fit outright, their rates being dominated by the small denominator.
+The gamma fit corrects for the noise in its own inputs. A season's goals-per-appearance is spread both by how much players genuinely differ and by the randomness of scoring itself, the second contributing `mean / denominator` to the variance of an observed rate; subtracting its average leaves the spread a prior should carry. Over the 524 forward-seasons of five or more appearances in the shipped data, 38% of the apparent spread is that randomness, and correcting for it takes the prior from 7.0 to 11.2 appearances' worth of evidence — the difference between a player with three goals in four appearances reading as a genuine 0.75-per-appearance striker or not. Seasons under five appearances are excluded from the fit outright, their rates being dominated by the small denominator.
 
 Scope is optional and composable — a prior can be global, or narrowed by any combination of dimensions (e.g. position group, competition). Stored as `PriorParams` keyed by `(stat_id, scope)`, in an `InMemoryPriorStore` or a `JsonPriorStore`.
 
@@ -84,13 +84,21 @@ Each half is a script:
 
 ```
 uv run python examples/fit_priors.py
-uv run python examples/roll.py "Harry Kane" --scope position_general=Forward --priors data/priors.json
+uv run python examples/roll.py "Erling Haaland" --scope position_general=Forward --priors data/priors.json
 ```
 
 Without `--priors`, `roll.py` fits the prior inline and discards it, which is fine for one die and wrong for anything answering requests.
 
 ## Data
 
-No dataset ships with this repo. `CsvDataAdapter` reads any CSV of one row per entity per period, given the column names to treat as the entity, the denominator and the label; football player-seasons are what it was built against, but nothing in `die_scouting/` knows that.
+[data/player_seasons.csv](data/player_seasons.csv) ships with the repo: 2,753 player-seasons of Premier League goals and appearances covering 2021/22 to 2025/26, so a fresh clone can roll a die without finding data first. [tools/wikipedia_squads.py](tools/wikipedia_squads.py) built it from the squad statistics tables of Wikipedia's club-season articles and can rebuild it; [data/README.md](data/README.md) describes the columns and what was dropped.
 
-A generated sample is coming, so a fresh clone can roll a die without finding data first.
+Exposure is appearances rather than minutes, because Wikipedia records minutes on almost no club-season article. A five-minute substitute appearance therefore counts as much as ninety, which widens the fitted priors relative to a per-90 denominator.
+
+`CsvDataAdapter` reads any CSV of one row per entity per period, given the column names to treat as the entity, the denominator and the label; football player-seasons are what it was built against, but nothing in `die_scouting/` knows that.
+
+## Licence
+
+The software — `die_scouting/`, `examples/`, `tools/` and `tests/` — is MIT, in [LICENSE](LICENSE).
+
+`data/` is not: it derives from Wikipedia, whose text is CC BY-SA 4.0, so the dataset carries the same licence and its own attribution in [data/LICENSE](data/LICENSE). The two are separate works in one tree, which is why a fork may take the library closed-source while the data file keeps its terms. Redistributing the data, modified or not, means keeping that licence and the notices with it.
