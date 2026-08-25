@@ -209,6 +209,72 @@ def test_substitute_appearances_in_brackets():
     assert ada.values[("Premier League", "sub_appearances")] == 1
 
 
+MIXED_NOTATION = """
+<h2>Statistics</h2><h3>Appearances and goals</h3>
+<table class="wikitable">
+<tr><th rowspan="2">Player</th><th colspan="2">Premier League</th><th colspan="2">Total</th></tr>
+<tr><th>Apps</th><th>Goals</th><th>Apps</th><th>Goals</th></tr>
+<tr><td><a href="/wiki/Ada_Ames">Ada Ames</a></td>
+    <td>25+3</td><td>4</td><td>25+3</td><td>4</td></tr>
+<tr><td><a href="/wiki/Bo_Baker">Bo Baker</a></td>
+    <td>38</td><td>0</td><td>38</td><td>0</td></tr>
+</table>
+"""
+
+
+APPS_AND_STARTS = """
+<h2>Statistics</h2><h3>Appearances</h3>
+<table class="wikitable">
+<tr><th rowspan="2">Player</th><th colspan="2">Premier League</th><th>Total</th></tr>
+<tr><th>Apps</th><th>Starts</th><th>Apps</th></tr>
+<tr><td><a href="/wiki/Ada_Ames">Ada Ames</a></td><td>35</td><td>27</td><td>35</td></tr>
+</table>
+"""
+
+STARTS_AND_SUBS = """
+<h2>Statistics</h2><h3>Appearances, goals and cards</h3>
+<table class="wikitable">
+<tr><th rowspan="2">Player</th><th colspan="3">Premier League</th><th colspan="3">Total</th></tr>
+<tr><th>Starts</th><th>Sub</th><th>Goals</th><th>Starts</th><th>Sub</th><th>Goals</th></tr>
+<tr><td><a href="/wiki/Ada_Ames">Ada Ames</a></td>
+    <td>27</td><td>8</td><td>5</td><td>27</td><td>8</td><td>5</td></tr>
+</table>
+"""
+
+
+def test_substitutions_are_the_difference_when_only_apps_and_starts_are_given():
+    """Liverpool and Aston Villa head each competition with appearances and starts and no
+    substitutes column, so zeroing the substitutions would contradict the appearances."""
+    (parsed,) = tables(APPS_AND_STARTS)
+    ada = by_name(parsed.entries)["Ada Ames"]
+    assert ada.values[("Premier League", "apps")] == 35
+    assert ada.values[("Premier League", "starts")] == 27
+    assert ada.values[("Premier League", "sub_appearances")] == 8
+
+
+def test_appearances_are_the_sum_when_only_starts_and_subs_are_given():
+    (parsed,) = tables(STARTS_AND_SUBS)
+    ada = by_name(parsed.entries)["Ada Ames"]
+    assert ada.values[("Premier League", "apps")] == 35
+    assert ada.values[("Premier League", "sub_appearances")] == 8
+    assert ada.values[("Premier League", "goals")] == 5
+
+
+def test_a_plain_count_is_all_starts_where_the_table_writes_the_split():
+    """An editor using `25+3` would have written `0+38` for a substitute, so a bare 38 in the
+    same table is a player who never came off the bench."""
+    (parsed,) = tables(MIXED_NOTATION)
+    bo = by_name(parsed.entries)["Bo Baker"]
+    assert bo.values[("Premier League", "starts")] == 38
+    assert bo.values[("Premier League", "sub_appearances")] == 0
+
+
+def test_a_plain_count_stays_unknown_where_the_table_never_writes_the_split():
+    appearances = next(parsed for parsed in tables(SPLIT) if parsed.metrics == {"apps"})
+    ada = by_name(appearances.entries)["Ada Ames"]
+    assert ("Premier League", "starts") not in ada.values
+
+
 def test_dotless_index_columns_are_not_competitions():
     """A column headed `No` is a squad number; read as a competition it would put the shirt
     number where a goal count belongs, and the row would then fail its own total."""

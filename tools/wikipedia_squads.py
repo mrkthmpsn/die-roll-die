@@ -402,23 +402,52 @@ def parse_table(table: Tag, headings: list[str]) -> ParsedTable | None:
             entries.append(entry)
             metrics |= {metric for _, metric in values} & {"apps", "goals"}
 
+    _fill_starts(entries)
     return ParsedTable(entries=entries, metrics=metrics)
 
 
-def _derive(raw: dict[tuple[str, str], int]) -> dict[tuple[str, str], int]:
-    """Fill in an appearance count for competitions given only starts and substitutions.
+def _fill_starts(entries: list[Entry]) -> None:
+    """Where a table writes the starts-and-substitutes split at all, read a plain count as
+    all starts and no substitute appearances.
 
-    Norwich gives each competition a starts column, a substitutes column and a goals column
-    and no appearance total, so the appearances have to be added up from the two.
+    An editor using the notation writes `0+12` for a player who only came off the bench and
+    `35+2` for one who did both, so a bare `35` in the same table is a player who was never a
+    substitute. Goalkeepers are 7% of the dataset and 39% of the bare counts, which is the
+    shape that claim predicts. A table that never writes the split leaves it unknown instead,
+    because there a bare count says nothing either way.
+    """
+    if not any(metric == "starts" for entry in entries for _, metric in entry.values):
+        return
+    for entry in entries:
+        for competition in {competition for competition, _ in entry.values}:
+            appearances = entry.values.get((competition, "apps"))
+            if appearances is None or (competition, "starts") in entry.values:
+                continue
+            entry.values[(competition, "starts")] = appearances
+            entry.values[(competition, "sub_appearances")] = 0
+
+
+def _derive(raw: dict[tuple[str, str], int]) -> dict[tuple[str, str], int]:
+    """Complete the appearances, starts and substitutions of each competition from whichever
+    two of them the table gives.
+
+    Norwich heads each competition with starts, substitutes and goals and no appearance
+    total, so appearances are the sum; Liverpool and Aston Villa head theirs with
+    appearances and starts and no substitutes column, so substitutions are the difference.
+    A table giving only appearances leaves the split alone, for `_fill_starts` to judge.
     """
     values = dict(raw)
     for competition in {competition for competition, _ in raw}:
+        appearances = raw.get((competition, "apps"))
         starts = raw.get((competition, "starts"))
         subs = raw.get((competition, "subs"))
-        if (competition, "apps") not in values and starts is not None:
-            values[(competition, "apps")] = starts + (subs or 0)
-        if starts is not None:
-            values[(competition, "sub_appearances")] = subs or 0
+        if appearances is None and starts is not None:
+            appearances = starts + (subs or 0)
+            values[(competition, "apps")] = appearances
+        if starts is not None and subs is None and appearances is not None:
+            subs = appearances - starts
+        if starts is not None and subs is not None and subs >= 0:
+            values[(competition, "sub_appearances")] = subs
         values.pop((competition, "subs"), None)
     return values
 

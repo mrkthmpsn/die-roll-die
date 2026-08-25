@@ -24,7 +24,7 @@ read from.
 | `competition_name`, `season_name` | `Premier League` throughout; season as `2024/25` |
 | `position_general` | `Goalkeeper` / `Defender` / `Midfielder` / `Forward`, from the article's one- or two-letter position |
 | `appearances` | Starts plus substitute appearances |
-| `starts`, `sub_appearances` | Only where the article distinguished them, whether as `35+2` or `35 (2)` |
+| `starts`, `sub_appearances` | Populated on 2,534 of 2,753 rows; see below |
 | `goals` | |
 
 `appearances` is the denominator `CsvDataAdapter` reads by default. It is coarser than the
@@ -33,6 +33,23 @@ ninety — because Wikipedia records minutes on almost no club-season article.
 
 Nothing in the file carries assists, shots, expected goals, or a finer position than the four
 groups, all of which the source lacks.
+
+### `starts` and `sub_appearances`
+
+Articles record the split three ways, and all three are read: a cell written `35+2` or `35 (2)`;
+a competition given an appearances column and a starts column, where the substitutions are the
+difference; and a competition given a starts column and a substitutes column, where the
+appearances are the sum.
+
+Within a table that writes the split at all, a bare count is read as all starts and no
+substitute appearances, because an editor using the notation writes `0+12` for a player who
+only came off the bench. Goalkeepers are 7% of the rows and were 39% of the bare counts, which
+is the shape that reading predicts.
+
+Both columns are blank for the 219 rows from nine club-seasons — Chelsea in three, Manchester
+City in five, Luton in 2023/24 — whose tables give a total and nothing about how it divided.
+Blank there means unknown rather than zero, so a denominator of `starts` silently covers fewer
+players than one of `appearances`.
 
 ### What is not here
 
