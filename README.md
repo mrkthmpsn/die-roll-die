@@ -66,7 +66,9 @@ On whole-number samples, adjacent `equal_mass` faces can report the same integer
 
 Samples outside the 1st and 99th percentiles are dropped before binning, by default. Without that, an outer face reports the single most extreme draw as its bound — a die over predicted goals showed a top face of `14-73` where that outcome had probability 2e-6, and the bound climbed from 46 to 73 as the draw count went from a thousand to half a million. Clipping is skipped where the sample count is too small for the tails to hold a whole sample, so the default applies from a hundred samples upward. Pass `clip=None` to bin every sample.
 
-**Die** — the contract handed to a frontend: `{faces, metadata}`. The rolling UI never touches raw stats, priors, or resampling.
+**Die** — the contract handed to a frontend: `{faces, metadata}`, serialising with `model_dump_json()`. The rolling UI never touches raw stats, priors, or resampling.
+
+`metadata` is a `DieMetadata` rather than a free dict, so a consumer can rely on the names: which entity and stat, the scope, the whole `PriorParams` behind it, the posterior's parameters, the entity's own record, what denominator the die predicts over and in what units. `build_die` stamps the binning strategy and the draw count itself. Two dice for the same player under different scopes are different answers, and this is what lets anything holding them tell which is which.
 
 ## Pipeline
 

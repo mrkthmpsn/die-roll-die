@@ -16,6 +16,7 @@ from pathlib import Path
 
 from die_scouting import (
     CsvDataAdapter,
+    DieMetadata,
     JsonPriorStore,
     PosteriorSampler,
     PriorFitError,
@@ -42,6 +43,11 @@ def _prior_pair(prior) -> tuple[float, float]:
     if prior.family == "normal":
         return prior.params["mu"], prior.params["sigma"]
     return prior.params["alpha"], prior.params["beta"]
+
+
+def _param_names(family: str) -> tuple[str, str]:
+    """Return the names `posterior_params` returns its two values under, for this family."""
+    return ("mu", "sigma") if family == "normal" else ("alpha", "beta")
 
 
 def _summarise(family: str, first: float, second: float) -> str:
@@ -95,6 +101,9 @@ def main() -> None:
         type=Path,
         help="read the prior from this store instead of fitting it from the population",
     )
+    parser.add_argument(
+        "--json", action="store_true", help="print the Die as JSON instead of as faces"
+    )
     parser.add_argument("--draws", type=int, default=100_000)
     args = parser.parse_args()
 
@@ -132,28 +141,41 @@ def main() -> None:
     observations = adapter.get_entity_observations(entity_id, args.stat, scope)
     alpha, beta = sampler.posterior_params(entity_id)
 
-    name = observations[0].context["player_name"] if observations else args.player
-    recorded = sum(o.value for o in observations)
-    played = sum(o.denominator for o in observations)
-
-    print(f"{name} ({entity_id}) - {args.stat}, scope {scope or 'none'}")
-    print(
-        f"  record:    {recorded:.0f} in {played:.1f} {args.denominator_column} "
-        f"across {len(observations)} seasons"
+    metadata = DieMetadata(
+        entity_id=entity_id,
+        entity_name=observations[0].context["player_name"] if observations else args.player,
+        stat_id=args.stat,
+        scope=scope,
+        prior=prior,
+        posterior_params=dict(zip(_param_names(prior.family), (alpha, beta))),
+        observed_value=sum(o.value for o in observations),
+        observed_denominator=sum(o.denominator for o in observations),
+        predicted_denominator=args.denominator,
+        denominator_unit=args.denominator_column,
+        extra={"seasons": len(observations)},
     )
-    print(f"  prior:     {prior.family}, {_summarise(prior.family, *_prior_pair(prior))}")
-    print(f"  posterior: {_summarise(prior.family, alpha, beta)}")
 
     samples = sampler.sample_predictive(entity_id, args.draws, args.denominator)
-    die = build_die(
-        samples,
-        n_faces=args.faces,
-        metadata={"entity_id": entity_id, "strategy": args.strategy},
-        strategy=args.strategy,
-    )
+    die = build_die(samples, n_faces=args.faces, metadata=metadata, strategy=args.strategy)
+    meta = die.metadata
 
-    print(f"\n  a D{args.faces} ({args.strategy}) over {args.stat} "
-          f"in the next {args.denominator:.0f} {args.denominator_column}:")
+    print(f"{meta.entity_name} ({meta.entity_id}) - {meta.stat_id}, scope {meta.scope or 'none'}")
+    print(
+        f"  record:    {meta.observed_value:.0f} in {meta.observed_denominator:.1f} "
+        f"{meta.denominator_unit} across {meta.extra['seasons']} seasons"
+    )
+    family = meta.prior.family
+    posterior = tuple(meta.posterior_params[name] for name in _param_names(family))
+    print(f"  prior:     {family}, {_summarise(family, *_prior_pair(meta.prior))}")
+    print(f"  posterior: {_summarise(family, *posterior)}")
+
+    if args.json:
+        print()
+        print(die.model_dump_json(indent=2))
+        return
+
+    print(f"\n  a D{args.faces} ({meta.strategy}) over {meta.stat_id} "
+          f"in the next {meta.predicted_denominator:.0f} {meta.denominator_unit}:")
     for face in die.faces:
         low, high = face.value_range
         places = 0 if low == int(low) and high == int(high) else 1
