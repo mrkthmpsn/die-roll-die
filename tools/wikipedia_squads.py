@@ -47,22 +47,31 @@ REQUEST_DELAY = 0.25
 SEASONS = ("2021–22", "2022–23", "2023–24", "2024–25", "2025–26")
 
 PLAYER_LABELS = ("player", "name")
-APPS_LABELS = ("apps", "app", "appearances", "appearance", "\U0001f455")
-GOALS_LABELS = ("goals", "goal", "gls", "⚽")
+APPS_LABELS = ("apps", "app", "appearances", "appearance", "\U0001f455", "p", "pld", "played")
+GOALS_LABELS = ("goals", "goal", "gls", "g", "⚽")
+STARTS_LABELS = ("starts", "start")
+SUBS_LABELS = ("sub", "subs", "substitute", "substitutes", "sub apps")
 IGNORED_METRIC_LABELS = (
-    "assists", "assist", "yellow card", "yellow cards", "red card", "red cards",
-    "booked", "sent off", "sent off (straight red)", "second yellow", "clean sheets",
-    "cs", "minutes", "mins", "starts", "sub", "subs",
+    "assists", "assist", "booked", "sent off", "second yellow", "clean sheets",
+    "cs", "minutes", "mins", "discipline", "notes", "pts", "points",
 )
+CARD_LABEL = re.compile(r"\b(yellow|red)\b.*\b(card|rectangle)\b|sent off|booked", re.I)
+"""Discipline columns, which sit inside per-competition groups at several clubs.
+
+Matched loosely because the label is often an image's alt text describing the card at
+length rather than naming it.
+"""
 IGNORED_COMPETITIONS = (
-    "career club total", "career total", "career", "ref.", "ref", "reference(s)",
-    "notes", "rank", "rk.", "rk", "rnk", "no.", "no", "pos.", "pos", "nat.", "nat",
-    "player", "name", "#", "age", "since", "ends", "fee",
+    "career club total", "career total", "career", "ref", "reference(s)", "notes",
+    "rank", "rk", "rnk", "no", "pos", "nat", "player", "name", "#", "age", "since",
+    "ends", "fee", "squad number", "heritage number", "gpg",
 )
 """Column labels that are not competitions.
 
-The dotless spellings matter: several clubs head their index columns `No`, `Pos` and `Nat`,
-and a squad number read as a competition puts the shirt number where a goal count belongs.
+An index column read as a competition puts a shirt number where a goal count belongs, and
+Arsenal heads two of them by tooltip — `Squad number` and `Heritage number` — so the label a
+reader sees is not the one the parser gets. Compared against `_norm`, which strips the
+trailing dots that clubs apply inconsistently.
 """
 TOTAL_LABELS = ("total", "totals", "season total")
 LEAGUE_LABELS = ("premier league", "league", "pl")
@@ -112,10 +121,19 @@ class ParsedTable:
     metrics: set[str]
 
 
-def _norm(text: str) -> str:
-    """Lower-case a header label, drop footnote markers, and collapse whitespace."""
+def _clean(text: str) -> str:
+    """A header label with footnote markers removed and whitespace collapsed."""
     text = FOOTNOTE.sub(" ", unicodedata.normalize("NFKC", text))
-    return re.sub(r"\s+", " ", text).strip().lower()
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _norm(text: str) -> str:
+    """A header label reduced to its matching key: cleaned, lower-cased, trailing dots gone.
+
+    The dots matter both ways round, since clubs write the same column `Apps` and `Apps.`
+    and the same index column `No` and `No.`.
+    """
+    return _clean(text).lower().rstrip(".").strip()
 
 
 def _label(cell: Tag) -> str:
@@ -137,13 +155,25 @@ def _label(cell: Tag) -> str:
     return ""
 
 
+COUNTED_METRICS = ("apps", "goals", "starts", "subs")
+
+
 def _metric(label: str) -> str | None:
-    """`apps`, `goals`, `ignore` for a known non-metric column, or None when unrecognised."""
+    """The metric a header label names, `ignore` for a known non-metric column, or None.
+
+    `starts` and `subs` are metrics in their own right because several clubs give a
+    competition three columns — starts, substitute appearances, goals — and never write a
+    total appearance count for it.
+    """
     if label in APPS_LABELS:
         return "apps"
     if label in GOALS_LABELS:
         return "goals"
-    if label in IGNORED_METRIC_LABELS:
+    if label in STARTS_LABELS:
+        return "starts"
+    if label in SUBS_LABELS:
+        return "subs"
+    if label in IGNORED_METRIC_LABELS or CARD_LABEL.search(label):
         return "ignore"
     return None
 
@@ -152,10 +182,9 @@ def _competition(raw: str) -> str | None:
     """A competition's name as the article writes it, or None when the label names something
     else. `Total` and the several spellings of the league are given canonical names; every
     other label keeps its own casing, so `FA Cup` is not retitled."""
-    cleaned = FOOTNOTE.sub(" ", unicodedata.normalize("NFKC", raw))
-    cleaned = re.sub(r"\s+", " ", cleaned).strip()
-    key = cleaned.lower()
-    if not cleaned or key in IGNORED_COMPETITIONS:
+    cleaned = _clean(raw)
+    key = _norm(raw)
+    if not cleaned or key in IGNORED_COMPETITIONS or _metric(key) is not None:
         return None
     if key in TOTAL_LABELS:
         return "Total"
@@ -189,6 +218,11 @@ def _expand(rows: list[Tag]) -> list[dict[int, Tag]]:
     return grid
 
 
+def _metric_count(line: dict[int, Tag]) -> int:
+    """How many of a header row's cells name a counted metric."""
+    return sum(1 for cell in line.values() if _metric(_norm(_label(cell))) in COUNTED_METRICS)
+
+
 def _resolve_header(
     header: list[dict[int, Tag]], section_metric: str | None
 ) -> tuple[dict[int, tuple[str, str]], int | None]:
@@ -197,11 +231,16 @@ def _resolve_header(
     Where a column's lower header cell names a metric, the upper cell names its competition.
     Where the lower cell names a competition instead, or repeats the upper cell because it
     spans both rows, the metric comes from `section_metric`.
+
+    Some clubs invert the two rows, putting the metric above and the competition below, so
+    the rows are swapped when the upper one names more metrics than the lower.
     """
     if not header:
         return {}, None
     top = header[0]
     bottom = header[1] if len(header) > 1 else {}
+    if bottom and _metric_count(top) > _metric_count(bottom):
+        top, bottom = bottom, top
     mapping: dict[int, tuple[str, str]] = {}
     player_column: int | None = None
 
@@ -302,10 +341,11 @@ def _header_depth(rows: list[Tag]) -> int:
 def parse_table(table: Tag, headings: list[str]) -> ParsedTable | None:
     """Read one wikitable into entries, or None when its header carries no usable metric.
 
-    `headings` supplies a metric for tables whose columns are bare competition names, and
-    excludes the table when it names a squad section.
+    `headings` runs from the table's own heading outwards. Any of them may supply a metric for
+    a table whose columns are bare competition names, but only the nearest excludes the table
+    as a squad roster, since Wolves files a statistics section beneath a `Players` one.
     """
-    if any(SQUAD_HEADING.search(heading) for heading in headings):
+    if headings and SQUAD_HEADING.search(headings[0]):
         return None
 
     section_metric: str | None = None
@@ -326,11 +366,14 @@ def parse_table(table: Tag, headings: list[str]) -> ParsedTable | None:
     if not mapping or player_column is None:
         return None
 
-    metrics = {metric for _, metric in mapping.values()}
-    if not metrics & {"apps", "goals"}:
+    declared = {metric for _, metric in mapping.values()}
+    if not declared & {"apps", "goals", "starts"}:
+        return None
+    if not {competition for competition, _ in mapping.values()} - {"Total"}:
         return None
 
     entries: list[Entry] = []
+    metrics: set[str] = set()
     for line in _expand(rows[header_rows:]):
         cell = line.get(player_column)
         if cell is None:
@@ -339,7 +382,7 @@ def parse_table(table: Tag, headings: list[str]) -> ParsedTable | None:
         if identity is None:
             continue
         key, name = identity
-        entry = Entry(player_key=key, player_name=name)
+        raw: dict[tuple[str, str], int] = {}
         for column, (competition, metric) in mapping.items():
             target = line.get(column)
             if target is None:
@@ -348,15 +391,36 @@ def parse_table(table: Tag, headings: list[str]) -> ParsedTable | None:
             if parsed is None:
                 continue
             value, starts, subs = parsed
-            entry.values[(competition, metric)] = value
+            raw[(competition, metric)] = value
             if metric == "apps" and starts is not None:
-                entry.values[(competition, "starts")] = starts
-                entry.values[(competition, "sub_appearances")] = subs or 0
-        if entry.values:
+                raw[(competition, "starts")] = starts
+                raw[(competition, "subs")] = subs or 0
+        values = _derive(raw)
+        if values:
+            entry = Entry(player_key=key, player_name=name, values=values)
             entry.position = _position(line, mapping, player_column)
             entries.append(entry)
+            metrics |= {metric for _, metric in values} & {"apps", "goals"}
 
-    return ParsedTable(entries=entries, metrics=metrics & {"apps", "goals"})
+    return ParsedTable(entries=entries, metrics=metrics)
+
+
+def _derive(raw: dict[tuple[str, str], int]) -> dict[tuple[str, str], int]:
+    """Fill in an appearance count for competitions given only starts and substitutions.
+
+    Norwich gives each competition a starts column, a substitutes column and a goals column
+    and no appearance total, so the appearances have to be added up from the two.
+    """
+    values = dict(raw)
+    for competition in {competition for competition, _ in raw}:
+        starts = raw.get((competition, "starts"))
+        subs = raw.get((competition, "subs"))
+        if (competition, "apps") not in values and starts is not None:
+            values[(competition, "apps")] = starts + (subs or 0)
+        if starts is not None:
+            values[(competition, "sub_appearances")] = subs or 0
+        values.pop((competition, "subs"), None)
+    return values
 
 
 def _position(line: dict[int, Tag], mapping: dict[int, tuple[str, str]], player: int) -> str | None:
@@ -450,33 +514,55 @@ def league_rows(entries: list[Entry], supplied: set[str]) -> list[dict[str, obje
 # --------------------------------------------------------------------------- fetching
 
 
+class FetchError(RuntimeError):
+    """The API could not be read after retrying, which is a transport failure rather than
+    anything about the article."""
+
+
 class Wikipedia:
     """Reads rendered article HTML and link lists from the MediaWiki API."""
 
-    def __init__(self, delay: float = REQUEST_DELAY) -> None:
+    def __init__(self, delay: float = REQUEST_DELAY, attempts: int = 4) -> None:
         self.session = requests.Session()
         self.session.headers["User-Agent"] = USER_AGENT
         self.delay = delay
+        self.attempts = attempts
 
-    def parse(self, title: str, prop: str = "text") -> dict | None:
-        """The API's `parse` result for a title, or None when the article does not exist."""
-        response = self.session.get(
-            API,
-            params={"action": "parse", "page": title, "prop": prop,
-                    "redirects": 1, "format": "json"},
-            timeout=60,
-        )
-        time.sleep(self.delay)
-        try:
-            payload = response.json()
-        except ValueError:
-            return None
-        return None if "error" in payload else payload["parse"]
+    def parse(self, title: str, prop: str = "text|revid") -> dict | None:
+        """The API's `parse` result for a title, or None when the article does not exist.
+
+        A throttled or malformed response is retried with a widening delay and then raised,
+        so that a transport failure is never mistaken for a missing article — which would
+        otherwise be counted against the parse rate and reported as a layout change.
+        """
+        for attempt in range(self.attempts):
+            try:
+                response = self.session.get(
+                    API,
+                    params={"action": "parse", "page": title, "prop": prop,
+                            "redirects": 1, "format": "json"},
+                    timeout=60,
+                )
+                payload = response.json()
+            except (requests.RequestException, ValueError) as problem:
+                failure = problem
+            else:
+                time.sleep(self.delay)
+                if "error" in payload:
+                    if payload["error"].get("code") in ("missingtitle", "invalidtitle"):
+                        return None
+                    failure = FetchError(f"{title}: {payload['error'].get('code')}")
+                else:
+                    return payload["parse"]
+            backoff = self.delay * (4 ** attempt)
+            print(f"    retrying {title} in {backoff:.1f}s ({failure})", file=sys.stderr)
+            time.sleep(backoff)
+        raise FetchError(f"could not read {title} after {self.attempts} attempts")
 
 
 def club_season_titles(wiki: Wikipedia, season: str) -> list[str]:
     """Club-season article titles for the clubs in that season's league table."""
-    parsed = wiki.parse(f"{season} Premier League", prop="text|links")
+    parsed = wiki.parse(f"{season} Premier League", prop="text|links|revid")
     if parsed is None:
         return []
     soup = BeautifulSoup(parsed["text"]["*"], "lxml")
