@@ -39,7 +39,17 @@ The gamma fit corrects for the noise in its own inputs. A season's goals-per-nin
 
 Scope is optional and composable — a prior can be global, or narrowed by any combination of dimensions (e.g. position group, competition). Stored as `PriorParams` keyed by `(stat_id, scope)`, in an `InMemoryPriorStore` or a `JsonPriorStore`.
 
-Which scopes exist is a list someone writes down rather than something the system derives. `scopes_for` builds that list from the distinct values of a column, and `fit_scopes` fits each one, saving what fits and reporting the slices too thin to fit. A scope nobody fitted is a miss at read time, not a silent fall back to a broader prior: `list_scopes` tells a caller what is available so the choice stays theirs.
+Which scopes exist is a list someone writes down rather than something the system derives. `scopes_for` builds that list from the distinct values of a column, and `fit_scopes` fits each one, saving what fits and reporting the slices too thin to fit. A scope nobody fitted is a miss at read time, not a silent fall back to a broader prior, because a die built from the forwards prior and one built from the global prior are different answers and nothing downstream could tell them apart. `list_scopes` tells a caller what is available so the choice stays theirs:
+
+```
+data/priors.json holds no prior for 'goals' scoped to {'position_general': 'Forward', 'season_name': '2024/25'}
+scopes fitted for 'goals':
+  {'position_general': 'Defender'}
+  {'position_general': 'Forward'}
+  {'position_general': 'Goalkeeper'}
+  {'position_general': 'Midfielder'}
+  global
+```
 
 **QualitySampler** (online, per player/roll) — uniform interface: `sample(entity_id, n_draws) -> float[]`, returning draws of the player's underlying rate. Two implementations behind it:
 
