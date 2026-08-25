@@ -8,8 +8,8 @@ from .models import Record
 class DataAdapter(Protocol):
     """Protocol to adapt provider-specific data to a list of Records.
 
-    A concrete implementation might read from empty-head-data's Core API, a CSV, or
-    anything else.
+    A concrete implementation might read from a CSV, a database or an HTTP API;
+    `CsvDataAdapter` is the one in this package.
     """
 
     def get_entity_observations(
