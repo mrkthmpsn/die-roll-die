@@ -73,6 +73,6 @@ Online (per player, per roll):
 
 ## Data
 
-[data/player_seasons.csv](data/) holds 10,723 Premier League player-seasons from 2006/07 to 2025/26, extracted from the Pulselive API by [empty-head-data](../empty-head-data) (sibling repo, where provider ingestion lives) and described in [research/premier-league-pulselive-api.md](research/premier-league-pulselive-api.md). Its `position_general` column is populated on every row, which makes it the first prior scope; the granular `position` column is blank on 14% of rows.
+No dataset ships with this repo. `CsvDataAdapter` reads any CSV of one row per entity per period, given the column names to treat as the entity, the denominator and the label; football player-seasons are what it was built against, but nothing in `die_scouting/` knows that.
 
-Season aggregates are the right grain, not a compromise forced by what happens to be pre-computed: a Poisson update depends only on total count and total denominator, so a player's five seasons and the hundred-odd matches inside them produce an identical posterior. Collecting season totals is the cheaper route to the same answer.
+A generated sample is coming, so a fresh clone can roll a die without finding data first.

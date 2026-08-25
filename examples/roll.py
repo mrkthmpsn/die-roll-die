@@ -1,4 +1,7 @@
-"""Build a goals die for one Premier League player from the extract in `data/`.
+"""Build a die for one entity from a CSV in `data/`, one row per entity per period.
+
+No dataset ships with this repo, so this needs a file at `data/player_seasons.csv` whose
+columns match the flags below.
 
 Usage:
     uv run python examples/roll.py "Harry Kane"
@@ -69,6 +72,12 @@ def main() -> None:
     parser.add_argument("--draws", type=int, default=100_000)
     args = parser.parse_args()
 
+    if not DATA.exists():
+        raise SystemExit(
+            f"no data at {DATA}\n"
+            "no dataset ships with this repo; put a CSV of one row per entity per period "
+            "there, or point this script at your own"
+        )
     adapter = CsvDataAdapter(DATA, denominator_column=args.denominator_column)
     scope = parse_scope(args.scope)
 
