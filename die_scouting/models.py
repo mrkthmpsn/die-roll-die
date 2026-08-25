@@ -47,8 +47,32 @@ class Face(BaseModel):
     value_range: tuple[float, float]
 
 
+class DieMetadata(BaseModel):
+    """What a die was built from: which entity and stat, the scope and prior behind it, the
+    entity's own record, and how the faces were binned.
+
+    Every field is optional, a die over arbitrary samples carrying none of them. `strategy`
+    and `draws` are set by `build_die`; `extra` holds anything a caller needs that this
+    model does not name.
+    """
+
+    entity_id: str | None = None
+    entity_name: str | None = None
+    stat_id: str | None = None
+    scope: dict[str, str] = {}
+    prior: PriorParams | None = None
+    posterior_params: dict[str, float] = {}
+    observed_value: float | None = None
+    observed_denominator: float | None = None
+    predicted_denominator: float | None = None
+    denominator_unit: str | None = None
+    strategy: Literal["equal_mass", "equal_width"] | None = None
+    draws: int | None = None
+    extra: dict[str, Any] = {}
+
+
 class Die(BaseModel):
     """Basic representation of a die."""
 
     faces: list[Face]
-    metadata: dict[str, Any] = {}
+    metadata: DieMetadata = DieMetadata()

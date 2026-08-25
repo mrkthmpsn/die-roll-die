@@ -4,7 +4,7 @@ from .die import build_die
 from .discretizer import discretize
 from .errors import InsufficientData, PriorFitError, UnsuitableFamily
 from .fitting import FitReport, fit_scopes, scopes_for
-from .models import Die, Face, PriorParams, Record
+from .models import Die, DieMetadata, Face, PriorParams, Record
 from .prior_discovery import fit_prior
 from .prior_store import InMemoryPriorStore, JsonPriorStore, PriorStore
 from .quality_sampler import BootstrapSampler, PosteriorSampler, QualitySampler
@@ -14,6 +14,7 @@ __all__ = [
     "CsvDataAdapter",
     "DataAdapter",
     "Die",
+    "DieMetadata",
     "Face",
     "FitReport",
     "InMemoryPriorStore",
