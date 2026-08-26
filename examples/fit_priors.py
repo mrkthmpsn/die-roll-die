@@ -5,9 +5,14 @@ The scopes fitted are the global one plus one per distinct value of `--scope-col
 any named by `--exclude`, which defaults to Goalkeeper because no goalkeeper in the shipped
 dataset has scored. Scopes with too little data to fit are reported and skipped.
 
+`--scope-column` defaults to position group, which is the axis a scoring rate actually
+varies along; `season_name` and `club_name` are columns of the file but poor scopes, one
+pinning the prior to a single year of noise and the other mixing team strength into a
+player estimate.
+
 Usage:
     uv run python examples/fit_priors.py
-    uv run python examples/fit_priors.py --scope-column season_name --exclude
+    uv run python examples/fit_priors.py --exclude Goalkeeper Defender --priors data/attackers.json
 """
 
 from __future__ import annotations
