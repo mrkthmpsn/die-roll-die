@@ -8,24 +8,26 @@ from .models import PriorParams
 
 
 class PriorStore(Protocol):
-    """Persists discovered priors, keyed by (stat_id, scope)."""
+    """Persists discovered priors, keyed by (entity_type, stat_id, scope)."""
 
     def save(self, params: PriorParams) -> None: ...
 
-    def get(self, stat_id: str, scope: dict[str, str]) -> PriorParams | None:
-        """Return the prior stored for exactly this `stat_id` and `scope`, or None."""
+    def get(
+        self, entity_type: str, stat_id: str, scope: dict[str, str]
+    ) -> PriorParams | None:
+        """Return the prior stored for exactly this entity type, stat and scope, or None."""
         ...
 
-    def list_scopes(self, stat_id: str) -> list[dict[str, str]]:
-        """Return the scopes held for `stat_id`, most dimensions first."""
+    def list_scopes(self, entity_type: str, stat_id: str) -> list[dict[str, str]]:
+        """Return the scopes held for this entity type and stat, most dimensions first."""
         ...
 
 
-def _key(stat_id: str, scope: dict[str, str]) -> str:
-    """Return a key for `stat_id` and `scope` that does not depend on the scope's key
-    order, so the same dimensions saved in either order address one entry.
+def _key(entity_type: str, stat_id: str, scope: dict[str, str]) -> str:
+    """Return a key for `entity_type`, `stat_id` and `scope` that does not depend on the
+    scope's key order, so the same dimensions saved in either order address one entry.
     """
-    return json.dumps([stat_id, sorted(scope.items())], separators=(",", ":"))
+    return json.dumps([entity_type, stat_id, sorted(scope.items())], separators=(",", ":"))
 
 
 def _sorted_scopes(scopes: list[dict[str, str]]) -> list[dict[str, str]]:
@@ -39,18 +41,24 @@ class InMemoryPriorStore:
         self._priors: dict[str, PriorParams] = {}
 
     def save(self, params: PriorParams) -> None:
-        """Store `params`, replacing any prior held for the same stat and scope."""
-        self._priors[_key(params.stat_id, params.scope)] = params
+        """Store `params`, replacing any prior held for the same entity type, stat and
+        scope.
+        """
+        self._priors[_key(params.entity_type, params.stat_id, params.scope)] = params
 
-    def get(self, stat_id: str, scope: dict[str, str]) -> PriorParams | None:
-        """Return the prior stored for exactly this `stat_id` and `scope`, or None."""
-        return self._priors.get(_key(stat_id, scope))
+    def get(
+        self, entity_type: str, stat_id: str, scope: dict[str, str]
+    ) -> PriorParams | None:
+        """Return the prior stored for exactly this entity type, stat and scope, or None."""
+        return self._priors.get(_key(entity_type, stat_id, scope))
 
-    def list_scopes(self, stat_id: str) -> list[dict[str, str]]:
-        """Return the scopes held for `stat_id`, most dimensions first."""
-        return _sorted_scopes(
-            [p.scope for p in self._priors.values() if p.stat_id == stat_id]
-        )
+    def list_scopes(self, entity_type: str, stat_id: str) -> list[dict[str, str]]:
+        """Return the scopes held for this entity type and stat, most dimensions first."""
+        return _sorted_scopes([
+            p.scope
+            for p in self._priors.values()
+            if p.stat_id == stat_id and p.entity_type == entity_type
+        ])
 
 
 class JsonPriorStore:
@@ -68,21 +76,25 @@ class JsonPriorStore:
             self._priors = {key: PriorParams.model_validate(value) for key, value in raw.items()}
 
     def save(self, params: PriorParams) -> None:
-        """Store `params` and rewrite the file, replacing any prior held for the same stat
-        and scope.
+        """Store `params` and rewrite the file, replacing any prior held for the same
+        entity type, stat and scope.
         """
-        self._priors[_key(params.stat_id, params.scope)] = params
+        self._priors[_key(params.entity_type, params.stat_id, params.scope)] = params
         self._write()
 
-    def get(self, stat_id: str, scope: dict[str, str]) -> PriorParams | None:
-        """Return the prior stored for exactly this `stat_id` and `scope`, or None."""
-        return self._priors.get(_key(stat_id, scope))
+    def get(
+        self, entity_type: str, stat_id: str, scope: dict[str, str]
+    ) -> PriorParams | None:
+        """Return the prior stored for exactly this entity type, stat and scope, or None."""
+        return self._priors.get(_key(entity_type, stat_id, scope))
 
-    def list_scopes(self, stat_id: str) -> list[dict[str, str]]:
-        """Return the scopes held for `stat_id`, most dimensions first."""
-        return _sorted_scopes(
-            [p.scope for p in self._priors.values() if p.stat_id == stat_id]
-        )
+    def list_scopes(self, entity_type: str, stat_id: str) -> list[dict[str, str]]:
+        """Return the scopes held for this entity type and stat, most dimensions first."""
+        return _sorted_scopes([
+            p.scope
+            for p in self._priors.values()
+            if p.stat_id == stat_id and p.entity_type == entity_type
+        ])
 
     def _write(self) -> None:
         payload = {key: params.model_dump() for key, params in self._priors.items()}

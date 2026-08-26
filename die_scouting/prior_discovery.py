@@ -24,6 +24,9 @@ def fit_prior(
     which no sample establishes, since an unobserved value and an impossible one look
     alike in data.
 
+    The prior's `entity_type` is read off the observations rather than passed, so it cannot
+    disagree with the data it was fitted from.
+
     Observations with a denominator below `min_denominator` are excluded from the fit, their
     rates being dominated by the small denominator.
 
@@ -31,12 +34,22 @@ def fit_prior(
     per call.
 
     Raises:
+        ValueError: if `observations` is empty, or holds more than one entity type.
         InsufficientData: if there are too few observations to fit `family`.
         UnsuitableFamily: if the observations contradict `family`.
     """
+    entity_types = {o.entity_type for o in observations}
+    if not entity_types:
+        raise ValueError(f"no observations of {stat_id!r} to fit a prior from")
+    if len(entity_types) > 1:
+        raise ValueError(
+            f"observations of {stat_id!r} hold more than one entity type "
+            f"({', '.join(sorted(entity_types))}); a prior describes one kind of entity"
+        )
     fit = {"beta": _fit_beta, "gamma": _fit_gamma, "normal": _fit_normal}[family]
     return PriorParams(
         stat_id=stat_id,
+        entity_type=entity_types.pop(),
         scope=scope or {},
         family=family,
         params=fit(observations, min_denominator),

@@ -15,7 +15,7 @@ def gamma_poisson_observations(alpha: float, beta: float, n: int, seed: int = 7)
     denominators = rng.uniform(5.0, 38.0, size=n)
     counts = rng.poisson(rates * denominators)
     return [
-        Record(entity_id=str(i), value=float(count), denominator=float(denominator))
+        Record(entity_type="player", entity_id=str(i), value=float(count), denominator=float(denominator))
         for i, (count, denominator) in enumerate(zip(counts, denominators))
     ]
 
@@ -49,9 +49,9 @@ def test_correcting_for_poisson_noise_narrows_the_prior():
 
 def test_min_denominator_excludes_short_observations():
     observations = [
-        Record(entity_id="1", value=6.0, denominator=1.0),
-        Record(entity_id="2", value=3.0, denominator=10.0),
-        Record(entity_id="3", value=9.0, denominator=20.0),
+        Record(entity_type="player", entity_id="1", value=6.0, denominator=1.0),
+        Record(entity_type="player", entity_id="2", value=3.0, denominator=10.0),
+        Record(entity_type="player", entity_id="3", value=9.0, denominator=20.0),
     ]
     with_cameo = fit_prior(observations, "gamma", "goals", min_denominator=0.5)
     without = fit_prior(observations, "gamma", "goals")
@@ -62,15 +62,15 @@ def test_min_denominator_excludes_short_observations():
 
 def test_fit_prior_needs_two_observations_above_min_denominator():
     observations = [
-        Record(entity_id="1", value=6.0, denominator=1.0),
-        Record(entity_id="2", value=3.0, denominator=10.0),
+        Record(entity_type="player", entity_id="1", value=6.0, denominator=1.0),
+        Record(entity_type="player", entity_id="2", value=3.0, denominator=10.0),
     ]
     with pytest.raises(InsufficientData, match="at least two observations"):
         fit_prior(observations, "gamma", "goals")
 
 
 def test_fit_prior_rejects_observations_that_are_all_zero():
-    observations = [Record(entity_id=str(i), value=0.0, denominator=10.0) for i in range(5)]
+    observations = [Record(entity_type="player", entity_id=str(i), value=0.0, denominator=10.0) for i in range(5)]
     with pytest.raises(InsufficientData, match="value is zero"):
         fit_prior(observations, "gamma", "goals")
 
@@ -86,7 +86,7 @@ def beta_binomial_observations(
     attempts = rng.integers(20, 200, size=n)
     successes = rng.binomial(attempts, proportions)
     return [
-        Record(entity_id=str(i), value=float(s), denominator=float(a))
+        Record(entity_type="player", entity_id=str(i), value=float(s), denominator=float(a))
         for i, (s, a) in enumerate(zip(successes, attempts))
     ]
 
@@ -106,7 +106,7 @@ def normal_observations(
             denominator = float(rng.uniform(10.0, 30.0))
             rate = level + rng.normal(0.0, sigma_obs / np.sqrt(denominator))
             records.append(
-                Record(entity_id=str(entity), value=rate * denominator, denominator=denominator)
+                Record(entity_type="player", entity_id=str(entity), value=rate * denominator, denominator=denominator)
             )
     return records
 
@@ -131,8 +131,8 @@ def test_beta_correction_narrows_the_prior():
 
 def test_beta_rejects_values_above_their_denominator():
     observations = [
-        Record(entity_id="over", value=12.0, denominator=10.0),
-        Record(entity_id="fine", value=3.0, denominator=10.0),
+        Record(entity_type="player", entity_id="over", value=12.0, denominator=10.0),
+        Record(entity_type="player", entity_id="fine", value=3.0, denominator=10.0),
     ]
     with pytest.raises(UnsuitableFamily, match="over"):
         fit_prior(observations, "beta", "pass_completion")
@@ -156,3 +156,20 @@ def test_both_fit_errors_are_value_errors():
     """Callers catching ValueError keep working, since both types subclass it."""
     assert issubclass(InsufficientData, ValueError)
     assert issubclass(UnsuitableFamily, ValueError)
+
+
+def test_fit_prior_takes_the_entity_type_from_the_observations():
+    prior = fit_prior(gamma_poisson_observations(5.0, 16.0, 200), "gamma", "goals")
+    assert prior.entity_type == "player"
+
+
+def test_fit_prior_rejects_a_mixed_set_of_entity_types():
+    observations = gamma_poisson_observations(5.0, 16.0, 200)
+    observations[0] = observations[0].model_copy(update={"entity_type": "club"})
+    with pytest.raises(ValueError, match="more than one entity type"):
+        fit_prior(observations, "gamma", "goals")
+
+
+def test_fit_prior_rejects_an_empty_set():
+    with pytest.raises(ValueError, match="no observations"):
+        fit_prior([], "gamma", "goals")

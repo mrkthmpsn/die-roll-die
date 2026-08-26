@@ -17,17 +17,17 @@ from die_scouting import (
 
 
 def test_record_instantiates():
-    record = Record(entity_id="player-1", value=12.0, denominator=30.0)
+    record = Record(entity_type="player", entity_id="player-1", value=12.0, denominator=30.0)
     assert record.dimensions == {}
 
 
 def test_record_requires_a_denominator():
     with pytest.raises(ValidationError):
-        Record(entity_id="player-1", value=12.0)
+        Record(entity_type="player", entity_id="player-1", value=12.0)
 
 
 def test_prior_params_instantiates():
-    prior = PriorParams(stat_id="goals_per_90", family="beta", params={"alpha": 2.0, "beta": 5.0})
+    prior = PriorParams(entity_type="player", stat_id="goals_per_90", family="beta", params={"alpha": 2.0, "beta": 5.0})
     assert prior.scope == {}
 
 
@@ -107,7 +107,10 @@ def test_metadata_round_trips_through_json():
         stat_id="goals",
         scope={"position_general": "Forward"},
         prior=PriorParams(
-            stat_id="goals", family="gamma", params={"alpha": 5.26, "beta": 16.59}
+            stat_id="goals",
+            entity_type="player",
+            family="gamma",
+            params={"alpha": 5.26, "beta": 16.59},
         ),
         posterior_params={"alpha": 218.26, "beta": 314.92},
         predicted_denominator=30.0,

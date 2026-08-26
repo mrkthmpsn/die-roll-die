@@ -16,6 +16,7 @@ player_source_id,player_name,season_name,position,position_general,appearances,g
 
 COLUMNS = ColumnMap(
     entity="player_source_id",
+    entity_type="player",
     denominator="appearances",
     name="player_name",
     dimensions=("player_name", "season_name", "position", "position_general"),
@@ -118,7 +119,7 @@ def test_columns_can_be_named_anything(tmp_path):
         encoding="utf-8",
     )
     adapter = CsvDataAdapter(
-        path, ColumnMap(entity="id", denominator="games", name="full_name")
+        path, ColumnMap(entity="id", entity_type="player", denominator="games", name="full_name")
     )
 
     assert adapter.entity_ids_for_name("ada") == ["7"]
@@ -144,6 +145,11 @@ def test_any_column_can_be_the_denominator(tmp_path):
     adapter = CsvDataAdapter(path, COLUMNS.model_copy(update={"denominator": "goals"}))
     record = adapter.get_entity_observations("2", "appearances")[0]
     assert (record.value, record.denominator) == (30.0, 1.0)
+
+
+def test_records_carry_the_entity_type(adapter):
+    record = adapter.get_entity_observations("1", "goals")[0]
+    assert record.entity_type == "player"
 
 
 def test_entity_name_resolves_an_id(adapter):

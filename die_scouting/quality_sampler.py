@@ -49,11 +49,18 @@ class PosteriorSampler:
         An entity with no observations returns the prior's parameters unchanged.
 
         Raises:
-            ValueError: if the prior's params lack a key its family needs.
+            ValueError: if the entity's observations are of a different entity type than
+                the prior describes, or if the prior's params lack a key its family needs.
         """
         observations = self.data_adapter.get_entity_observations(
             entity_id, self.stat_id, self.prior.scope
         )
+        for observation in observations:
+            if observation.entity_type != self.prior.entity_type:
+                raise ValueError(
+                    f"entity {entity_id!r} is a {observation.entity_type!r} and the prior "
+                    f"describes a {self.prior.entity_type!r}"
+                )
         if self.prior.family == "gamma":
             self._require("alpha", "beta")
             return (

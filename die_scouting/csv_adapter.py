@@ -11,10 +11,14 @@ from .models import Record
 class ColumnMap(BaseModel):
     """Which of a CSV's columns fill each role a `CsvDataAdapter` needs.
 
-    Only these four roles are mapped, and most of a file's columns will fill none of them:
+    Only these roles are mapped, and most of a file's columns will fill none of them:
 
     - `entity` identifies which entity a row belongs to, and is repeated across that
       entity's rows. It becomes `Record.entity_id`.
+    - `entity_type` says what that identifier names — "player", "club" — and is a constant
+      for the file rather than one of its columns, a CSV being at one grain. It becomes
+      `Record.entity_type`, and keeps priors for one kind of entity from being stored over
+      another's.
     - `denominator` holds what the row's value was measured against — appearances,
       nineties, attempts. It becomes `Record.denominator`.
     - `name` is a human-readable label for an entity, used by `entity_ids_for_name` to
@@ -31,6 +35,7 @@ class ColumnMap(BaseModel):
     """
 
     entity: str
+    entity_type: str
     denominator: str
     name: str | None = None
     dimensions: tuple[str, ...] = ()
@@ -155,6 +160,7 @@ class CsvDataAdapter:
             records.append(
                 Record(
                     entity_id=row[entity_column],
+                    entity_type=self.column_map.entity_type,
                     value=value,
                     denominator=float(row[self.column_map.denominator]),
                     dimensions={

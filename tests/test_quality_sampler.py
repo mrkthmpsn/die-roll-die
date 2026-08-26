@@ -20,12 +20,13 @@ class FakeAdapter:
 def gamma_prior(alpha: float = 3.0, beta: float = 10.0) -> PriorParams:
     """Mean rate of 0.3 goals per ninety."""
     return PriorParams(
+        entity_type="player",
         stat_id="non_penalty_goals", family="gamma", params={"alpha": alpha, "beta": beta}
     )
 
 
 def season(entity_id: str, goals: float, nineties: float) -> Record:
-    return Record(entity_id=entity_id, value=goals, denominator=nineties)
+    return Record(entity_type="player", entity_id=entity_id, value=goals, denominator=nineties)
 
 
 def source(observations: dict[str, list[Record]], prior: PriorParams | None = None, seed: int = 0):
@@ -110,12 +111,14 @@ def test_a_seeded_generator_repeats_its_draws():
 def beta_prior(alpha: float = 2.0, beta: float = 8.0) -> PriorParams:
     """Mean proportion of 0.2."""
     return PriorParams(
+        entity_type="player",
         stat_id="pass_completion", family="beta", params={"alpha": alpha, "beta": beta}
     )
 
 
 def normal_prior(mu: float = 10.0, sigma: float = 1.0, sigma_obs: float = 2.0) -> PriorParams:
     return PriorParams(
+        entity_type="player",
         stat_id="distance",
         family="normal",
         params={"mu": mu, "sigma": sigma, "sigma_obs": sigma_obs},
@@ -169,6 +172,13 @@ def test_normal_predictive_totals_over_the_denominator():
 
 
 def test_gamma_prior_missing_a_parameter_raises():
-    prior = PriorParams(stat_id="np_goals", family="gamma", params={"alpha": 3.0})
+    prior = PriorParams(entity_type="player", stat_id="np_goals", family="gamma", params={"alpha": 3.0})
     with pytest.raises(ValueError, match="beta"):
         source({}, prior=prior).sample("striker", 10)
+
+
+def test_a_prior_for_another_entity_type_is_rejected():
+    observations = {"striker": [season("striker", 40, 100)]}
+    club_prior = gamma_prior().model_copy(update={"entity_type": "club"})
+    with pytest.raises(ValueError, match="describes a 'club'"):
+        source(observations, prior=club_prior).sample("striker", 10)

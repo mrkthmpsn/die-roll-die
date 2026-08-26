@@ -16,6 +16,9 @@ class Record(BaseModel):
     is the measured quantity per unit. A denominator of `1.0` states that the value stands
     on its own.
 
+    `entity_type` says what kind of thing `entity_id` names, so a player's observations and
+    a club's cannot be mistaken for one another downstream.
+
     `dimensions` holds the values of the columns priors might be fitted along — a position
     group, a season. It exists because a Record outlives the source it came from: whatever
     produced it can inspect its own file or API, and nothing downstream can, so `scopes_for`
@@ -23,13 +26,15 @@ class Record(BaseModel):
     """
 
     entity_id: str
+    entity_type: str
     value: float
     denominator: float
     dimensions: dict[str, str] = {}
 
 
 class PriorParams(BaseModel):
-    """Fitted prior distribution parameters for a stat, within an optional scope.
+    """Fitted prior distribution parameters for a stat, for one kind of entity, within an
+    optional scope.
 
     `scope` is a set of optional, composable filter dimensions (e.g. position group,
     competition); an empty dict means the global, unscoped prior for this stat.
@@ -39,6 +44,7 @@ class PriorParams(BaseModel):
     """
 
     stat_id: str
+    entity_type: str
     scope: dict[str, str] = {}
     family: Literal["beta", "gamma", "normal"]
     params: dict[str, float]
@@ -62,6 +68,7 @@ class DieMetadata(BaseModel):
     """
 
     entity_id: str | None = None
+    entity_type: str | None = None
     entity_name: str | None = None
     stat_id: str | None = None
     scope: dict[str, str] = {}

@@ -27,6 +27,7 @@ class FakeAdapter:
 def season(entity_id: str, goals: float, nineties: float, position: str) -> Record:
     return Record(
         entity_id=entity_id,
+        entity_type="player",
         value=goals,
         denominator=nineties,
         dimensions={"position_general": position},
@@ -52,7 +53,7 @@ def test_scopes_for_returns_one_scope_per_distinct_value(adapter):
 
 def test_scopes_for_ignores_records_without_the_column():
     adapter = FakeAdapter(
-        [season("fwd-1", 8, 20, "Forward"), Record(entity_id="x", value=1, denominator=2)]
+        [season("fwd-1", 8, 20, "Forward"), Record(entity_id="x", entity_type="player", value=1, denominator=2)]
     )
     assert scopes_for(adapter, "goals", "position_general") == [
         {"position_general": "Forward"}
@@ -72,7 +73,7 @@ def test_fit_scopes_saves_what_it_fits(adapter):
 
     assert {} in report.fitted
     assert {"position_general": "Forward"} in report.fitted
-    assert store.get("goals", {"position_general": "Forward"}) is not None
+    assert store.get("player", "goals", {"position_general": "Forward"}) is not None
 
 
 def test_fit_scopes_skips_a_scope_with_too_little_data(adapter):
@@ -83,7 +84,7 @@ def test_fit_scopes_skips_a_scope_with_too_little_data(adapter):
 
     skipped_scopes = [scope for scope, _ in report.skipped]
     assert {"position_general": "Goalkeeper"} in skipped_scopes
-    assert store.get("goals", {"position_general": "Goalkeeper"}) is None
+    assert store.get("player", "goals", {"position_general": "Goalkeeper"}) is None
     assert "at least two observations" in dict(
         (tuple(sorted(s.items())), reason) for s, reason in report.skipped
     )[(("position_general", "Goalkeeper"),)]
