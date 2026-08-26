@@ -31,11 +31,18 @@ The denominator is what makes the die worth looking at: four goals in ten appear
 
 `CsvDataAdapter` implements it over a CSV of one row per entity per period, reading any numeric column as the stat and any column as a scope filter, so the same class serves both the goals example and a future modelled score.
 
-Which columns fill which role is a `ColumnMap` given at construction — the entity id, the denominator, an optional name for lookups, and the columns copied onto each `Record` as context. Nothing is guessed from a column's name, so a file with its own conventions needs a map rather than a rename:
+Which columns fill which role is a `ColumnMap` given at construction. Nothing is guessed from a column's name, so a file with its own conventions needs a map rather than a rename:
 
 ```python
-CsvDataAdapter("mine.csv", ColumnMap(entity="id", denominator="games", name="full_name"))
+CsvDataAdapter("mine.csv", ColumnMap(
+    entity="player_id",        # which entity a row belongs to -> Record.entity_id
+    denominator="games",       # what the value was measured against -> Record.denominator
+    name="full_name",          # a label, for entity_ids_for_name and entity_name
+    dimensions=("position",),  # columns priors may be fitted along -> Record.dimensions
+))
 ```
+
+A file's other columns are not mapped, and are used in one of two ways instead. The stat is chosen per call — `get_population_observations("goals")` — and a `scope` may filter on any column at all, mapped or not. Only `scopes_for` is restricted to the mapped dimensions, because it sees `Record`s rather than the file.
 
 **PriorDiscovery** (offline, periodic) — empirical Bayes: fits a prior distribution's parameters from the population-wide spread of a stat, rather than requiring someone to hand-pick numbers. The distribution family is supplied by the caller rather than chosen from the stat's name — Beta for proportions bounded by 0 and 1, Gamma for positive quantities with no ceiling, Normal for values that can sit anywhere. The family states which values the stat can take at all, and no sample establishes that, because an unobserved value and an impossible one look identical in data; the parameters are then fitted from the population by method of moments. All three are implemented.
 
