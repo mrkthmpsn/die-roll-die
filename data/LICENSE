@@ -21,9 +21,13 @@ CC BY-SA 4.0, and an adapted database built from it carries the same terms.
 
 ATTRIBUTION
 
-Source articles are listed in `sources.json`, each with its title, URL and the
-revision id the figures were read from. Attribution to the authors of a Wikipedia
-article is given by linking the article, whose page history is its author list.
+The material is the squad statistics tables of the 100 English Wikipedia
+club-season articles covering the twenty Premier League clubs of each season from
+2021-22 to 2025-26. Attribution to a Wikipedia article's authors is given by
+linking the article, whose page history is its author list.
+
+`sources.json` lists all 100 individually — title, URL, and the revision id each
+article's figures were read from — which is the resource this notice points at.
 
 Changes made: the per-competition appearance and goal figures were extracted from
 each article's squad statistics tables; the Premier League columns were kept and

@@ -754,31 +754,26 @@ def main() -> None:
 
     parse_rate = parsed_ok / discovered if discovered else 0.0
     reconcile_rate = (kept - inconsistent) / kept if kept else 0.0
-    args.sources.write_text(
-        json.dumps(
-            {
-                "layout_version": LAYOUT_VERSION,
-                "retrieved": date.today().isoformat(),
-                "licence": "CC BY-SA 4.0",
-                "licence_url": "https://creativecommons.org/licenses/by-sa/4.0/",
-                "seasons": list(args.seasons),
-                "articles_discovered": discovered,
-                "articles_parsed": parsed_ok,
-                "squad_members": squad,
-                "rows": kept,
-                "rows_without_league_appearances": squad - kept,
-                "rows_inconsistent": inconsistent,
-                "tables_discarded": discarded,
-                "articles": sources,
-            },
-            indent=1,
-        )
-        + "\n",
-        encoding="utf-8",
-    )
+    manifest = {
+        "layout_version": LAYOUT_VERSION,
+        "retrieved": date.today().isoformat(),
+        "licence": "CC BY-SA 4.0",
+        "licence_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "seasons": list(args.seasons),
+        "articles_discovered": discovered,
+        "articles_parsed": parsed_ok,
+        "squad_members": squad,
+        "rows": kept,
+        "rows_without_league_appearances": squad - kept,
+        "rows_inconsistent": inconsistent,
+        "tables_discarded": discarded,
+        "articles": sources,
+    }
+    args.sources.write_text(json.dumps(manifest, indent=1) + "\n", encoding="utf-8")
 
-    print(f"\n{kept} rows from {parsed_ok}/{discovered} articles; {inconsistent} carry figures "
-          f"their article does not add up ({reconcile_rate:.1%} consistent); "
+    print(f"\n{kept} rows from {parsed_ok}/{discovered} articles, of {squad} squad members "
+          f"({squad - kept} with no league appearance); {inconsistent} carry figures their "
+          f"article does not add up ({reconcile_rate:.1%} consistent); "
           f"{discarded} tables discarded as misparsed", file=sys.stderr)
 
     if parse_rate < args.min_parse_rate or reconcile_rate < args.min_reconcile_rate:

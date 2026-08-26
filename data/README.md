@@ -10,9 +10,9 @@ player per season per club. A player transferred mid-season has a row for each c
 two observations of the same entity rather than one averaged over both.
 
 Built by [`tools/wikipedia_squads.py`](../tools/wikipedia_squads.py) from the squad statistics
-tables of English Wikipedia's club-season articles; run it again to rebuild the file. Every
-source article is listed in [`sources.json`](sources.json) with the revision id its figures were
-read from.
+tables of English Wikipedia's club-season articles; run it again to rebuild the file. It reads the
+twenty clubs of each season, 100 articles in all; [`sources.json`](sources.json) lists them with
+the revision id each was read at and what each contributed.
 
 ### Columns
 
