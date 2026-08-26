@@ -21,7 +21,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from die_scouting import CsvDataAdapter, JsonPriorStore, fit_scopes, scopes_for
+from die_scouting import ColumnMap, CsvDataAdapter, JsonPriorStore, fit_scopes, scopes_for
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data" / "player_seasons.csv"
@@ -31,6 +31,16 @@ PRIORS = ROOT / "data" / "priors.json"
 def describe(scope: dict[str, str]) -> str:
     """Render a scope as `column=value` pairs, or as `global` when it has none."""
     return ", ".join(f"{k}={v}" for k, v in scope.items()) or "global"
+
+
+def column_map(args) -> ColumnMap:
+    """Build the adapter's column map from the command line."""
+    return ColumnMap(
+        entity=args.entity_column,
+        denominator=args.denominator_column,
+        name=args.name_column,
+        context=tuple(args.context_columns),
+    )
 
 
 def main() -> None:
@@ -45,6 +55,14 @@ def main() -> None:
         help="values of --scope-column to leave out of the fit",
     )
     parser.add_argument("--denominator-column", default="appearances")
+    parser.add_argument("--entity-column", default="player_source_id")
+    parser.add_argument("--name-column", default="player_name")
+    parser.add_argument(
+        "--context-columns",
+        nargs="*",
+        default=["player_name", "club_name", "season_name", "position_general"],
+        help="columns copied onto each observation, and the ones --scope-column can use",
+    )
     parser.add_argument("--priors", type=Path, default=PRIORS)
     parser.add_argument("--data", type=Path, default=DATA)
     args = parser.parse_args()
@@ -52,7 +70,7 @@ def main() -> None:
     if not args.data.exists():
         raise SystemExit(f"no data at {args.data}")
 
-    adapter = CsvDataAdapter(args.data, denominator_column=args.denominator_column)
+    adapter = CsvDataAdapter(args.data, column_map(args))
     store = JsonPriorStore(args.priors)
 
     scopes = [{}] + [

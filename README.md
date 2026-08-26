@@ -29,7 +29,13 @@ The denominator is what makes the die worth looking at: four goals in ten appear
 
 **DataAdapter** — the only provider/domain-aware module. Supplies per-observation values for one player, and population-wide values across many players (for prior discovery). Everything else is domain-agnostic.
 
-`CsvDataAdapter` implements it over a player-season CSV, reading any numeric column as the stat and any column as a scope filter, so the same class serves both the goals example and a future modelled score.
+`CsvDataAdapter` implements it over a CSV of one row per entity per period, reading any numeric column as the stat and any column as a scope filter, so the same class serves both the goals example and a future modelled score.
+
+Which columns fill which role is a `ColumnMap` given at construction — the entity id, the denominator, an optional name for lookups, and the columns copied onto each `Record` as context. Nothing is guessed from a column's name, so a file with its own conventions needs a map rather than a rename:
+
+```python
+CsvDataAdapter("mine.csv", ColumnMap(entity="id", denominator="games", name="full_name"))
+```
 
 **PriorDiscovery** (offline, periodic) — empirical Bayes: fits a prior distribution's parameters from the population-wide spread of a stat, rather than requiring someone to hand-pick numbers. The distribution family is supplied by the caller rather than chosen from the stat's name — Beta for proportions bounded by 0 and 1, Gamma for positive quantities with no ceiling, Normal for values that can sit anywhere. The family states which values the stat can take at all, and no sample establishes that, because an unobserved value and an impossible one look identical in data; the parameters are then fitted from the population by method of moments. All three are implemented.
 

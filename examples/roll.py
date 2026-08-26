@@ -16,6 +16,7 @@ import argparse
 from pathlib import Path
 
 from die_scouting import (
+    ColumnMap,
     CsvDataAdapter,
     DieMetadata,
     JsonPriorStore,
@@ -60,6 +61,16 @@ def _summarise(family: str, first: float, second: float) -> str:
     return f"{first:.3f} per unit, spread {second:.3f}"
 
 
+def column_map(args) -> ColumnMap:
+    """Build the adapter's column map from the command line."""
+    return ColumnMap(
+        entity=args.entity_column,
+        denominator=args.denominator_column,
+        name=args.name_column,
+        context=tuple(args.context_columns),
+    )
+
+
 def read_prior(path: Path, stat_id: str, scope: dict[str, str]):
     """Return the stored prior for `stat_id` and `scope`, or exit listing what is stored."""
     store = JsonPriorStore(path)
@@ -86,6 +97,14 @@ def main() -> None:
         "--denominator-column",
         default="appearances",
         help="column the stat is measured against; attempts rather than time for a beta",
+    )
+    parser.add_argument("--entity-column", default="player_source_id")
+    parser.add_argument("--name-column", default="player_name")
+    parser.add_argument(
+        "--context-columns",
+        nargs="*",
+        default=["player_name", "club_name", "season_name", "position_general"],
+        help="columns copied onto each observation, and the ones a scope can name",
     )
     parser.add_argument("--faces", type=int, default=6)
     parser.add_argument(
@@ -114,7 +133,7 @@ def main() -> None:
             "no dataset ships with this repo; put a CSV of one row per entity per period "
             "there, or point this script at your own"
         )
-    adapter = CsvDataAdapter(DATA, denominator_column=args.denominator_column)
+    adapter = CsvDataAdapter(DATA, column_map(args))
     scope = parse_scope(args.scope)
 
     matches = adapter.entity_ids_for_name(args.player)
