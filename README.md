@@ -91,7 +91,7 @@ Without `--priors`, `roll.py` fits the prior inline and discards it, which is fi
 
 ## Data
 
-[data/player_seasons.csv](data/player_seasons.csv) ships with the repo: 2,753 player-seasons of Premier League goals and appearances covering 2021/22 to 2025/26, so a fresh clone can roll a die without finding data first. [tools/wikipedia_squads.py](tools/wikipedia_squads.py) built it from the squad statistics tables of Wikipedia's club-season articles and can rebuild it; [data/README.md](data/README.md) describes the columns and what was dropped.
+[data/player_seasons.csv](data/player_seasons.csv) ships with the repo: 2,804 player-seasons of Premier League goals and appearances covering 2021/22 to 2025/26, so a fresh clone can roll a die without finding data first. [tools/wikipedia_squads.py](tools/wikipedia_squads.py) built it from the squad statistics tables of Wikipedia's club-season articles and can rebuild it; [data/README.md](data/README.md) describes the columns and their caveats.
 
 Exposure is appearances rather than minutes, because Wikipedia records minutes on almost no club-season article. A five-minute substitute appearance therefore counts as much as ninety, which widens the fitted priors relative to a per-90 denominator.
 

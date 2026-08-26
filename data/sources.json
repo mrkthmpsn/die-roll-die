@@ -1,6 +1,6 @@
 {
  "layout_version": "2026-08-25",
- "retrieved": "2026-08-25",
+ "retrieved": "2026-08-26",
  "licence": "CC BY-SA 4.0",
  "licence_url": "https://creativecommons.org/licenses/by-sa/4.0/",
  "seasons": [
@@ -12,8 +12,9 @@
  ],
  "articles_discovered": 100,
  "articles_parsed": 100,
- "rows": 2753,
- "rows_rejected": 62,
+ "rows": 2804,
+ "rows_inconsistent": 57,
+ "tables_discarded": 0,
  "articles": [
   {
    "title": "2021\u201322 Arsenal F.C. season",
@@ -21,7 +22,8 @@
    "revid": 1370845841,
    "status": "ok",
    "rows": 27,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2021\u201322 Aston Villa F.C. season",
@@ -29,7 +31,8 @@
    "revid": 1367859764,
    "status": "ok",
    "rows": 31,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2021\u201322 Brentford F.C. season",
@@ -37,7 +40,8 @@
    "revid": 1361965476,
    "status": "ok",
    "rows": 29,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2021\u201322 Brighton & Hove Albion F.C. season",
@@ -45,7 +49,8 @@
    "revid": 1355292745,
    "status": "ok",
    "rows": 25,
-   "rejected": 1
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2021\u201322 Burnley F.C. season",
@@ -53,7 +58,8 @@
    "revid": 1356312921,
    "status": "ok",
    "rows": 23,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2021\u201322 Chelsea F.C. season",
@@ -61,7 +67,8 @@
    "revid": 1371139267,
    "status": "ok",
    "rows": 26,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2021\u201322 Crystal Palace F.C. season",
@@ -69,7 +76,8 @@
    "revid": 1355293028,
    "status": "ok",
    "rows": 24,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2021\u201322 Everton F.C. season",
@@ -77,7 +85,8 @@
    "revid": 1367264272,
    "status": "ok",
    "rows": 33,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2021\u201322 Leeds United F.C. season",
@@ -85,7 +94,8 @@
    "revid": 1357092975,
    "status": "ok",
    "rows": 29,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2021\u201322 Leicester City F.C. season",
@@ -93,7 +103,8 @@
    "revid": 1353206668,
    "status": "ok",
    "rows": 28,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2021\u201322 Liverpool F.C. season",
@@ -101,15 +112,17 @@
    "revid": 1368678672,
    "status": "ok",
    "rows": 27,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2021\u201322 Manchester City F.C. season",
    "url": "https://en.wikipedia.org/wiki/2021\u201322_Manchester_City_F.C._season",
    "revid": 1371241295,
    "status": "ok",
-   "rows": 24,
-   "rejected": 2
+   "rows": 26,
+   "inconsistent": 2,
+   "tables_discarded": 0
   },
   {
    "title": "2021\u201322 Manchester United F.C. season",
@@ -117,7 +130,8 @@
    "revid": 1349356380,
    "status": "ok",
    "rows": 29,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2021\u201322 Newcastle United F.C. season",
@@ -125,15 +139,17 @@
    "revid": 1367968682,
    "status": "ok",
    "rows": 29,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2021\u201322 Norwich City F.C. season",
    "url": "https://en.wikipedia.org/wiki/2021\u201322_Norwich_City_F.C._season",
    "revid": 1355293282,
    "status": "ok",
-   "rows": 27,
-   "rejected": 1
+   "rows": 28,
+   "inconsistent": 1,
+   "tables_discarded": 0
   },
   {
    "title": "2021\u201322 Southampton F.C. season",
@@ -141,15 +157,17 @@
    "revid": 1357265105,
    "status": "ok",
    "rows": 25,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2021\u201322 Tottenham Hotspur F.C. season",
    "url": "https://en.wikipedia.org/wiki/2021\u201322_Tottenham_Hotspur_F.C._season",
    "revid": 1363087971,
    "status": "ok",
-   "rows": 24,
-   "rejected": 1
+   "rows": 25,
+   "inconsistent": 1,
+   "tables_discarded": 0
   },
   {
    "title": "2021\u201322 Watford F.C. season",
@@ -157,7 +175,8 @@
    "revid": 1355293435,
    "status": "ok",
    "rows": 29,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2021\u201322 West Ham United F.C. season",
@@ -165,15 +184,17 @@
    "revid": 1309767894,
    "status": "ok",
    "rows": 25,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2021\u201322 Wolverhampton Wanderers F.C. season",
    "url": "https://en.wikipedia.org/wiki/2021\u201322_Wolverhampton_Wanderers_F.C._season",
    "revid": 1356957977,
    "status": "ok",
-   "rows": 23,
-   "rejected": 3
+   "rows": 26,
+   "inconsistent": 3,
+   "tables_discarded": 0
   },
   {
    "title": "2022\u201323 AFC Bournemouth season",
@@ -181,7 +202,8 @@
    "revid": 1361743432,
    "status": "ok",
    "rows": 31,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2022\u201323 Arsenal F.C. season",
@@ -189,7 +211,8 @@
    "revid": 1365781954,
    "status": "ok",
    "rows": 26,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2022\u201323 Aston Villa F.C. season",
@@ -197,15 +220,17 @@
    "revid": 1365165168,
    "status": "ok",
    "rows": 26,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2022\u201323 Brentford F.C. season",
    "url": "https://en.wikipedia.org/wiki/2022\u201323_Brentford_F.C._season",
    "revid": 1368353895,
    "status": "ok",
-   "rows": 24,
-   "rejected": 1
+   "rows": 25,
+   "inconsistent": 1,
+   "tables_discarded": 0
   },
   {
    "title": "2022\u201323 Brighton & Hove Albion F.C. season",
@@ -213,7 +238,8 @@
    "revid": 1355453937,
    "status": "ok",
    "rows": 29,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2022\u201323 Chelsea F.C. season",
@@ -221,7 +247,8 @@
    "revid": 1361492198,
    "status": "ok",
    "rows": 32,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2022\u201323 Crystal Palace F.C. season",
@@ -229,7 +256,8 @@
    "revid": 1356959064,
    "status": "ok",
    "rows": 25,
-   "rejected": 1
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2022\u201323 Everton F.C. season",
@@ -237,7 +265,8 @@
    "revid": 1360778273,
    "status": "ok",
    "rows": 28,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2022\u201323 Fulham F.C. season",
@@ -245,15 +274,17 @@
    "revid": 1356888476,
    "status": "ok",
    "rows": 29,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2022\u201323 Leeds United F.C. season",
    "url": "https://en.wikipedia.org/wiki/2022\u201323_Leeds_United_F.C._season",
    "revid": 1357265043,
    "status": "ok",
-   "rows": 26,
-   "rejected": 3
+   "rows": 29,
+   "inconsistent": 3,
+   "tables_discarded": 0
   },
   {
    "title": "2022\u201323 Leicester City F.C. season",
@@ -261,7 +292,8 @@
    "revid": 1356894797,
    "status": "ok",
    "rows": 28,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2022\u201323 Liverpool F.C. season",
@@ -269,7 +301,8 @@
    "revid": 1368678527,
    "status": "ok",
    "rows": 28,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2022\u201323 Manchester City F.C. season",
@@ -277,7 +310,8 @@
    "revid": 1371246262,
    "status": "ok",
    "rows": 23,
-   "rejected": 1
+   "inconsistent": 1,
+   "tables_discarded": 0
   },
   {
    "title": "2022\u201323 Manchester United F.C. season",
@@ -285,7 +319,8 @@
    "revid": 1349356375,
    "status": "ok",
    "rows": 26,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2022\u201323 Newcastle United F.C. season",
@@ -293,7 +328,8 @@
    "revid": 1367968629,
    "status": "ok",
    "rows": 27,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2022\u201323 Nottingham Forest F.C. season",
@@ -301,15 +337,17 @@
    "revid": 1356157419,
    "status": "ok",
    "rows": 33,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2022\u201323 Southampton F.C. season",
    "url": "https://en.wikipedia.org/wiki/2022\u201323_Southampton_F.C._season",
    "revid": 1356888720,
    "status": "ok",
-   "rows": 34,
-   "rejected": 4
+   "rows": 33,
+   "inconsistent": 2,
+   "tables_discarded": 0
   },
   {
    "title": "2022\u201323 Tottenham Hotspur F.C. season",
@@ -317,7 +355,8 @@
    "revid": 1363087833,
    "status": "ok",
    "rows": 29,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2022\u201323 West Ham United F.C. season",
@@ -325,15 +364,17 @@
    "revid": 1366132392,
    "status": "ok",
    "rows": 25,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2022\u201323 Wolverhampton Wanderers F.C. season",
    "url": "https://en.wikipedia.org/wiki/2022\u201323_Wolverhampton_Wanderers_F.C._season",
    "revid": 1361411115,
    "status": "ok",
-   "rows": 29,
-   "rejected": 3
+   "rows": 32,
+   "inconsistent": 3,
+   "tables_discarded": 0
   },
   {
    "title": "2023\u201324 AFC Bournemouth season",
@@ -341,7 +382,8 @@
    "revid": 1370231676,
    "status": "ok",
    "rows": 30,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2023\u201324 Arsenal F.C. season",
@@ -349,15 +391,17 @@
    "revid": 1362332636,
    "status": "ok",
    "rows": 25,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2023\u201324 Aston Villa F.C. season",
    "url": "https://en.wikipedia.org/wiki/2023\u201324_Aston_Villa_F.C._season",
    "revid": 1359643113,
    "status": "ok",
-   "rows": 30,
-   "rejected": 1
+   "rows": 31,
+   "inconsistent": 1,
+   "tables_discarded": 0
   },
   {
    "title": "2023\u201324 Brentford F.C. season",
@@ -365,7 +409,8 @@
    "revid": 1355782864,
    "status": "ok",
    "rows": 28,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2023\u201324 Brighton & Hove Albion F.C. season",
@@ -373,7 +418,8 @@
    "revid": 1355782885,
    "status": "ok",
    "rows": 30,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2023\u201324 Burnley F.C. season",
@@ -381,7 +427,8 @@
    "revid": 1371139265,
    "status": "ok",
    "rows": 31,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2023\u201324 Chelsea F.C. season",
@@ -389,7 +436,8 @@
    "revid": 1361492241,
    "status": "ok",
    "rows": 32,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2023\u201324 Crystal Palace F.C. season",
@@ -397,7 +445,8 @@
    "revid": 1370311248,
    "status": "ok",
    "rows": 26,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2023\u201324 Everton F.C. season",
@@ -405,7 +454,8 @@
    "revid": 1364073141,
    "status": "ok",
    "rows": 26,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2023\u201324 Fulham F.C. season",
@@ -413,7 +463,8 @@
    "revid": 1357291799,
    "status": "ok",
    "rows": 25,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2023\u201324 Liverpool F.C. season",
@@ -421,7 +472,8 @@
    "revid": 1368678413,
    "status": "ok",
    "rows": 30,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2023\u201324 Luton Town F.C. season",
@@ -429,15 +481,17 @@
    "revid": 1353127387,
    "status": "ok",
    "rows": 26,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2023\u201324 Manchester City F.C. season",
    "url": "https://en.wikipedia.org/wiki/2023\u201324_Manchester_City_F.C._season",
    "revid": 1371241577,
    "status": "ok",
-   "rows": 13,
-   "rejected": 12
+   "rows": 25,
+   "inconsistent": 12,
+   "tables_discarded": 0
   },
   {
    "title": "2023\u201324 Manchester United F.C. season",
@@ -445,7 +499,8 @@
    "revid": 1367880659,
    "status": "ok",
    "rows": 31,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2023\u201324 Newcastle United F.C. season",
@@ -453,7 +508,8 @@
    "revid": 1367968570,
    "status": "ok",
    "rows": 32,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2023\u201324 Nottingham Forest F.C. season",
@@ -461,7 +517,8 @@
    "revid": 1356222693,
    "status": "ok",
    "rows": 33,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2023\u201324 Sheffield United F.C. season",
@@ -469,15 +526,17 @@
    "revid": 1357492979,
    "status": "ok",
    "rows": 34,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2023\u201324 Tottenham Hotspur F.C. season",
    "url": "https://en.wikipedia.org/wiki/2023\u201324_Tottenham_Hotspur_F.C._season",
    "revid": 1363087631,
    "status": "ok",
-   "rows": 28,
-   "rejected": 1
+   "rows": 29,
+   "inconsistent": 1,
+   "tables_discarded": 0
   },
   {
    "title": "2023\u201324 West Ham United F.C. season",
@@ -485,15 +544,17 @@
    "revid": 1363971877,
    "status": "ok",
    "rows": 26,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2023\u201324 Wolverhampton Wanderers F.C. season",
    "url": "https://en.wikipedia.org/wiki/2023\u201324_Wolverhampton_Wanderers_F.C._season",
    "revid": 1355802842,
    "status": "ok",
-   "rows": 19,
-   "rejected": 7
+   "rows": 25,
+   "inconsistent": 6,
+   "tables_discarded": 0
   },
   {
    "title": "2024\u201325 AFC Bournemouth season",
@@ -501,7 +562,8 @@
    "revid": 1369909444,
    "status": "ok",
    "rows": 28,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2024\u201325 Arsenal F.C. season",
@@ -509,7 +571,8 @@
    "revid": 1365784867,
    "status": "ok",
    "rows": 25,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2024\u201325 Aston Villa F.C. season",
@@ -517,7 +580,8 @@
    "revid": 1369225424,
    "status": "ok",
    "rows": 28,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2024\u201325 Brentford F.C. season",
@@ -525,7 +589,8 @@
    "revid": 1370692709,
    "status": "ok",
    "rows": 28,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2024\u201325 Brighton & Hove Albion F.C. season",
@@ -533,15 +598,17 @@
    "revid": 1371120680,
    "status": "ok",
    "rows": 32,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2024\u201325 Chelsea F.C. season",
    "url": "https://en.wikipedia.org/wiki/2024\u201325_Chelsea_F.C._season",
    "revid": 1369359934,
    "status": "ok",
-   "rows": 28,
-   "rejected": 1
+   "rows": 29,
+   "inconsistent": 1,
+   "tables_discarded": 0
   },
   {
    "title": "2024\u201325 Crystal Palace F.C. season",
@@ -549,7 +616,8 @@
    "revid": 1356459821,
    "status": "ok",
    "rows": 29,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2024\u201325 Everton F.C. season",
@@ -557,7 +625,8 @@
    "revid": 1356795088,
    "status": "ok",
    "rows": 26,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2024\u201325 Fulham F.C. season",
@@ -565,7 +634,8 @@
    "revid": 1370594055,
    "status": "ok",
    "rows": 26,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2024\u201325 Ipswich Town F.C. season",
@@ -573,7 +643,8 @@
    "revid": 1357141210,
    "status": "ok",
    "rows": 32,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2024\u201325 Leicester City F.C. season",
@@ -581,7 +652,8 @@
    "revid": 1352411499,
    "status": "ok",
    "rows": 32,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2024\u201325 Liverpool F.C. season",
@@ -589,15 +661,17 @@
    "revid": 1370331264,
    "status": "ok",
    "rows": 24,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2024\u201325 Manchester City F.C. season",
    "url": "https://en.wikipedia.org/wiki/2024\u201325_Manchester_City_F.C._season",
    "revid": 1363641115,
    "status": "ok",
-   "rows": 26,
-   "rejected": 4
+   "rows": 29,
+   "inconsistent": 4,
+   "tables_discarded": 0
   },
   {
    "title": "2024\u201325 Manchester United F.C. season",
@@ -605,7 +679,8 @@
    "revid": 1369886713,
    "status": "ok",
    "rows": 31,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2024\u201325 Newcastle United F.C. season",
@@ -613,7 +688,8 @@
    "revid": 1370296506,
    "status": "ok",
    "rows": 24,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2024\u201325 Nottingham Forest F.C. season",
@@ -621,7 +697,8 @@
    "revid": 1370891827,
    "status": "ok",
    "rows": 23,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2024\u201325 Southampton F.C. season",
@@ -629,15 +706,17 @@
    "revid": 1356452944,
    "status": "ok",
    "rows": 36,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2024\u201325 Tottenham Hotspur F.C. season",
    "url": "https://en.wikipedia.org/wiki/2024\u201325_Tottenham_Hotspur_F.C._season",
    "revid": 1369359901,
    "status": "ok",
-   "rows": 29,
-   "rejected": 2
+   "rows": 31,
+   "inconsistent": 2,
+   "tables_discarded": 0
   },
   {
    "title": "2024\u201325 West Ham United F.C. season",
@@ -645,7 +724,8 @@
    "revid": 1356646880,
    "status": "ok",
    "rows": 27,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2024\u201325 Wolverhampton Wanderers F.C. season",
@@ -653,7 +733,8 @@
    "revid": 1345850322,
    "status": "ok",
    "rows": 32,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2025\u201326 AFC Bournemouth season",
@@ -661,15 +742,17 @@
    "revid": 1370231438,
    "status": "ok",
    "rows": 26,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2025\u201326 Arsenal F.C. season",
    "url": "https://en.wikipedia.org/wiki/2025\u201326_Arsenal_F.C._season",
    "revid": 1371019856,
    "status": "ok",
-   "rows": 24,
-   "rejected": 1
+   "rows": 25,
+   "inconsistent": 1,
+   "tables_discarded": 0
   },
   {
    "title": "2025\u201326 Aston Villa F.C. season",
@@ -677,7 +760,8 @@
    "revid": 1369101257,
    "status": "ok",
    "rows": 30,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2025\u201326 Brentford F.C. season",
@@ -685,7 +769,8 @@
    "revid": 1370692650,
    "status": "ok",
    "rows": 25,
-   "rejected": 1
+   "inconsistent": 1,
+   "tables_discarded": 0
   },
   {
    "title": "2025\u201326 Brighton & Hove Albion F.C. season",
@@ -693,7 +778,8 @@
    "revid": 1370846754,
    "status": "ok",
    "rows": 27,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2025\u201326 Burnley F.C. season",
@@ -701,7 +787,8 @@
    "revid": 1364292526,
    "status": "ok",
    "rows": 28,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2025\u201326 Chelsea F.C. season",
@@ -709,7 +796,8 @@
    "revid": 1368871337,
    "status": "ok",
    "rows": 30,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2025\u201326 Crystal Palace F.C. season",
@@ -717,7 +805,8 @@
    "revid": 1358564029,
    "status": "ok",
    "rows": 30,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2025\u201326 Everton F.C. season",
@@ -725,7 +814,8 @@
    "revid": 1361843418,
    "status": "ok",
    "rows": 22,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2025\u201326 Fulham F.C. season",
@@ -733,15 +823,17 @@
    "revid": 1367564489,
    "status": "ok",
    "rows": 24,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2025\u201326 Leeds United F.C. season",
    "url": "https://en.wikipedia.org/wiki/2025\u201326_Leeds_United_F.C._season",
    "revid": 1365707139,
    "status": "ok",
-   "rows": 23,
-   "rejected": 1
+   "rows": 24,
+   "inconsistent": 1,
+   "tables_discarded": 0
   },
   {
    "title": "2025\u201326 Liverpool F.C. season",
@@ -749,15 +841,17 @@
    "revid": 1369808254,
    "status": "ok",
    "rows": 24,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2025\u201326 Manchester City F.C. season",
    "url": "https://en.wikipedia.org/wiki/2025\u201326_Manchester_City_F.C._season",
    "revid": 1371302170,
    "status": "ok",
-   "rows": 17,
-   "rejected": 10
+   "rows": 27,
+   "inconsistent": 10,
+   "tables_discarded": 0
   },
   {
    "title": "2025\u201326 Manchester United F.C. season",
@@ -765,7 +859,8 @@
    "revid": 1370668212,
    "status": "ok",
    "rows": 27,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2025\u201326 Newcastle United F.C. season",
@@ -773,7 +868,8 @@
    "revid": 1371001828,
    "status": "ok",
    "rows": 26,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2025\u201326 Nottingham Forest F.C. season",
@@ -781,7 +877,8 @@
    "revid": 1364713533,
    "status": "ok",
    "rows": 31,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2025\u201326 Sunderland A.F.C. season",
@@ -789,7 +886,8 @@
    "revid": 1361440810,
    "status": "ok",
    "rows": 29,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2025\u201326 Tottenham Hotspur F.C. season",
@@ -797,7 +895,8 @@
    "revid": 1370558337,
    "status": "ok",
    "rows": 31,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2025\u201326 West Ham United F.C. season",
@@ -805,7 +904,8 @@
    "revid": 1363971903,
    "status": "ok",
    "rows": 32,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   },
   {
    "title": "2025\u201326 Wolverhampton Wanderers F.C. season",
@@ -813,7 +913,8 @@
    "revid": 1368500636,
    "status": "ok",
    "rows": 31,
-   "rejected": 0
+   "inconsistent": 0,
+   "tables_discarded": 0
   }
  ]
 }

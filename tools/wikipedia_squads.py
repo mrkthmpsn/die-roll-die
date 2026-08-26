@@ -463,6 +463,16 @@ def _position(line: dict[int, Tag], mapping: dict[int, tuple[str, str]], player:
     return None
 
 
+TABLE_RECONCILE_FLOOR = 0.5
+"""The share of a table's rows that must sum to their own Total for the table to be read.
+
+Reconciliation detects two different things and the rate separates them. A handful of rows
+disagreeing is arithmetic the article gets wrong, and the Premier League column those rows
+carry is still right, so they are kept and counted. Most of a table disagreeing means the
+columns were read out of alignment, and nothing in it can be trusted.
+"""
+
+
 def reconcile(entries: list[Entry]) -> tuple[list[Entry], list[tuple[Entry, str]]]:
     """Split entries into those whose per-competition figures sum to their own Total, and
     those that disagree, each paired with the metric that failed."""
@@ -632,7 +642,7 @@ def scrape_article(wiki: Wikipedia, title: str) -> dict:
     """Parse one club-season article into rows, with the counts and revision behind them."""
     parsed = wiki.parse(title)
     if parsed is None:
-        return {"title": title, "status": "missing", "rows": [], "rejected": 0}
+        return {"title": title, "status": "missing", "rows": []}
     soup = BeautifulSoup(parsed["text"]["*"], "lxml")
     tables = []
     for table in soup.find_all("table", class_="wikitable"):
@@ -641,25 +651,29 @@ def scrape_article(wiki: Wikipedia, title: str) -> dict:
             tables.append(result)
     if not tables:
         return {"title": title, "revid": parsed.get("revid"),
-                "status": "no table", "rows": [], "rejected": 0}
+                "status": "no table", "rows": []}
 
-    checked: list[Entry] = []
-    rejected = 0
+    usable: list[ParsedTable] = []
+    inconsistent = discarded = 0
     for table in tables:
         kept, bad = reconcile(table.entries)
-        table.entries = kept
-        rejected += len(bad)
-        checked.extend(kept)
+        rate = len(kept) / len(table.entries) if table.entries else 1.0
+        if rate < TABLE_RECONCILE_FLOOR:
+            discarded += 1
+            continue
+        inconsistent += len(bad)
+        usable.append(table)
 
-    entries, supplied, conflicts = merge(tables)
-    rejected += len(conflicts)
+    entries, supplied, conflicts = merge(usable)
     rows = league_rows(entries, supplied)
     return {
         "title": title,
         "revid": parsed.get("revid"),
         "status": "ok" if rows else "no rows",
         "rows": rows,
-        "rejected": rejected,
+        "inconsistent": inconsistent,
+        "conflicts": len(conflicts),
+        "tables_discarded": discarded,
     }
 
 
@@ -686,7 +700,7 @@ def main() -> None:
     wiki = Wikipedia(delay=args.delay)
     rows: list[dict[str, object]] = []
     sources: list[dict[str, object]] = []
-    discovered = parsed_ok = kept = rejected = 0
+    discovered = parsed_ok = kept = inconsistent = discarded = 0
 
     for season in args.seasons:
         titles = club_season_titles(wiki, season)
@@ -704,7 +718,8 @@ def main() -> None:
                 )
                 rows.append(row)
             kept += len(result["rows"])
-            rejected += result["rejected"]
+            inconsistent += result.get("inconsistent", 0)
+            discarded += result.get("tables_discarded", 0)
             if result["status"] == "ok":
                 parsed_ok += 1
             sources.append(
@@ -714,11 +729,13 @@ def main() -> None:
                     "revid": result.get("revid"),
                     "status": result["status"],
                     "rows": len(result["rows"]),
-                    "rejected": result["rejected"],
+                    "inconsistent": result.get("inconsistent", 0),
+                    "tables_discarded": result.get("tables_discarded", 0),
                 }
             )
             print(f"  {club:<34} {result['status']:<9} rows={len(result['rows']):<3}"
-                  f" rejected={result['rejected']}", file=sys.stderr)
+                  f" inconsistent={result.get('inconsistent', 0)}"
+                  f" discarded={result.get('tables_discarded', 0)}", file=sys.stderr)
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open("w", newline="", encoding="utf-8") as handle:
@@ -728,7 +745,7 @@ def main() -> None:
             writer.writerow(row)
 
     parse_rate = parsed_ok / discovered if discovered else 0.0
-    reconcile_rate = kept / (kept + rejected) if kept + rejected else 0.0
+    reconcile_rate = (kept - inconsistent) / kept if kept else 0.0
     args.sources.write_text(
         json.dumps(
             {
@@ -740,7 +757,8 @@ def main() -> None:
                 "articles_discovered": discovered,
                 "articles_parsed": parsed_ok,
                 "rows": kept,
-                "rows_rejected": rejected,
+                "rows_inconsistent": inconsistent,
+                "tables_discarded": discarded,
                 "articles": sources,
             },
             indent=1,
@@ -749,8 +767,9 @@ def main() -> None:
         encoding="utf-8",
     )
 
-    print(f"\n{kept} rows from {parsed_ok}/{discovered} articles; "
-          f"{rejected} rejected ({reconcile_rate:.1%} kept)", file=sys.stderr)
+    print(f"\n{kept} rows from {parsed_ok}/{discovered} articles; {inconsistent} carry figures "
+          f"their article does not add up ({reconcile_rate:.1%} consistent); "
+          f"{discarded} tables discarded as misparsed", file=sys.stderr)
 
     if parse_rate < args.min_parse_rate or reconcile_rate < args.min_reconcile_rate:
         failed = [s["title"] for s in sources if s["status"] != "ok"]

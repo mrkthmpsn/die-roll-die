@@ -24,7 +24,7 @@ read from.
 | `competition_name`, `season_name` | `Premier League` throughout; season as `2024/25` |
 | `position_general` | `Goalkeeper` / `Defender` / `Midfielder` / `Forward`, from the article's one- or two-letter position |
 | `appearances` | Starts plus substitute appearances |
-| `starts`, `sub_appearances` | Populated on 2,534 of 2,753 rows; see below |
+| `starts`, `sub_appearances` | Populated on 2,558 of 2,804 rows; see below |
 | `goals` | |
 
 `appearances` is the denominator `CsvDataAdapter` reads by default. It is coarser than the
@@ -46,17 +46,22 @@ substitute appearances, because an editor using the notation writes `0+12` for a
 only came off the bench. Goalkeepers are 7% of the rows and were 39% of the bare counts, which
 is the shape that reading predicts.
 
-Both columns are blank for the 219 rows from nine club-seasons — Chelsea in three, Manchester
+Both columns are blank for the 246 rows from nine club-seasons — Chelsea in three, Manchester
 City in five, Luton in 2023/24 — whose tables give a total and nothing about how it divided.
 Blank there means unknown rather than zero, so a denominator of `starts` silently covers fewer
 players than one of `appearances`.
 
 ### What is not here
 
-Rows whose per-competition figures did not sum to the article's own stated total were dropped
-rather than shipped, so every row here is internally consistent. That is a real cost in a few
-places: Manchester City's 2023/24 article states totals that disagree with its own columns for
-twelve players, so those twelve are absent even though their league figures look right.
+57 of the 2,804 rows come from articles whose per-competition figures do not sum to the total
+they state, most of them Manchester City's, whose grid carries twenty-four numeric columns per
+player and is the hardest on the site to keep consistent by hand. Those rows are kept, because
+the disagreement is in cup and European columns that never reach this file while the Premier
+League figure they carry is right. `sources.json` records the count per article.
+
+What is dropped is a whole table whose rows mostly fail that check, since a table where half the
+rows do not add up has been read out of alignment rather than typed wrong. No table in the
+current build fell to that.
 
 Where a club's article carried no goals table at all, its players are absent rather than
 recorded with zero goals, since an absent goals table is unknown and absence from an existing

@@ -29,8 +29,7 @@ Changes made: the per-competition appearance and goal figures were extracted fro
 each article's squad statistics tables, the Premier League columns kept and the
 cup and European columns discarded, starts and substitute appearances separated
 where the article distinguished them, and the result reshaped into one row per
-player per season per club. Rows whose competition figures did not sum to the
-article's own stated total were dropped.
+player per season per club.
 
 
 IF YOU REDISTRIBUTE THIS FILE
