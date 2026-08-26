@@ -26,10 +26,10 @@ revision id the figures were read from. Attribution to the authors of a Wikipedi
 article is given by linking the article, whose page history is its author list.
 
 Changes made: the per-competition appearance and goal figures were extracted from
-each article's squad statistics tables, the Premier League columns kept and the
-cup and European columns discarded, starts and substitute appearances separated
-where the article distinguished them, and the result reshaped into one row per
-player per season per club.
+each article's squad statistics tables; the Premier League columns were kept and
+the cup and European ones discarded; players with no Premier League appearance
+were left out; and the result was reshaped into one row per player per season per
+club, keyed by the player's Wikipedia page title.
 
 
 IF YOU REDISTRIBUTE THIS FILE
