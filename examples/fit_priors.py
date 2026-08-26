@@ -2,8 +2,9 @@
 pipeline, run when the data changes rather than per die.
 
 The scopes fitted are the global one plus one per distinct value of `--scope-column`, less
-any named by `--exclude`, which defaults to Goalkeeper because no goalkeeper in the shipped
-dataset has scored. Scopes with too little data to fit are reported and skipped.
+any named by `--exclude`. Scopes with nothing to estimate from are reported and skipped
+rather than stopping the run — no goalkeeper in the shipped dataset has scored, so the
+goalkeeper scope is skipped every time.
 
 `--scope-column` defaults to position group, which is the axis a scoring rate actually
 varies along; `season_name` and `club_name` are columns of the file but poor scopes, one
@@ -40,11 +41,8 @@ def main() -> None:
     parser.add_argument(
         "--exclude",
         nargs="*",
-        default=["Goalkeeper"],
-        help=(
-            "values of --scope-column to skip; goalkeepers score no goals, so no gamma "
-            "fits them. Pass --exclude with no values to fit every scope"
-        ),
+        default=[],
+        help="values of --scope-column to leave out of the fit",
     )
     parser.add_argument("--denominator-column", default="appearances")
     parser.add_argument("--priors", type=Path, default=PRIORS)

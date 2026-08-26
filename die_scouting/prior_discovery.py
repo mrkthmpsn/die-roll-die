@@ -63,13 +63,15 @@ def _corrected_variance(observed: float, noise: float) -> float:
     not positive, which gives a wider prior.
 
     Raises:
-        UnsuitableFamily: if `observed` is not positive either.
+        InsufficientData: if `observed` is not positive either.
     """
     variance = observed - noise
     if variance <= 0:
         variance = observed
     if variance <= 0:
-        raise UnsuitableFamily("the observations' rates are all equal, so no prior fits them")
+        raise InsufficientData(
+            "the observations' rates are all equal, so there is no spread to estimate"
+        )
     return variance
 
 
@@ -84,15 +86,17 @@ def _fit_gamma(observations: list[Record], min_denominator: float) -> dict[str, 
     prior.
 
     Raises:
-        InsufficientData: if fewer than two observations reach `min_denominator`.
-        UnsuitableFamily: if their rates have a mean or a variance of zero.
+        InsufficientData: if fewer than two observations reach `min_denominator`, or if
+            their rates have a mean or a variance of zero.
     """
     usable = _usable(observations, min_denominator, "gamma")
 
     rates = [o.value / o.denominator for o in usable]
     mean = statistics.fmean(rates)
     if mean <= 0:
-        raise UnsuitableFamily("the observations' mean rate is zero, so no gamma fits them")
+        raise InsufficientData(
+            "every observation's value is zero, so there is no rate to estimate"
+        )
 
     poisson_variance = mean * statistics.fmean(1.0 / o.denominator for o in usable)
     variance = _corrected_variance(statistics.variance(rates), poisson_variance)
@@ -110,10 +114,10 @@ def _fit_beta(observations: list[Record], min_denominator: float) -> dict[str, f
     uncorrected variance is used.
 
     Raises:
-        InsufficientData: if fewer than two observations reach `min_denominator`.
+        InsufficientData: if fewer than two observations reach `min_denominator`, or if
+            their mean proportion is 0 or 1.
         UnsuitableFamily: if any observation's value is negative or exceeds its
-            denominator, if their mean proportion is 0 or 1, or if their spread exceeds
-            what a beta with that mean can produce.
+            denominator, or if their spread exceeds what a beta with that mean can produce.
     """
     for o in observations:
         if o.value < 0 or o.value > o.denominator:
@@ -127,8 +131,9 @@ def _fit_beta(observations: list[Record], min_denominator: float) -> dict[str, f
     proportions = [o.value / o.denominator for o in usable]
     mean = statistics.fmean(proportions)
     if not 0 < mean < 1:
-        raise UnsuitableFamily(
-            f"the observations' mean proportion is {mean}, so no beta fits them"
+        raise InsufficientData(
+            f"every observation's proportion is {mean:.0f}, so there is no proportion to "
+            "estimate"
         )
 
     binomial_variance = mean * (1 - mean) * statistics.fmean(1.0 / o.denominator for o in usable)
@@ -154,10 +159,9 @@ def _fit_normal(observations: list[Record], min_denominator: float) -> dict[str,
     from entities that appear more than once.
 
     Raises:
-        InsufficientData: if fewer than two observations reach `min_denominator`, or if no
-            entity has two or more of them.
-        UnsuitableFamily: if every repeated observation is identical, or if the rates have
-            no spread.
+        InsufficientData: if fewer than two observations reach `min_denominator`, if no
+            entity has two or more of them, if every repeated observation is identical, or
+            if the rates have no spread.
     """
     usable = _usable(observations, min_denominator, "normal")
 
@@ -182,8 +186,9 @@ def _fit_normal(observations: list[Record], min_denominator: float) -> dict[str,
         )
     observation_variance = weighted_squares / degrees_of_freedom
     if observation_variance <= 0:
-        raise UnsuitableFamily(
-            "every entity's repeated observations are identical, so their spread is zero"
+        raise InsufficientData(
+            "every entity's repeated observations are identical, so there is no spread to "
+            "estimate"
         )
 
     rates = [o.value / o.denominator for o in usable]

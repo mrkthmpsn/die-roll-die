@@ -71,7 +71,7 @@ def test_fit_prior_needs_two_observations_above_min_denominator():
 
 def test_fit_prior_rejects_observations_that_are_all_zero():
     observations = [Record(entity_id=str(i), value=0.0, denominator=10.0) for i in range(5)]
-    with pytest.raises(UnsuitableFamily, match="mean rate is zero"):
+    with pytest.raises(InsufficientData, match="value is zero"):
         fit_prior(observations, "gamma", "goals")
 
 

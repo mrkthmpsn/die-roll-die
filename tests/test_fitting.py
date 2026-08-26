@@ -89,6 +89,21 @@ def test_fit_scopes_skips_a_scope_with_too_little_data(adapter):
     )[(("position_general", "Goalkeeper"),)]
 
 
+def test_fit_scopes_skips_a_scope_whose_values_are_all_zero():
+    """Goalkeepers score no goals, which is a fact about the slice rather than the family."""
+    adapter = FakeAdapter(
+        [season(f"fwd-{i}", 8 + i, 20 + i, "Forward") for i in range(12)]
+        + [season(f"gk-{i}", 0, 30 + i, "Goalkeeper") for i in range(12)]
+    )
+    store = InMemoryPriorStore()
+    scopes = scopes_for(adapter, "goals", "position_general")
+
+    report = fit_scopes(adapter, store, "goals", "gamma", scopes)
+
+    assert {"position_general": "Forward"} in report.fitted
+    assert [scope for scope, _ in report.skipped] == [{"position_general": "Goalkeeper"}]
+
+
 def test_fit_scopes_does_not_swallow_a_wrong_family():
     """A beta needs successes counted out of attempts, and these values exceed theirs."""
     adapter = FakeAdapter([season(f"fwd-{i}", 40 + i, 20 + i, "Forward") for i in range(12)])
