@@ -36,6 +36,7 @@ Which columns fill which role is a `ColumnMap` given at construction. Nothing is
 ```python
 CsvDataAdapter("mine.csv", ColumnMap(
     entity="player_id",        # which entity a row belongs to -> Record.entity_id
+    entity_type="player",      # what that id names, so a club's priors cannot overwrite it
     denominator="games",       # what the value was measured against -> Record.denominator
     name="full_name",          # a label, for entity_ids_for_name and entity_name
     dimensions=("position",),  # columns priors may be fitted along -> Record.dimensions
@@ -50,7 +51,7 @@ Each family corrects for the noise in its own inputs, and where that noise comes
 
 The gamma fit corrects for the noise in its own inputs. A season's goals-per-appearance is spread both by how much players genuinely differ and by the randomness of scoring itself, the second contributing `mean / denominator` to the variance of an observed rate; subtracting its average leaves the spread a prior should carry. Over the 524 forward-seasons of five or more appearances in the shipped data, 38% of the apparent spread is that randomness, and correcting for it takes the prior from 7.0 to 11.2 appearances' worth of evidence — the difference between a player with three goals in four appearances reading as a genuine 0.75-per-appearance striker or not. Seasons under five appearances are excluded from the fit outright, their rates being dominated by the small denominator.
 
-Scope is optional and composable — a prior can be global, or narrowed by any combination of dimensions (e.g. position group, competition). Stored as `PriorParams` keyed by `(stat_id, scope)`, in an `InMemoryPriorStore` or a `JsonPriorStore`.
+Scope is optional and composable — a prior can be global, or narrowed by any combination of dimensions (e.g. position group, competition). Stored as `PriorParams` keyed by `(entity_type, stat_id, scope)`, in an `InMemoryPriorStore` or a `JsonPriorStore`. The entity type is in the key so that goals-per-player and goals-per-club can share a store, and `PosteriorSampler` raises rather than shrinking a player toward a club's prior.
 
 Which scopes exist is a list someone writes down rather than something the system derives. `scopes_for` builds that list from the distinct values of a column, and `fit_scopes` fits each one, saving what fits and reporting the slices too thin to fit. A scope nobody fitted is a miss at read time, not a silent fall back to a broader prior, because a die built from the forwards prior and one built from the global prior are different answers and nothing downstream could tell them apart. `list_scopes` tells a caller what is available so the choice stays theirs:
 

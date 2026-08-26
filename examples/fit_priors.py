@@ -37,6 +37,7 @@ def column_map(args) -> ColumnMap:
     """Build the adapter's column map from the command line."""
     return ColumnMap(
         entity=args.entity_column,
+        entity_type=args.entity_type,
         denominator=args.denominator_column,
         name=args.name_column,
         dimensions=tuple(args.dimensions),
@@ -56,6 +57,11 @@ def main() -> None:
     )
     parser.add_argument("--denominator-column", default="appearances")
     parser.add_argument("--entity-column", default="player_source_id")
+    parser.add_argument(
+        "--entity-type",
+        default="player",
+        help="what the entity column identifies; priors are stored per type",
+    )
     parser.add_argument("--name-column", default="player_name")
     parser.add_argument(
         "--dimensions",
@@ -82,7 +88,7 @@ def main() -> None:
 
     print(f"{args.stat} ({args.family}) -> {args.priors}")
     for scope in report.fitted:
-        prior = store.get(args.stat, scope)
+        prior = store.get(args.entity_type, args.stat, scope)
         params = ", ".join(f"{k}={v:.3f}" for k, v in prior.params.items())
         print(f"  fitted   {describe(scope):<40} {params}")
     for scope, reason in report.skipped:

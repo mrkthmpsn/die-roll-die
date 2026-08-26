@@ -65,19 +65,22 @@ def column_map(args) -> ColumnMap:
     """Build the adapter's column map from the command line."""
     return ColumnMap(
         entity=args.entity_column,
+        entity_type=args.entity_type,
         denominator=args.denominator_column,
         name=args.name_column,
         dimensions=tuple(args.dimensions),
     )
 
 
-def read_prior(path: Path, stat_id: str, scope: dict[str, str]):
-    """Return the stored prior for `stat_id` and `scope`, or exit listing what is stored."""
+def read_prior(path: Path, entity_type: str, stat_id: str, scope: dict[str, str]):
+    """Return the stored prior for this entity type, stat and scope, or exit listing what
+    is stored.
+    """
     store = JsonPriorStore(path)
-    prior = store.get(stat_id, scope)
+    prior = store.get(entity_type, stat_id, scope)
     if prior is not None:
         return prior
-    available = store.list_scopes(stat_id)
+    available = store.list_scopes(entity_type, stat_id)
     listed = "\n".join(f"  {s or 'global'}" for s in available) or "  (none)"
     raise SystemExit(
         f"{path} holds no prior for {stat_id!r} scoped to {scope or 'global'}\n"
@@ -99,6 +102,11 @@ def main() -> None:
         help="column the stat is measured against; attempts rather than time for a beta",
     )
     parser.add_argument("--entity-column", default="player_source_id")
+    parser.add_argument(
+        "--entity-type",
+        default="player",
+        help="what the entity column identifies; priors are stored per type",
+    )
     parser.add_argument("--name-column", default="player_name")
     parser.add_argument(
         "--dimensions",
@@ -142,7 +150,7 @@ def main() -> None:
     entity_id = matches[0]
 
     if args.priors:
-        prior = read_prior(args.priors, args.stat, scope)
+        prior = read_prior(args.priors, args.entity_type, args.stat, scope)
     else:
         try:
             prior = fit_prior(
@@ -163,6 +171,7 @@ def main() -> None:
 
     metadata = DieMetadata(
         entity_id=entity_id,
+        entity_type=args.entity_type,
         entity_name=adapter.entity_name(entity_id) or args.player,
         stat_id=args.stat,
         scope=scope,
