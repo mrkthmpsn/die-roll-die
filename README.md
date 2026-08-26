@@ -9,7 +9,7 @@ The pipeline runs end to end on the dataset in [data/](data/), which ships with 
 All three prior families are implemented in `fit_prior` and `PosteriorSampler`, and priors can be fitted once and stored. `BootstrapSampler` still raises `NotImplementedError`.
 
 ```
-uv run python examples/roll.py "Erling Haaland" --scope position_general=Forward
+uv run python examples/roll.py Erling_Haaland --scope position_general=Forward
 ```
 
 ## Development
@@ -98,7 +98,7 @@ Each half is a script:
 
 ```
 uv run python examples/fit_priors.py
-uv run python examples/roll.py "Erling Haaland" --scope position_general=Forward --priors data/priors.json
+uv run python examples/roll.py Erling_Haaland --scope position_general=Forward --priors data/priors.json
 ```
 
 Without `--priors`, `roll.py` fits the prior inline and discards it, which is fine for one die and wrong for anything answering requests.

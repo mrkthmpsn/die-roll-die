@@ -1,13 +1,16 @@
 """Build a die for one entity from a CSV in `data/`, one row per entity per period.
 
+Takes an entity id rather than a name, a name being no kind of identifier: "Saka" matches
+Aaron Wan-Bissaka as readily as Bukayo Saka.
+
 Reads `data/player_seasons.csv`, which ships with the repo: Premier League goals and
 appearances per player per season.
 
 Usage:
-    uv run python examples/roll.py "Erling Haaland"
-    uv run python examples/roll.py "Bukayo Saka" --scope position_general=Forward
-    uv run python examples/roll.py "Mohamed Salah" --scope season_name=2024/25 --faces 8
-    uv run python examples/roll.py "Cole Palmer" --faces 10 --strategy equal_width
+    uv run python examples/roll.py Erling_Haaland
+    uv run python examples/roll.py Bukayo_Saka --scope position_general=Forward
+    uv run python examples/roll.py Mohamed_Salah --scope season_name=2024/25 --faces 8
+    uv run python examples/roll.py Cole_Palmer --faces 10 --strategy equal_width
 """
 
 from __future__ import annotations
@@ -90,7 +93,7 @@ def read_prior(path: Path, entity_type: str, stat_id: str, scope: dict[str, str]
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("player", help="part of a player's name, matched case-insensitively")
+    parser.add_argument("entity", help="the entity id to roll for, e.g. Bukayo_Saka")
     parser.add_argument("--stat", default="goals")
     parser.add_argument("--scope", nargs="*", default=[], help="column=value, repeatable")
     parser.add_argument(
@@ -138,16 +141,16 @@ def main() -> None:
     if not DATA.exists():
         raise SystemExit(
             f"no data at {DATA}\n"
-            "no dataset ships with this repo; put a CSV of one row per entity per period "
-            "there, or point this script at your own"
+            "the shipped dataset lives there; restore it, or point the column flags at a "
+            "CSV of your own"
         )
     adapter = CsvDataAdapter(DATA, column_map(args))
     scope = parse_scope(args.scope)
 
-    matches = adapter.entity_ids_for_name(args.player)
-    if not matches:
-        raise SystemExit(f"no player matching {args.player!r}")
-    entity_id = matches[0]
+    entity_id = args.entity
+    name = adapter.entity_name(entity_id)
+    if name is None:
+        raise SystemExit(f"no entity with id {entity_id!r} in {DATA.name}")
 
     if args.priors:
         prior = read_prior(args.priors, args.entity_type, args.stat, scope)
@@ -172,7 +175,7 @@ def main() -> None:
     metadata = DieMetadata(
         entity_id=entity_id,
         entity_type=args.entity_type,
-        entity_name=adapter.entity_name(entity_id) or args.player,
+        entity_name=name,
         stat_id=args.stat,
         scope=scope,
         prior=prior,
@@ -194,7 +197,7 @@ def main() -> None:
         f"{meta.denominator_unit} across {meta.extra['seasons']} seasons"
     )
     family = meta.prior.family
-    posterior = tuple(meta.posterior_params[name] for name in _param_names(family))
+    posterior = tuple(meta.posterior_params[param] for param in _param_names(family))
     print(f"  prior:     {family}, {_summarise(family, *_prior_pair(meta.prior))}")
     print(f"  posterior: {_summarise(family, *posterior)}")
 
