@@ -3,44 +3,67 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 
+from pydantic import BaseModel
+
 from .models import Record
 
-ENTITY_COLUMN = "player_source_id"
-CONTEXT_COLUMNS = ("player_name", "season_name", "position", "position_general")
+
+class ColumnMap(BaseModel):
+    """Which of a CSV's columns fill each role a `CsvDataAdapter` needs.
+
+    `entity` identifies the entity a row belongs to and `denominator` holds what its value
+    was measured against. `name` is a human-readable label used by `entity_ids_for_name`,
+    and `context` names the columns copied onto each `Record`, which are the columns
+    `scopes_for` can enumerate.
+
+    The column holding the stat is not named here, being chosen per call as `stat_id`, and
+    nor are the columns a scope filters on, which are checked against the file's header.
+    """
+
+    entity: str
+    denominator: str
+    name: str | None = None
+    context: tuple[str, ...] = ()
 
 
 class CsvDataAdapter:
-    """Reads Records from a player-season CSV, one row per entity per season.
+    """Reads Records from a CSV, one row per entity per period.
 
-    `stat_id` names the column read into `Record.value` and must be one of
-    `numeric_columns`; `denominator_column` names the column read into `Record.denominator`.
-    A `scope` filters rows by exact string match, keyed by column name.
+    `columns` says which of the file's columns fill each role. `stat_id` names the column
+    read into `Record.value` and must be one of `numeric_columns`; a `scope` filters rows
+    by exact string match, keyed by column name, and may name any column of the file.
 
     Rows whose denominator is zero, blank or unparseable are dropped when the file is read,
     as are rows whose `stat_id` column is blank when records are requested.
 
     Raises:
-        ValueError: if `denominator_column` is not a column of the file.
+        ValueError: if any column named by `columns` is not in the file.
     """
 
-    def __init__(self, path: str | Path, denominator_column: str = "appearances") -> None:
+    def __init__(self, path: str | Path, columns: ColumnMap) -> None:
         self.path = Path(path)
-        self.denominator_column = denominator_column
+        self.column_map = columns
 
         with self.path.open(newline="", encoding="utf-8") as handle:
             reader = csv.DictReader(handle)
             self.columns: tuple[str, ...] = tuple(reader.fieldnames or ())
             rows = list(reader)
 
-        if denominator_column not in self.columns:
-            raise ValueError(
-                f"denominator column {denominator_column!r} is not in the file; "
-                f"columns are {', '.join(self.columns)}"
-            )
+        mapped = {"entity": columns.entity, "denominator": columns.denominator}
+        if columns.name is not None:
+            mapped["name"] = columns.name
+        for index, column in enumerate(columns.context):
+            mapped[f"context[{index}]"] = column
+        for role, column in mapped.items():
+            if column not in self.columns:
+                raise ValueError(
+                    f"{role} column {column!r} is not in the file; "
+                    f"columns are {', '.join(self.columns)}"
+                )
 
         self._rows = []
         for row in rows:
-            denominator = _as_float(row[denominator_column])
+            denominator = _as_float(row[columns.denominator])
             if denominator is not None and denominator > 0:
                 self._rows.append(row)
 
@@ -63,10 +86,18 @@ class CsvDataAdapter:
         return self._records(stat_id, scope)
 
     def entity_ids_for_name(self, name: str) -> list[str]:
-        """Entity ids whose `player_name` contains `name`, matched case-insensitively."""
+        """Entity ids whose name column contains `name`, matched case-insensitively.
+
+        Raises:
+            ValueError: if the column map named no `name` column.
+        """
+        if self.column_map.name is None:
+            raise ValueError("this adapter's ColumnMap names no `name` column to search")
         needle = name.casefold()
         return sorted({
-            row[ENTITY_COLUMN] for row in self._rows if needle in row["player_name"].casefold()
+            row[self.column_map.entity]
+            for row in self._rows
+            if needle in row[self.column_map.name].casefold()
         })
 
     def _records(
@@ -85,9 +116,10 @@ class CsvDataAdapter:
                     f"columns are {', '.join(self.columns)}"
                 )
 
+        entity_column = self.column_map.entity
         records = []
         for row in self._rows:
-            if entity_id is not None and row[ENTITY_COLUMN] != entity_id:
+            if entity_id is not None and row[entity_column] != entity_id:
                 continue
             if any(row[key] != value for key, value in scope.items()):
                 continue
@@ -96,10 +128,10 @@ class CsvDataAdapter:
                 continue
             records.append(
                 Record(
-                    entity_id=row[ENTITY_COLUMN],
+                    entity_id=row[entity_column],
                     value=value,
-                    denominator=float(row[self.denominator_column]),
-                    context={column: row[column] for column in CONTEXT_COLUMNS if column in row},
+                    denominator=float(row[self.column_map.denominator]),
+                    context={column: row[column] for column in self.column_map.context},
                 )
             )
         return records

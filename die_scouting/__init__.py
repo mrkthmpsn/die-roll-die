@@ -1,4 +1,4 @@
-from .csv_adapter import CsvDataAdapter
+from .csv_adapter import ColumnMap, CsvDataAdapter
 from .data_adapter import DataAdapter
 from .die import build_die
 from .discretizer import discretize
@@ -11,6 +11,7 @@ from .quality_sampler import BootstrapSampler, PosteriorSampler, QualitySampler
 
 __all__ = [
     "BootstrapSampler",
+    "ColumnMap",
     "CsvDataAdapter",
     "DataAdapter",
     "Die",
