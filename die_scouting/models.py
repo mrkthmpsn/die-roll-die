@@ -15,12 +15,17 @@ class Record(BaseModel):
     hundred shots; or a measurement over the weight it carries, where `value / denominator`
     is the measured quantity per unit. A denominator of `1.0` states that the value stands
     on its own.
+
+    `dimensions` holds the values of the columns priors might be fitted along — a position
+    group, a season. It exists because a Record outlives the source it came from: whatever
+    produced it can inspect its own file or API, and nothing downstream can, so `scopes_for`
+    has only this to enumerate.
     """
 
     entity_id: str
     value: float
     denominator: float
-    context: dict[str, Any] = {}
+    dimensions: dict[str, str] = {}
 
 
 class PriorParams(BaseModel):

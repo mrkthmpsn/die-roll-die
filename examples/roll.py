@@ -67,7 +67,7 @@ def column_map(args) -> ColumnMap:
         entity=args.entity_column,
         denominator=args.denominator_column,
         name=args.name_column,
-        context=tuple(args.context_columns),
+        dimensions=tuple(args.dimensions),
     )
 
 
@@ -101,10 +101,10 @@ def main() -> None:
     parser.add_argument("--entity-column", default="player_source_id")
     parser.add_argument("--name-column", default="player_name")
     parser.add_argument(
-        "--context-columns",
+        "--dimensions",
         nargs="*",
-        default=["player_name", "club_name", "season_name", "position_general"],
-        help="columns copied onto each observation, and the ones a scope can name",
+        default=["club_name", "season_name", "position_general"],
+        help="columns priors may be fitted along, carried onto each observation",
     )
     parser.add_argument("--faces", type=int, default=6)
     parser.add_argument(
@@ -163,7 +163,7 @@ def main() -> None:
 
     metadata = DieMetadata(
         entity_id=entity_id,
-        entity_name=observations[0].context["player_name"] if observations else args.player,
+        entity_name=adapter.entity_name(entity_id) or args.player,
         stat_id=args.stat,
         scope=scope,
         prior=prior,

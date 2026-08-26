@@ -19,23 +19,27 @@ class FitReport(BaseModel):
     skipped: list[tuple[dict[str, str], str]] = []
 
 
-def scopes_for(adapter: DataAdapter, stat_id: str, column: str) -> list[dict[str, str]]:
-    """Return one scope per distinct value of `column` across the population's observations
-    for `stat_id`, taken from each Record's `context`.
+def scopes_for(adapter: DataAdapter, stat_id: str, dimension: str) -> list[dict[str, str]]:
+    """Return one scope per distinct value of `dimension` across the population's
+    observations for `stat_id`, ready to hand to `fit_scopes`.
 
-    Observations whose context lacks `column`, or holds an empty value for it, are ignored.
+    The values come from each Record's `dimensions`, so `dimension` must be one the adapter
+    was configured to carry; observations holding an empty value for it are ignored.
 
     Raises:
-        ValueError: if no observation carries a value for `column`.
+        ValueError: if no observation carries `dimension`.
     """
     values = {
-        record.context[column]
+        record.dimensions[dimension]
         for record in adapter.get_population_observations(stat_id)
-        if record.context.get(column)
+        if record.dimensions.get(dimension)
     }
     if not values:
-        raise ValueError(f"no observation of {stat_id!r} carries a value for {column!r}")
-    return [{column: value} for value in sorted(values)]
+        raise ValueError(
+            f"{dimension!r} is not a dimension the adapter carries for {stat_id!r}; "
+            "its observations hold no value for it"
+        )
+    return [{dimension: value} for value in sorted(values)]
 
 
 def fit_scopes(
@@ -47,6 +51,9 @@ def fit_scopes(
     min_denominator: float | None = None,
 ) -> FitReport:
     """Fit a prior for each scope and save those that fit, returning a `FitReport`.
+
+    `scopes` is the caller's list of which priors should exist, typically the empty scope
+    plus whatever `scopes_for` enumerates; nothing here derives it.
 
     A scope raising `InsufficientData` is recorded in the report's `skipped` and the run
     continues, a thin slice being expected when scopes are enumerated from a column. An

@@ -11,27 +11,38 @@ from .models import Record
 class ColumnMap(BaseModel):
     """Which of a CSV's columns fill each role a `CsvDataAdapter` needs.
 
-    `entity` identifies the entity a row belongs to and `denominator` holds what its value
-    was measured against. `name` is a human-readable label used by `entity_ids_for_name`,
-    and `context` names the columns copied onto each `Record`, which are the columns
-    `scopes_for` can enumerate.
+    Only these four roles are mapped, and most of a file's columns will fill none of them:
 
-    The column holding the stat is not named here, being chosen per call as `stat_id`, and
-    nor are the columns a scope filters on, which are checked against the file's header.
+    - `entity` identifies which entity a row belongs to, and is repeated across that
+      entity's rows. It becomes `Record.entity_id`.
+    - `denominator` holds what the row's value was measured against — appearances,
+      nineties, attempts. It becomes `Record.denominator`.
+    - `name` is a human-readable label for an entity, used by `entity_ids_for_name` to
+      search and `entity_name` to resolve. It is a fact about the entity rather than about
+      one of its observations, so it is never copied onto a `Record`. Optional, a dataset
+      being allowed to have only ids.
+    - `dimensions` names the columns along which separate priors might be fitted, and each
+      becomes an entry in `Record.dimensions`.
+
+    The column holding the stat is not mapped, being chosen per call as `stat_id`; nor are
+    the columns a `scope` filters on, which are checked against the file's header when the
+    scope is used. Filtering therefore works on any column of the file, while `scopes_for`
+    can only enumerate a mapped dimension.
     """
 
     entity: str
     denominator: str
     name: str | None = None
-    context: tuple[str, ...] = ()
+    dimensions: tuple[str, ...] = ()
 
 
 class CsvDataAdapter:
     """Reads Records from a CSV, one row per entity per period.
 
-    `columns` says which of the file's columns fill each role. `stat_id` names the column
-    read into `Record.value` and must be one of `numeric_columns`; a `scope` filters rows
-    by exact string match, keyed by column name, and may name any column of the file.
+    A column of that file is used in one of three ways. It is mapped to a role by
+    `columns`; or named per call as `stat_id`, which must be one of `numeric_columns` and
+    is read into `Record.value`; or named in a `scope`, filtering rows by exact string
+    match, which may be any column of the file whether mapped or not.
 
     Rows whose denominator is zero, blank or unparseable are dropped when the file is read,
     as are rows whose `stat_id` column is blank when records are requested.
@@ -52,8 +63,8 @@ class CsvDataAdapter:
         mapped = {"entity": columns.entity, "denominator": columns.denominator}
         if columns.name is not None:
             mapped["name"] = columns.name
-        for index, column in enumerate(columns.context):
-            mapped[f"context[{index}]"] = column
+        for index, column in enumerate(columns.dimensions):
+            mapped[f"dimensions[{index}]"] = column
         for role, column in mapped.items():
             if column not in self.columns:
                 raise ValueError(
@@ -91,14 +102,29 @@ class CsvDataAdapter:
         Raises:
             ValueError: if the column map named no `name` column.
         """
-        if self.column_map.name is None:
-            raise ValueError("this adapter's ColumnMap names no `name` column to search")
-        needle = name.casefold()
+        needle = self._name_column()
         return sorted({
             row[self.column_map.entity]
             for row in self._rows
-            if needle in row[self.column_map.name].casefold()
+            if name.casefold() in row[needle].casefold()
         })
+
+    def entity_name(self, entity_id: str) -> str | None:
+        """The label held for `entity_id`, or None where the file has no row for it.
+
+        Raises:
+            ValueError: if the column map named no `name` column.
+        """
+        column = self._name_column()
+        for row in self._rows:
+            if row[self.column_map.entity] == entity_id:
+                return row[column]
+        return None
+
+    def _name_column(self) -> str:
+        if self.column_map.name is None:
+            raise ValueError("this adapter's ColumnMap names no `name` column")
+        return self.column_map.name
 
     def _records(
         self, stat_id: str, scope: dict[str, str] | None, entity_id: str | None = None
@@ -131,7 +157,9 @@ class CsvDataAdapter:
                     entity_id=row[entity_column],
                     value=value,
                     denominator=float(row[self.column_map.denominator]),
-                    context={column: row[column] for column in self.column_map.context},
+                    dimensions={
+                        column: row[column] for column in self.column_map.dimensions
+                    },
                 )
             )
         return records

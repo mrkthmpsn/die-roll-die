@@ -18,7 +18,7 @@ from die_scouting import (
 
 def test_record_instantiates():
     record = Record(entity_id="player-1", value=12.0, denominator=30.0)
-    assert record.context == {}
+    assert record.dimensions == {}
 
 
 def test_record_requires_a_denominator():

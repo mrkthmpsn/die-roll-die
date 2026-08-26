@@ -39,7 +39,7 @@ def column_map(args) -> ColumnMap:
         entity=args.entity_column,
         denominator=args.denominator_column,
         name=args.name_column,
-        context=tuple(args.context_columns),
+        dimensions=tuple(args.dimensions),
     )
 
 
@@ -58,10 +58,10 @@ def main() -> None:
     parser.add_argument("--entity-column", default="player_source_id")
     parser.add_argument("--name-column", default="player_name")
     parser.add_argument(
-        "--context-columns",
+        "--dimensions",
         nargs="*",
-        default=["player_name", "club_name", "season_name", "position_general"],
-        help="columns copied onto each observation, and the ones --scope-column can use",
+        default=["club_name", "season_name", "position_general"],
+        help="columns priors may be fitted along; --scope-column must name one",
     )
     parser.add_argument("--priors", type=Path, default=PRIORS)
     parser.add_argument("--data", type=Path, default=DATA)

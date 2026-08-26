@@ -18,7 +18,7 @@ COLUMNS = ColumnMap(
     entity="player_source_id",
     denominator="appearances",
     name="player_name",
-    context=("player_name", "season_name", "position", "position_general"),
+    dimensions=("player_name", "season_name", "position", "position_general"),
 )
 
 
@@ -40,11 +40,11 @@ def test_entity_observations_are_limited_to_that_entity(adapter):
     assert [(r.value, r.denominator) for r in records] == [(5.0, 10.0), (8.0, 20.0)]
 
 
-def test_records_carry_context_columns(adapter):
+def test_records_carry_dimensions(adapter):
     record = adapter.get_entity_observations("2", "goals")[0]
-    assert record.context["player_name"] == "Bo Bergstrom"
-    assert record.context["season_name"] == "2023/24"
-    assert record.context["position_general"] == "Defender"
+    assert record.dimensions["player_name"] == "Bo Bergstrom"
+    assert record.dimensions["season_name"] == "2023/24"
+    assert record.dimensions["position_general"] == "Defender"
 
 
 def test_population_observations_span_entities(adapter):
@@ -106,9 +106,9 @@ def test_unknown_name_column_is_rejected(csv_path):
         CsvDataAdapter(csv_path, COLUMNS.model_copy(update={"name": "full_name"}))
 
 
-def test_unknown_context_column_is_rejected(csv_path):
+def test_unknown_dimension_column_is_rejected(csv_path):
     with pytest.raises(ValueError, match="team_name"):
-        CsvDataAdapter(csv_path, COLUMNS.model_copy(update={"context": ("team_name",)}))
+        CsvDataAdapter(csv_path, COLUMNS.model_copy(update={"dimensions": ("team_name",)}))
 
 
 def test_columns_can_be_named_anything(tmp_path):
@@ -132,10 +132,10 @@ def test_a_map_without_a_name_column_cannot_search_names(csv_path):
         adapter.entity_ids_for_name("Alice")
 
 
-def test_context_carries_exactly_the_mapped_columns(csv_path):
-    columns = COLUMNS.model_copy(update={"context": ("season_name",)})
+def test_dimensions_carry_exactly_the_mapped_columns(csv_path):
+    columns = COLUMNS.model_copy(update={"dimensions": ("season_name",)})
     record = CsvDataAdapter(csv_path, columns).get_entity_observations("1", "goals")[0]
-    assert record.context == {"season_name": "2023/24"}
+    assert record.dimensions == {"season_name": "2023/24"}
 
 
 def test_any_column_can_be_the_denominator(tmp_path):
@@ -144,3 +144,17 @@ def test_any_column_can_be_the_denominator(tmp_path):
     adapter = CsvDataAdapter(path, COLUMNS.model_copy(update={"denominator": "goals"}))
     record = adapter.get_entity_observations("2", "appearances")[0]
     assert (record.value, record.denominator) == (30.0, 1.0)
+
+
+def test_entity_name_resolves_an_id(adapter):
+    assert adapter.entity_name("1") == "Alice Adeyemi"
+
+
+def test_entity_name_is_none_for_an_unknown_id(adapter):
+    assert adapter.entity_name("nobody") is None
+
+
+def test_entity_name_needs_a_mapped_name_column(csv_path):
+    adapter = CsvDataAdapter(csv_path, COLUMNS.model_copy(update={"name": None}))
+    with pytest.raises(ValueError, match="no `name` column"):
+        adapter.entity_name("1")

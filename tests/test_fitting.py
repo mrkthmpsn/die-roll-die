@@ -6,7 +6,7 @@ from die_scouting import InMemoryPriorStore, Record, UnsuitableFamily, fit_scope
 
 
 class FakeAdapter:
-    """Serves a fixed list of Records, filtering by scope on each Record's context."""
+    """Serves a fixed list of Records, filtering by scope on each Record's dimensions."""
 
     def __init__(self, records: list[Record]) -> None:
         self.records = records
@@ -20,7 +20,7 @@ class FakeAdapter:
     def _matching(self, scope):
         scope = scope or {}
         return [
-            r for r in self.records if all(r.context.get(k) == v for k, v in scope.items())
+            r for r in self.records if all(r.dimensions.get(k) == v for k, v in scope.items())
         ]
 
 
@@ -29,7 +29,7 @@ def season(entity_id: str, goals: float, nineties: float, position: str) -> Reco
         entity_id=entity_id,
         value=goals,
         denominator=nineties,
-        context={"position_general": position},
+        dimensions={"position_general": position},
     )
 
 
