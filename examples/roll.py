@@ -7,7 +7,7 @@ Usage:
     uv run python examples/roll.py "Erling Haaland"
     uv run python examples/roll.py "Bukayo Saka" --scope position_general=Forward
     uv run python examples/roll.py "Mohamed Salah" --scope season_name=2024/25 --faces 8
-    uv run python examples/roll.py "Cole Palmer" --denominator-column starts
+    uv run python examples/roll.py "Cole Palmer" --faces 10 --strategy equal_width
 """
 
 from __future__ import annotations

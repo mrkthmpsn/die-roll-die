@@ -542,8 +542,6 @@ def league_rows(entries: list[Entry], supplied: set[str]) -> list[dict[str, obje
                 "player_name": entry.player_name,
                 "position_general": entry.position or "",
                 "appearances": appearances,
-                "starts": entry.values.get((LEAGUE_NAME, "starts"), ""),
-                "sub_appearances": entry.values.get((LEAGUE_NAME, "sub_appearances"), ""),
                 "goals": goals,
             }
         )
@@ -671,6 +669,7 @@ def scrape_article(wiki: Wikipedia, title: str) -> dict:
         "revid": parsed.get("revid"),
         "status": "ok" if rows else "no rows",
         "rows": rows,
+        "squad": len(entries),
         "inconsistent": inconsistent,
         "conflicts": len(conflicts),
         "tables_discarded": discarded,
@@ -683,8 +682,15 @@ def scrape_article(wiki: Wikipedia, title: str) -> dict:
 FIELDNAMES = (
     "provider", "player_source_id", "player_name", "club_name",
     "competition_name", "season_name", "position_general",
-    "appearances", "starts", "sub_appearances", "goals",
+    "appearances", "goals",
 )
+"""The shipped columns.
+
+Starts and substitute appearances are parsed, because several layouts give appearances only
+as their sum, but are not written out: nine club-seasons record no split at all, and a
+denominator populated for some clubs and not others silently changes which players an
+estimate covers.
+"""
 
 
 def main() -> None:
@@ -700,7 +706,7 @@ def main() -> None:
     wiki = Wikipedia(delay=args.delay)
     rows: list[dict[str, object]] = []
     sources: list[dict[str, object]] = []
-    discovered = parsed_ok = kept = inconsistent = discarded = 0
+    discovered = parsed_ok = kept = inconsistent = discarded = squad = 0
 
     for season in args.seasons:
         titles = club_season_titles(wiki, season)
@@ -718,6 +724,7 @@ def main() -> None:
                 )
                 rows.append(row)
             kept += len(result["rows"])
+            squad += result.get("squad", 0)
             inconsistent += result.get("inconsistent", 0)
             discarded += result.get("tables_discarded", 0)
             if result["status"] == "ok":
@@ -728,6 +735,7 @@ def main() -> None:
                     "url": "https://en.wikipedia.org/wiki/" + title.replace(" ", "_"),
                     "revid": result.get("revid"),
                     "status": result["status"],
+                    "squad": result.get("squad", 0),
                     "rows": len(result["rows"]),
                     "inconsistent": result.get("inconsistent", 0),
                     "tables_discarded": result.get("tables_discarded", 0),
@@ -756,7 +764,9 @@ def main() -> None:
                 "seasons": list(args.seasons),
                 "articles_discovered": discovered,
                 "articles_parsed": parsed_ok,
+                "squad_members": squad,
                 "rows": kept,
+                "rows_without_league_appearances": squad - kept,
                 "rows_inconsistent": inconsistent,
                 "tables_discarded": discarded,
                 "articles": sources,

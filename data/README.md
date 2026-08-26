@@ -24,32 +24,39 @@ read from.
 | `competition_name`, `season_name` | `Premier League` throughout; season as `2024/25` |
 | `position_general` | `Goalkeeper` / `Defender` / `Midfielder` / `Forward`, from the article's one- or two-letter position |
 | `appearances` | Starts plus substitute appearances |
-| `starts`, `sub_appearances` | Populated on 2,558 of 2,804 rows; see below |
 | `goals` | |
 
-`appearances` is the denominator `CsvDataAdapter` reads by default. It is coarser than the
+`appearances` is the denominator `CsvDataAdapter` reads by default, and is above zero on every row. It is coarser than the
 minutes a per-90 rate would want — a five-minute substitute appearance counts the same as
 ninety — because Wikipedia records minutes on almost no club-season article.
 
 Nothing in the file carries assists, shots, expected goals, or a finer position than the four
 groups, all of which the source lacks.
 
-### `starts` and `sub_appearances`
+### Why there is no starts column
 
-Articles record the split three ways, and all three are read: a cell written `35+2` or `35 (2)`;
-a competition given an appearances column and a starts column, where the substitutions are the
-difference; and a competition given a starts column and a substitutes column, where the
-appearances are the sum.
+Articles record the starts-and-substitutes split three ways and the scraper reads all three — a
+cell written `35+2` or `35 (2)`, a competition given appearances and starts, and a competition
+given starts and substitutes — because several layouts give the appearance count only as the sum
+of the other two. None of it is written out.
 
-Within a table that writes the split at all, a bare count is read as all starts and no
-substitute appearances, because an editor using the notation writes `0+12` for a player who
-only came off the bench. Goalkeepers are 7% of the rows and were 39% of the bare counts, which
-is the shape that reading predicts.
+Nine club-seasons record no split at all: Chelsea in three seasons, Manchester City in five,
+Luton in 2023/24. A denominator available for eleven clubs and missing for nine would quietly
+change which players an estimate covers depending on who they played for, which is worse than
+not offering it. `appearances` is populated on every row.
 
-Both columns are blank for the 246 rows from nine club-seasons — Chelsea in three, Manchester
-City in five, Luton in 2023/24 — whose tables give a total and nothing about how it divided.
-Blank there means unknown rather than zero, so a denominator of `starts` silently covers fewer
-players than one of `appearances`.
+### Who is not here
+
+A player needs at least one Premier League appearance to get a row, so 565 of the 3,369 squad
+members read from these articles are absent: those who played only in the cups or in Europe, and
+named substitutes who never got on. `CsvDataAdapter` drops rows with a zero denominator when it
+reads the file anyway, on the grounds that a count over no exposure is not a rate, so those rows
+would be discarded the moment they were used. `sources.json` records both counts per article,
+the largest gap being Chelsea's 2024/25 squad of 65 yielding 29 rows.
+
+The consequence is that this file is not a squad list. Nothing in it records that a player was
+at a club without featuring, and playing time is not modelled, so there is nowhere for that fact
+to sit.
 
 ### What is not here
 

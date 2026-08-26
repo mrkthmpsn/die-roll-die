@@ -12,7 +12,9 @@
  ],
  "articles_discovered": 100,
  "articles_parsed": 100,
+ "squad_members": 3369,
  "rows": 2804,
+ "rows_without_league_appearances": 565,
  "rows_inconsistent": 57,
  "tables_discarded": 0,
  "articles": [
@@ -21,6 +23,7 @@
    "url": "https://en.wikipedia.org/wiki/2021\u201322_Arsenal_F.C._season",
    "revid": 1370845841,
    "status": "ok",
+   "squad": 28,
    "rows": 27,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -30,6 +33,7 @@
    "url": "https://en.wikipedia.org/wiki/2021\u201322_Aston_Villa_F.C._season",
    "revid": 1367859764,
    "status": "ok",
+   "squad": 39,
    "rows": 31,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -39,6 +43,7 @@
    "url": "https://en.wikipedia.org/wiki/2021\u201322_Brentford_F.C._season",
    "revid": 1361965476,
    "status": "ok",
+   "squad": 31,
    "rows": 29,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -48,6 +53,7 @@
    "url": "https://en.wikipedia.org/wiki/2021\u201322_Brighton_&_Hove_Albion_F.C._season",
    "revid": 1355292745,
    "status": "ok",
+   "squad": 38,
    "rows": 25,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -57,6 +63,7 @@
    "url": "https://en.wikipedia.org/wiki/2021\u201322_Burnley_F.C._season",
    "revid": 1356312921,
    "status": "ok",
+   "squad": 31,
    "rows": 23,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -66,6 +73,7 @@
    "url": "https://en.wikipedia.org/wiki/2021\u201322_Chelsea_F.C._season",
    "revid": 1371139267,
    "status": "ok",
+   "squad": 35,
    "rows": 26,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -75,6 +83,7 @@
    "url": "https://en.wikipedia.org/wiki/2021\u201322_Crystal_Palace_F.C._season",
    "revid": 1355293028,
    "status": "ok",
+   "squad": 27,
    "rows": 24,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -84,6 +93,7 @@
    "url": "https://en.wikipedia.org/wiki/2021\u201322_Everton_F.C._season",
    "revid": 1367264272,
    "status": "ok",
+   "squad": 43,
    "rows": 33,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -93,6 +103,7 @@
    "url": "https://en.wikipedia.org/wiki/2021\u201322_Leeds_United_F.C._season",
    "revid": 1357092975,
    "status": "ok",
+   "squad": 29,
    "rows": 29,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -102,6 +113,7 @@
    "url": "https://en.wikipedia.org/wiki/2021\u201322_Leicester_City_F.C._season",
    "revid": 1353206668,
    "status": "ok",
+   "squad": 41,
    "rows": 28,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -111,6 +123,7 @@
    "url": "https://en.wikipedia.org/wiki/2021\u201322_Liverpool_F.C._season",
    "revid": 1368678672,
    "status": "ok",
+   "squad": 38,
    "rows": 27,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -120,6 +133,7 @@
    "url": "https://en.wikipedia.org/wiki/2021\u201322_Manchester_City_F.C._season",
    "revid": 1371241295,
    "status": "ok",
+   "squad": 34,
    "rows": 26,
    "inconsistent": 2,
    "tables_discarded": 0
@@ -129,6 +143,7 @@
    "url": "https://en.wikipedia.org/wiki/2021\u201322_Manchester_United_F.C._season",
    "revid": 1349356380,
    "status": "ok",
+   "squad": 41,
    "rows": 29,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -138,6 +153,7 @@
    "url": "https://en.wikipedia.org/wiki/2021\u201322_Newcastle_United_F.C._season",
    "revid": 1367968682,
    "status": "ok",
+   "squad": 29,
    "rows": 29,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -147,6 +163,7 @@
    "url": "https://en.wikipedia.org/wiki/2021\u201322_Norwich_City_F.C._season",
    "revid": 1355293282,
    "status": "ok",
+   "squad": 42,
    "rows": 28,
    "inconsistent": 1,
    "tables_discarded": 0
@@ -156,6 +173,7 @@
    "url": "https://en.wikipedia.org/wiki/2021\u201322_Southampton_F.C._season",
    "revid": 1357265105,
    "status": "ok",
+   "squad": 31,
    "rows": 25,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -165,6 +183,7 @@
    "url": "https://en.wikipedia.org/wiki/2021\u201322_Tottenham_Hotspur_F.C._season",
    "revid": 1363087971,
    "status": "ok",
+   "squad": 32,
    "rows": 25,
    "inconsistent": 1,
    "tables_discarded": 0
@@ -174,6 +193,7 @@
    "url": "https://en.wikipedia.org/wiki/2021\u201322_Watford_F.C._season",
    "revid": 1355293435,
    "status": "ok",
+   "squad": 36,
    "rows": 29,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -183,6 +203,7 @@
    "url": "https://en.wikipedia.org/wiki/2021\u201322_West_Ham_United_F.C._season",
    "revid": 1309767894,
    "status": "ok",
+   "squad": 31,
    "rows": 25,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -192,6 +213,7 @@
    "url": "https://en.wikipedia.org/wiki/2021\u201322_Wolverhampton_Wanderers_F.C._season",
    "revid": 1356957977,
    "status": "ok",
+   "squad": 34,
    "rows": 26,
    "inconsistent": 3,
    "tables_discarded": 0
@@ -201,6 +223,7 @@
    "url": "https://en.wikipedia.org/wiki/2022\u201323_AFC_Bournemouth_season",
    "revid": 1361743432,
    "status": "ok",
+   "squad": 35,
    "rows": 31,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -210,6 +233,7 @@
    "url": "https://en.wikipedia.org/wiki/2022\u201323_Arsenal_F.C._season",
    "revid": 1365781954,
    "status": "ok",
+   "squad": 28,
    "rows": 26,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -219,6 +243,7 @@
    "url": "https://en.wikipedia.org/wiki/2022\u201323_Aston_Villa_F.C._season",
    "revid": 1365165168,
    "status": "ok",
+   "squad": 32,
    "rows": 26,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -228,6 +253,7 @@
    "url": "https://en.wikipedia.org/wiki/2022\u201323_Brentford_F.C._season",
    "revid": 1368353895,
    "status": "ok",
+   "squad": 29,
    "rows": 25,
    "inconsistent": 1,
    "tables_discarded": 0
@@ -237,6 +263,7 @@
    "url": "https://en.wikipedia.org/wiki/2022\u201323_Brighton_&_Hove_Albion_F.C._season",
    "revid": 1355453937,
    "status": "ok",
+   "squad": 43,
    "rows": 29,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -246,6 +273,7 @@
    "url": "https://en.wikipedia.org/wiki/2022\u201323_Chelsea_F.C._season",
    "revid": 1361492198,
    "status": "ok",
+   "squad": 35,
    "rows": 32,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -255,6 +283,7 @@
    "url": "https://en.wikipedia.org/wiki/2022\u201323_Crystal_Palace_F.C._season",
    "revid": 1356959064,
    "status": "ok",
+   "squad": 29,
    "rows": 25,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -264,6 +293,7 @@
    "url": "https://en.wikipedia.org/wiki/2022\u201323_Everton_F.C._season",
    "revid": 1360778273,
    "status": "ok",
+   "squad": 33,
    "rows": 28,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -273,6 +303,7 @@
    "url": "https://en.wikipedia.org/wiki/2022\u201323_Fulham_F.C._season",
    "revid": 1356888476,
    "status": "ok",
+   "squad": 36,
    "rows": 29,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -282,6 +313,7 @@
    "url": "https://en.wikipedia.org/wiki/2022\u201323_Leeds_United_F.C._season",
    "revid": 1357265043,
    "status": "ok",
+   "squad": 31,
    "rows": 29,
    "inconsistent": 3,
    "tables_discarded": 0
@@ -291,6 +323,7 @@
    "url": "https://en.wikipedia.org/wiki/2022\u201323_Leicester_City_F.C._season",
    "revid": 1356894797,
    "status": "ok",
+   "squad": 40,
    "rows": 28,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -300,6 +333,7 @@
    "url": "https://en.wikipedia.org/wiki/2022\u201323_Liverpool_F.C._season",
    "revid": 1368678527,
    "status": "ok",
+   "squad": 35,
    "rows": 28,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -309,6 +343,7 @@
    "url": "https://en.wikipedia.org/wiki/2022\u201323_Manchester_City_F.C._season",
    "revid": 1371246262,
    "status": "ok",
+   "squad": 26,
    "rows": 23,
    "inconsistent": 1,
    "tables_discarded": 0
@@ -318,6 +353,7 @@
    "url": "https://en.wikipedia.org/wiki/2022\u201323_Manchester_United_F.C._season",
    "revid": 1349356375,
    "status": "ok",
+   "squad": 44,
    "rows": 26,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -327,6 +363,7 @@
    "url": "https://en.wikipedia.org/wiki/2022\u201323_Newcastle_United_F.C._season",
    "revid": 1367968629,
    "status": "ok",
+   "squad": 30,
    "rows": 27,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -336,6 +373,7 @@
    "url": "https://en.wikipedia.org/wiki/2022\u201323_Nottingham_Forest_F.C._season",
    "revid": 1356157419,
    "status": "ok",
+   "squad": 44,
    "rows": 33,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -345,6 +383,7 @@
    "url": "https://en.wikipedia.org/wiki/2022\u201323_Southampton_F.C._season",
    "revid": 1356888720,
    "status": "ok",
+   "squad": 36,
    "rows": 33,
    "inconsistent": 2,
    "tables_discarded": 0
@@ -354,6 +393,7 @@
    "url": "https://en.wikipedia.org/wiki/2022\u201323_Tottenham_Hotspur_F.C._season",
    "revid": 1363087833,
    "status": "ok",
+   "squad": 30,
    "rows": 29,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -363,6 +403,7 @@
    "url": "https://en.wikipedia.org/wiki/2022\u201323_West_Ham_United_F.C._season",
    "revid": 1366132392,
    "status": "ok",
+   "squad": 34,
    "rows": 25,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -372,6 +413,7 @@
    "url": "https://en.wikipedia.org/wiki/2022\u201323_Wolverhampton_Wanderers_F.C._season",
    "revid": 1361411115,
    "status": "ok",
+   "squad": 47,
    "rows": 32,
    "inconsistent": 3,
    "tables_discarded": 0
@@ -381,6 +423,7 @@
    "url": "https://en.wikipedia.org/wiki/2023\u201324_AFC_Bournemouth_season",
    "revid": 1370231676,
    "status": "ok",
+   "squad": 32,
    "rows": 30,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -390,6 +433,7 @@
    "url": "https://en.wikipedia.org/wiki/2023\u201324_Arsenal_F.C._season",
    "revid": 1362332636,
    "status": "ok",
+   "squad": 27,
    "rows": 25,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -399,6 +443,7 @@
    "url": "https://en.wikipedia.org/wiki/2023\u201324_Aston_Villa_F.C._season",
    "revid": 1359643113,
    "status": "ok",
+   "squad": 42,
    "rows": 31,
    "inconsistent": 1,
    "tables_discarded": 0
@@ -408,6 +453,7 @@
    "url": "https://en.wikipedia.org/wiki/2023\u201324_Brentford_F.C._season",
    "revid": 1355782864,
    "status": "ok",
+   "squad": 30,
    "rows": 28,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -417,6 +463,7 @@
    "url": "https://en.wikipedia.org/wiki/2023\u201324_Brighton_&_Hove_Albion_F.C._season",
    "revid": 1355782885,
    "status": "ok",
+   "squad": 38,
    "rows": 30,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -426,6 +473,7 @@
    "url": "https://en.wikipedia.org/wiki/2023\u201324_Burnley_F.C._season",
    "revid": 1371139265,
    "status": "ok",
+   "squad": 31,
    "rows": 31,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -435,6 +483,7 @@
    "url": "https://en.wikipedia.org/wiki/2023\u201324_Chelsea_F.C._season",
    "revid": 1361492241,
    "status": "ok",
+   "squad": 54,
    "rows": 32,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -444,6 +493,7 @@
    "url": "https://en.wikipedia.org/wiki/2023\u201324_Crystal_Palace_F.C._season",
    "revid": 1370311248,
    "status": "ok",
+   "squad": 28,
    "rows": 26,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -453,6 +503,7 @@
    "url": "https://en.wikipedia.org/wiki/2023\u201324_Everton_F.C._season",
    "revid": 1364073141,
    "status": "ok",
+   "squad": 30,
    "rows": 26,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -462,6 +513,7 @@
    "url": "https://en.wikipedia.org/wiki/2023\u201324_Fulham_F.C._season",
    "revid": 1357291799,
    "status": "ok",
+   "squad": 34,
    "rows": 25,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -471,6 +523,7 @@
    "url": "https://en.wikipedia.org/wiki/2023\u201324_Liverpool_F.C._season",
    "revid": 1368678413,
    "status": "ok",
+   "squad": 36,
    "rows": 30,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -480,6 +533,7 @@
    "url": "https://en.wikipedia.org/wiki/2023\u201324_Luton_Town_F.C._season",
    "revid": 1353127387,
    "status": "ok",
+   "squad": 30,
    "rows": 26,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -489,6 +543,7 @@
    "url": "https://en.wikipedia.org/wiki/2023\u201324_Manchester_City_F.C._season",
    "revid": 1371241577,
    "status": "ok",
+   "squad": 29,
    "rows": 25,
    "inconsistent": 12,
    "tables_discarded": 0
@@ -498,6 +553,7 @@
    "url": "https://en.wikipedia.org/wiki/2023\u201324_Manchester_United_F.C._season",
    "revid": 1367880659,
    "status": "ok",
+   "squad": 42,
    "rows": 31,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -507,6 +563,7 @@
    "url": "https://en.wikipedia.org/wiki/2023\u201324_Newcastle_United_F.C._season",
    "revid": 1367968570,
    "status": "ok",
+   "squad": 32,
    "rows": 32,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -516,6 +573,7 @@
    "url": "https://en.wikipedia.org/wiki/2023\u201324_Nottingham_Forest_F.C._season",
    "revid": 1356222693,
    "status": "ok",
+   "squad": 33,
    "rows": 33,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -525,6 +583,7 @@
    "url": "https://en.wikipedia.org/wiki/2023\u201324_Sheffield_United_F.C._season",
    "revid": 1357492979,
    "status": "ok",
+   "squad": 40,
    "rows": 34,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -534,6 +593,7 @@
    "url": "https://en.wikipedia.org/wiki/2023\u201324_Tottenham_Hotspur_F.C._season",
    "revid": 1363087631,
    "status": "ok",
+   "squad": 31,
    "rows": 29,
    "inconsistent": 1,
    "tables_discarded": 0
@@ -543,6 +603,7 @@
    "url": "https://en.wikipedia.org/wiki/2023\u201324_West_Ham_United_F.C._season",
    "revid": 1363971877,
    "status": "ok",
+   "squad": 28,
    "rows": 26,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -552,6 +613,7 @@
    "url": "https://en.wikipedia.org/wiki/2023\u201324_Wolverhampton_Wanderers_F.C._season",
    "revid": 1355802842,
    "status": "ok",
+   "squad": 29,
    "rows": 25,
    "inconsistent": 6,
    "tables_discarded": 0
@@ -561,6 +623,7 @@
    "url": "https://en.wikipedia.org/wiki/2024\u201325_AFC_Bournemouth_season",
    "revid": 1369909444,
    "status": "ok",
+   "squad": 29,
    "rows": 28,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -570,6 +633,7 @@
    "url": "https://en.wikipedia.org/wiki/2024\u201325_Arsenal_F.C._season",
    "revid": 1365784867,
    "status": "ok",
+   "squad": 32,
    "rows": 25,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -579,6 +643,7 @@
    "url": "https://en.wikipedia.org/wiki/2024\u201325_Aston_Villa_F.C._season",
    "revid": 1369225424,
    "status": "ok",
+   "squad": 36,
    "rows": 28,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -588,6 +653,7 @@
    "url": "https://en.wikipedia.org/wiki/2024\u201325_Brentford_F.C._season",
    "revid": 1370692709,
    "status": "ok",
+   "squad": 30,
    "rows": 28,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -597,6 +663,7 @@
    "url": "https://en.wikipedia.org/wiki/2024\u201325_Brighton_&_Hove_Albion_F.C._season",
    "revid": 1371120680,
    "status": "ok",
+   "squad": 39,
    "rows": 32,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -606,6 +673,7 @@
    "url": "https://en.wikipedia.org/wiki/2024\u201325_Chelsea_F.C._season",
    "revid": 1369359934,
    "status": "ok",
+   "squad": 65,
    "rows": 29,
    "inconsistent": 1,
    "tables_discarded": 0
@@ -615,6 +683,7 @@
    "url": "https://en.wikipedia.org/wiki/2024\u201325_Crystal_Palace_F.C._season",
    "revid": 1356459821,
    "status": "ok",
+   "squad": 30,
    "rows": 29,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -624,6 +693,7 @@
    "url": "https://en.wikipedia.org/wiki/2024\u201325_Everton_F.C._season",
    "revid": 1356795088,
    "status": "ok",
+   "squad": 27,
    "rows": 26,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -633,6 +703,7 @@
    "url": "https://en.wikipedia.org/wiki/2024\u201325_Fulham_F.C._season",
    "revid": 1370594055,
    "status": "ok",
+   "squad": 27,
    "rows": 26,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -642,6 +713,7 @@
    "url": "https://en.wikipedia.org/wiki/2024\u201325_Ipswich_Town_F.C._season",
    "revid": 1357141210,
    "status": "ok",
+   "squad": 33,
    "rows": 32,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -651,6 +723,7 @@
    "url": "https://en.wikipedia.org/wiki/2024\u201325_Leicester_City_F.C._season",
    "revid": 1352411499,
    "status": "ok",
+   "squad": 39,
    "rows": 32,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -660,6 +733,7 @@
    "url": "https://en.wikipedia.org/wiki/2024\u201325_Liverpool_F.C._season",
    "revid": 1370331264,
    "status": "ok",
+   "squad": 32,
    "rows": 24,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -669,6 +743,7 @@
    "url": "https://en.wikipedia.org/wiki/2024\u201325_Manchester_City_F.C._season",
    "revid": 1363641115,
    "status": "ok",
+   "squad": 35,
    "rows": 29,
    "inconsistent": 4,
    "tables_discarded": 0
@@ -678,6 +753,7 @@
    "url": "https://en.wikipedia.org/wiki/2024\u201325_Manchester_United_F.C._season",
    "revid": 1369886713,
    "status": "ok",
+   "squad": 32,
    "rows": 31,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -687,6 +763,7 @@
    "url": "https://en.wikipedia.org/wiki/2024\u201325_Newcastle_United_F.C._season",
    "revid": 1370296506,
    "status": "ok",
+   "squad": 26,
    "rows": 24,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -696,6 +773,7 @@
    "url": "https://en.wikipedia.org/wiki/2024\u201325_Nottingham_Forest_F.C._season",
    "revid": 1370891827,
    "status": "ok",
+   "squad": 26,
    "rows": 23,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -705,6 +783,7 @@
    "url": "https://en.wikipedia.org/wiki/2024\u201325_Southampton_F.C._season",
    "revid": 1356452944,
    "status": "ok",
+   "squad": 39,
    "rows": 36,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -714,6 +793,7 @@
    "url": "https://en.wikipedia.org/wiki/2024\u201325_Tottenham_Hotspur_F.C._season",
    "revid": 1369359901,
    "status": "ok",
+   "squad": 33,
    "rows": 31,
    "inconsistent": 2,
    "tables_discarded": 0
@@ -723,6 +803,7 @@
    "url": "https://en.wikipedia.org/wiki/2024\u201325_West_Ham_United_F.C._season",
    "revid": 1356646880,
    "status": "ok",
+   "squad": 28,
    "rows": 27,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -732,6 +813,7 @@
    "url": "https://en.wikipedia.org/wiki/2024\u201325_Wolverhampton_Wanderers_F.C._season",
    "revid": 1345850322,
    "status": "ok",
+   "squad": 32,
    "rows": 32,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -741,6 +823,7 @@
    "url": "https://en.wikipedia.org/wiki/2025\u201326_AFC_Bournemouth_season",
    "revid": 1370231438,
    "status": "ok",
+   "squad": 28,
    "rows": 26,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -750,6 +833,7 @@
    "url": "https://en.wikipedia.org/wiki/2025\u201326_Arsenal_F.C._season",
    "revid": 1371019856,
    "status": "ok",
+   "squad": 31,
    "rows": 25,
    "inconsistent": 1,
    "tables_discarded": 0
@@ -759,6 +843,7 @@
    "url": "https://en.wikipedia.org/wiki/2025\u201326_Aston_Villa_F.C._season",
    "revid": 1369101257,
    "status": "ok",
+   "squad": 31,
    "rows": 30,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -768,6 +853,7 @@
    "url": "https://en.wikipedia.org/wiki/2025\u201326_Brentford_F.C._season",
    "revid": 1370692650,
    "status": "ok",
+   "squad": 30,
    "rows": 25,
    "inconsistent": 1,
    "tables_discarded": 0
@@ -777,6 +863,7 @@
    "url": "https://en.wikipedia.org/wiki/2025\u201326_Brighton_&_Hove_Albion_F.C._season",
    "revid": 1370846754,
    "status": "ok",
+   "squad": 31,
    "rows": 27,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -786,6 +873,7 @@
    "url": "https://en.wikipedia.org/wiki/2025\u201326_Burnley_F.C._season",
    "revid": 1364292526,
    "status": "ok",
+   "squad": 29,
    "rows": 28,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -795,6 +883,7 @@
    "url": "https://en.wikipedia.org/wiki/2025\u201326_Chelsea_F.C._season",
    "revid": 1368871337,
    "status": "ok",
+   "squad": 48,
    "rows": 30,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -804,6 +893,7 @@
    "url": "https://en.wikipedia.org/wiki/2025\u201326_Crystal_Palace_F.C._season",
    "revid": 1358564029,
    "status": "ok",
+   "squad": 34,
    "rows": 30,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -813,6 +903,7 @@
    "url": "https://en.wikipedia.org/wiki/2025\u201326_Everton_F.C._season",
    "revid": 1361843418,
    "status": "ok",
+   "squad": 26,
    "rows": 22,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -822,6 +913,7 @@
    "url": "https://en.wikipedia.org/wiki/2025\u201326_Fulham_F.C._season",
    "revid": 1367564489,
    "status": "ok",
+   "squad": 25,
    "rows": 24,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -831,6 +923,7 @@
    "url": "https://en.wikipedia.org/wiki/2025\u201326_Leeds_United_F.C._season",
    "revid": 1365707139,
    "status": "ok",
+   "squad": 24,
    "rows": 24,
    "inconsistent": 1,
    "tables_discarded": 0
@@ -840,6 +933,7 @@
    "url": "https://en.wikipedia.org/wiki/2025\u201326_Liverpool_F.C._season",
    "revid": 1369808254,
    "status": "ok",
+   "squad": 33,
    "rows": 24,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -849,6 +943,7 @@
    "url": "https://en.wikipedia.org/wiki/2025\u201326_Manchester_City_F.C._season",
    "revid": 1371302170,
    "status": "ok",
+   "squad": 34,
    "rows": 27,
    "inconsistent": 10,
    "tables_discarded": 0
@@ -858,6 +953,7 @@
    "url": "https://en.wikipedia.org/wiki/2025\u201326_Manchester_United_F.C._season",
    "revid": 1370668212,
    "status": "ok",
+   "squad": 35,
    "rows": 27,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -867,6 +963,7 @@
    "url": "https://en.wikipedia.org/wiki/2025\u201326_Newcastle_United_F.C._season",
    "revid": 1371001828,
    "status": "ok",
+   "squad": 27,
    "rows": 26,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -876,6 +973,7 @@
    "url": "https://en.wikipedia.org/wiki/2025\u201326_Nottingham_Forest_F.C._season",
    "revid": 1364713533,
    "status": "ok",
+   "squad": 37,
    "rows": 31,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -885,6 +983,7 @@
    "url": "https://en.wikipedia.org/wiki/2025\u201326_Sunderland_A.F.C._season",
    "revid": 1361440810,
    "status": "ok",
+   "squad": 33,
    "rows": 29,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -894,6 +993,7 @@
    "url": "https://en.wikipedia.org/wiki/2025\u201326_Tottenham_Hotspur_F.C._season",
    "revid": 1370558337,
    "status": "ok",
+   "squad": 33,
    "rows": 31,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -903,6 +1003,7 @@
    "url": "https://en.wikipedia.org/wiki/2025\u201326_West_Ham_United_F.C._season",
    "revid": 1363971903,
    "status": "ok",
+   "squad": 36,
    "rows": 32,
    "inconsistent": 0,
    "tables_discarded": 0
@@ -912,6 +1013,7 @@
    "url": "https://en.wikipedia.org/wiki/2025\u201326_Wolverhampton_Wanderers_F.C._season",
    "revid": 1368500636,
    "status": "ok",
+   "squad": 31,
    "rows": 31,
    "inconsistent": 0,
    "tables_discarded": 0
