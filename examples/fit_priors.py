@@ -1,12 +1,13 @@
 """Fit priors for a set of scopes and write them to a store — the offline half of the
 pipeline, run when the data changes rather than per die.
 
-The scopes fitted are the global one plus one per distinct value of `--scope-column`.
-Scopes with too little data to fit are reported and skipped.
+The scopes fitted are the global one plus one per distinct value of `--scope-column`, less
+any named by `--exclude`, which defaults to Goalkeeper because no goalkeeper in the shipped
+dataset has scored. Scopes with too little data to fit are reported and skipped.
 
 Usage:
     uv run python examples/fit_priors.py
-    uv run python examples/fit_priors.py --stat assists --scope-column position
+    uv run python examples/fit_priors.py --scope-column season_name --exclude
 """
 
 from __future__ import annotations
@@ -31,6 +32,15 @@ def main() -> None:
     parser.add_argument("--stat", default="goals")
     parser.add_argument("--family", choices=["beta", "gamma", "normal"], default="gamma")
     parser.add_argument("--scope-column", default="position_general")
+    parser.add_argument(
+        "--exclude",
+        nargs="*",
+        default=["Goalkeeper"],
+        help=(
+            "values of --scope-column to skip; goalkeepers score no goals, so no gamma "
+            "fits them. Pass --exclude with no values to fit every scope"
+        ),
+    )
     parser.add_argument("--denominator-column", default="appearances")
     parser.add_argument("--priors", type=Path, default=PRIORS)
     parser.add_argument("--data", type=Path, default=DATA)
@@ -42,7 +52,11 @@ def main() -> None:
     adapter = CsvDataAdapter(args.data, denominator_column=args.denominator_column)
     store = JsonPriorStore(args.priors)
 
-    scopes = [{}] + scopes_for(adapter, args.stat, args.scope_column)
+    scopes = [{}] + [
+        scope
+        for scope in scopes_for(adapter, args.stat, args.scope_column)
+        if scope[args.scope_column] not in args.exclude
+    ]
     report = fit_scopes(adapter, store, args.stat, args.family, scopes)
 
     print(f"{args.stat} ({args.family}) -> {args.priors}")
