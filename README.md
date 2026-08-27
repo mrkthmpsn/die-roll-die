@@ -1,8 +1,8 @@
 # die-scouting
 
-die-scouting is a demonstration of probabilistic statistics. It takes a set of statistics — a footballer's goals across several seasons, say — works out a distribution of what that player's underlying scoring rate might be, and turns that distribution into a weighted die.
+die-scouting is a demonstration of probabilistic statistics. It takes a set of statistics — for example, a footballer's goals across several seasons — works out a distribution of what that player's underlying scoring rate might be, and turns that distribution into a weighted die.
 
-The distribution is the substance. It combines two things: what the player has actually done, and what players of their kind do in general, weighted by how much evidence each carries. Someone with four good games and someone with four good seasons get very different answers from the same headline rate. (The formal name for the result is a *posterior*, and the section on how it works builds one step by step.)
+The distribution is the substance. A prior is fitted from the population — what forwards in general score — and updated with the player's own record to give a posterior over their true rate. How far that posterior sits from their raw rate depends on how much evidence they bring: four good games barely move it off the population, four good seasons move it almost all the way. That pull is shrinkage, and it is most of what the die is showing you.
 
 The die is how you see it. A distribution is hard to read as a curve or a pair of parameters, and easy to read as six faces with percentages against them — and once it is a die, you can roll it, and one roll hands you a plausible season.
 
