@@ -126,11 +126,12 @@ def main() -> None:
     )
     parser.add_argument(
         "--strategy",
-        choices=["equal_mass", "equal_width"],
-        default="equal_mass",
+        choices=["equal_weight", "equal_width"],
+        default="equal_width",
         help=(
-            "equal_mass gives every face the same chance and different value ranges; "
-            "equal_width gives every face the same value range and different chances"
+            "equal_width gives every face the same range of values and different chances, "
+            "a weighted die; equal_weight gives every face the same chance and different "
+            "ranges, an unweighted die with uneven faces"
         ),
     )
     parser.add_argument(

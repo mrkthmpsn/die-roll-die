@@ -6,23 +6,23 @@ import pytest
 from die_scouting import discretize
 
 
-def test_equal_mass_face_count_and_weight_sum():
+def test_equal_weight_face_count_and_weight_sum():
     samples = list(range(100))
-    faces = discretize(samples, n_faces=6, strategy="equal_mass")
+    faces = discretize(samples, n_faces=6, strategy="equal_weight")
     assert len(faces) == 6
     assert sum(f.weight for f in faces) == pytest.approx(1.0)
 
 
-def test_equal_mass_supports_d20():
+def test_equal_weight_supports_d20():
     samples = list(range(1000))
-    faces = discretize(samples, n_faces=20, strategy="equal_mass")
+    faces = discretize(samples, n_faces=20, strategy="equal_weight")
     assert len(faces) == 20
     assert sum(f.weight for f in faces) == pytest.approx(1.0)
 
 
-def test_equal_mass_bins_are_ordered_and_contiguous():
+def test_equal_weight_bins_are_ordered_and_contiguous():
     samples = [float(i) for i in range(60)]
-    faces = discretize(samples, n_faces=6, strategy="equal_mass")
+    faces = discretize(samples, n_faces=6, strategy="equal_weight")
     for earlier, later in zip(faces, faces[1:]):
         assert earlier.value_range[1] <= later.value_range[0]
 
@@ -51,9 +51,9 @@ def test_rejects_zero_or_negative_faces():
         discretize([1.0, 2.0], n_faces=0)
 
 
-def test_equal_mass_rejects_more_faces_than_samples():
+def test_equal_weight_rejects_more_faces_than_samples():
     with pytest.raises(ValueError):
-        discretize([1.0, 2.0], n_faces=6, strategy="equal_mass")
+        discretize([1.0, 2.0], n_faces=6, strategy="equal_weight")
 
 
 def test_equal_width_rejects_zero_spread_samples():

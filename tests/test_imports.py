@@ -69,17 +69,22 @@ def test_build_die_supports_d20():
     assert len(die.faces) == 20
 
 
+def test_build_die_defaults_to_equal_width():
+    die = build_die([float(i) for i in range(100)] + [50.0] * 100, n_faces=4)
+    assert die.metadata.strategy == "equal_width"
+
+
 def test_build_die_passes_the_strategy_through():
     samples = [float(i) for i in range(100)] + [50.0] * 100
 
-    equal_mass = build_die(samples, n_faces=4)
-    equal_width = build_die(samples, n_faces=4, strategy="equal_width")
+    weighted = build_die(samples, n_faces=4, strategy="equal_width")
+    unweighted = build_die(samples, n_faces=4, strategy="equal_weight")
 
-    mass_weights = {round(f.weight, 6) for f in equal_mass.faces}
-    width_widths = {round(f.value_range[1] - f.value_range[0], 6) for f in equal_width.faces}
-    assert len(mass_weights) == 1
-    assert len(width_widths) == 1
-    assert len({round(f.weight, 6) for f in equal_width.faces}) > 1
+    widths = {round(f.value_range[1] - f.value_range[0], 6) for f in weighted.faces}
+    weights = {round(f.weight, 6) for f in unweighted.faces}
+    assert len(widths) == 1, "equal_width holds the value ranges equal"
+    assert len(weights) == 1, "equal_weight holds the chances equal"
+    assert len({round(f.weight, 6) for f in weighted.faces}) > 1
 
 
 def test_build_die_stamps_the_strategy_and_draw_count():

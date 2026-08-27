@@ -1,15 +1,17 @@
 # die-scouting
 
-die-scouting takes an entity's record — a footballer's goals, say — and turns it into a die you can roll. Each face covers a range of outcomes and carries a probability, so instead of a single number like "0.8 goals per appearance" you see the whole spread of seasons that number could produce.
+die-scouting is a demonstration of probabilistic statistics. It takes a set of statistics — a footballer's goals across several seasons, say — works out a distribution of what that player's underlying scoring rate might be, and turns that distribution into a weighted die.
 
-It is built to demonstrate the statistics rather than to do serious analysis. The methods are standard and the code is small enough to read in an afternoon; the aim is to make ideas like uncertainty, prior belief and shrinkage visible by turning them into something you can hold and roll.
+The distribution is the substance. It combines two things: what the player has actually done, and what players of their kind do in general, weighted by how much evidence each carries. Someone with four good games and someone with four good seasons get very different answers from the same headline rate. (The formal name for the result is a *posterior*, and the section on how it works builds one step by step.)
 
-Premier League data ships with it, but the statistics underneath are general. If you have counts over an exposure, successes out of attempts, or a measurement repeated over time, the same code works — so what the repo really provides is a small set of statistical building blocks that happen to be demonstrated on football.
+The die is how you see it. A distribution is hard to read as a curve or a pair of parameters, and easy to read as six faces with percentages against them — and once it is a die, you can roll it, and one roll hands you a plausible season.
+
+Premier League data ships with the repo, but the statistics underneath are general: counts over an exposure, successes out of attempts, or a measurement repeated over time. What is here is a small set of statistical building blocks, demonstrated on football because football has convenient data.
 
 Here is a die for Erling Haaland's goals over his next 30 appearances:
 
 ```
-$ uv run python examples/roll.py Erling_Haaland --scope position_general=Forward --priors data/priors.json --strategy equal_width
+$ uv run python examples/roll.py Erling_Haaland --scope position_general=Forward --priors data/priors.json
 
 Erling Haaland (Erling_Haaland) - goals, scope {'position_general': 'Forward'}
   record:    112 in 132.0 appearances across 4 seasons
@@ -18,16 +20,16 @@ Erling Haaland (Erling_Haaland) - goals, scope {'position_general': 'Forward'}
 
   a D6 (equal_width) over goals in the next 30 appearances:
       1  12.0-16.2    7.2%
-      2  16.2-20.3   19.7%
-      3  20.3-24.5   29.4%
+      2  16.2-20.3   19.6%
+      3  20.3-24.5   29.5%
       4  24.5-28.7   25.2%
       5  28.7-32.8   13.3%
       6  32.8-37.0    5.2%
 ```
 
-Each face covers about four goals, and the percentages say how likely each is: a season of 20 to 25 goals is the most likely single outcome at 29%, while 12 to 16 comes up 7% of the time and 33 to 37 comes up 5%. Read down the right-hand column and you are reading the shape of the distribution.
+Each face covers about four goals and carries its own chance of coming up. A season of 20 to 25 goals is the likeliest single outcome at 29%, while 12 to 16 comes up 7% of the time and 33 to 37 comes up 5%. Read down the right-hand column and you are reading the shape of the distribution.
 
-There is a second way to cut the same numbers, `--strategy equal_mass`, which is the default. It gives every face the same 1-in-6 chance and lets the ranges vary instead, so the faces come out narrow where outcomes bunch together and wide out in the tails. That version is a fair die you could physically roll; this one is closer to a histogram. Both describe the same posterior.
+That is a weighted die: even faces, uneven chances. `--strategy equal_weight` cuts the same numbers the other way — every face equally likely, with the value ranges uneven instead — which is an unweighted die you could fairly roll by hand, and a less direct read.
 
 ## Try it
 
@@ -107,9 +109,9 @@ The first is uncertainty about Haaland. The second adds the randomness of footba
 
 **Faces.** The 100,000 counts are cut into six groups, and there are two ways to do the cutting.
 
-`equal_mass`, the default, sorts the counts and splits them into six piles of the same size. **Every face then has the same 1-in-6 chance of coming up, and the value ranges differ instead** — narrow where outcomes bunch together, wide out in the tails. This is what makes it a die you could physically roll: a fair D6 gives you a genuine draw from the posterior, because each face really is equally likely.
+`equal_width`, the default, slices the range of outcomes into six equal spans. **Every face covers the same number of goals and the chances differ** — which is what makes it a weighted die, and why reading down the percentages shows you the distribution's shape.
 
-`equal_width` cuts the range into six equal slices instead, so **every face covers the same span of values and the probabilities differ**. That is the version shown at the top of this page, and it reads as a histogram: you can see the shape by looking down the percentages.
+`equal_weight` sorts the counts and splits them into six piles of the same size instead. **Every face then has the same 1-in-6 chance and the value ranges differ**, narrow where outcomes bunch together and wide out in the tails. That is an unweighted die with uneven faces, and it has one property the other lacks: a physical D6 rolled by hand gives a genuine draw from the posterior, because each face really is equally likely.
 
 ## Choosing a family
 
@@ -135,7 +137,7 @@ The names carry no meaning about your data. They come from the gamma and beta fu
 
 **QualitySampler** — `sample(entity_id, n_draws)` returning draws of an entity's underlying quality. `PosteriorSampler` does the conjugate update and also offers `sample_predictive(entity_id, n_draws, denominator)`, which is what a die is built from. `BootstrapSampler` is not implemented.
 
-**Discretizer** — `discretize(samples, n_faces, strategy)` turns a sample array into weighted faces. `equal_mass` holds the probabilities equal and lets the value ranges vary; `equal_width` holds the value ranges equal and lets the probabilities vary. It knows nothing about what the numbers mean.
+**Discretizer** — `discretize(samples, n_faces, strategy)` turns a sample array into weighted faces. `equal_weight` holds the probabilities equal and lets the value ranges vary; `equal_width` holds the value ranges equal and lets the probabilities vary. It knows nothing about what the numbers mean.
 
 **Die** — `{faces, metadata}`, serialising with `model_dump_json()`. `DieMetadata` is typed rather than a free dict, so a consumer can rely on the names: entity, stat, scope, the prior behind it, the posterior's parameters, the record it was built from, and what denominator it predicts over.
 

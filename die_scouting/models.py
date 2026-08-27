@@ -78,7 +78,7 @@ class DieMetadata(BaseModel):
     observed_denominator: float | None = None
     predicted_denominator: float | None = None
     denominator_unit: str | None = None
-    strategy: Literal["equal_mass", "equal_width"] | None = None
+    strategy: Literal["equal_weight", "equal_width"] | None = None
     draws: int | None = None
     extra: dict[str, Any] = {}
 

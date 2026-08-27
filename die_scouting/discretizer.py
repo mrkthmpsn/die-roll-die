@@ -10,20 +10,21 @@ from .models import Face
 def discretize(
     samples: list[float],
     n_faces: int,
-    strategy: Literal["equal_mass", "equal_width"] = "equal_mass",
+    strategy: Literal["equal_weight", "equal_width"] = "equal_width",
     clip: tuple[float, float] | None = (0.01, 0.99),
 ) -> list[Face]:
     """Bin `samples` into `n_faces` weighted faces by the given strategy.
 
     The two strategies hold different things constant.
 
-    `equal_mass` gives every face an equal share of the samples, so every face carries the
-    same weight and their `value_range`s differ — narrow where samples bunch together, wide
-    in the tails. A die whose faces are equally likely can be rolled fairly.
+    `equal_width`, the default, gives every face an equal slice of the observed value
+    range, so every `value_range` is the same size and the weights differ — a weighted die,
+    whose weights trace the shape of the samples.
 
-    `equal_width` gives every face an equal slice of the observed value range, so every
-    `value_range` is the same size and the weights differ instead, which reads as a
-    histogram of the samples.
+    `equal_weight` gives every face an equal share of the samples, so every face carries the
+    same weight and the `value_range`s differ instead, narrow where samples bunch together
+    and wide in the tails. That is an unweighted die with uneven faces: fair to roll by
+    hand, since each face really is equally likely.
 
     `clip` is a pair of quantiles, and samples falling outside them are dropped before
     binning. Without it an outer face reports the single most extreme draw as its bound,
@@ -40,8 +41,8 @@ def discretize(
     if clip is not None:
         samples = _clip(samples, clip)
 
-    if strategy == "equal_mass":
-        return _discretize_equal_mass(samples, n_faces)
+    if strategy == "equal_weight":
+        return _discretize_equal_weight(samples, n_faces)
     if strategy == "equal_width":
         return _discretize_equal_width(samples, n_faces)
     raise ValueError(f"unknown strategy: {strategy!r}")
@@ -60,9 +61,9 @@ def _clip(samples: list[float], quantiles: tuple[float, float]) -> list[float]:
     return [s for s in samples if low <= s <= high]
 
 
-def _discretize_equal_mass(samples: list[float], n_faces: int) -> list[Face]:
+def _discretize_equal_weight(samples: list[float], n_faces: int) -> list[Face]:
     if n_faces > len(samples):
-        raise ValueError("n_faces cannot exceed the number of samples for equal_mass binning")
+        raise ValueError("n_faces cannot exceed the number of samples for equal_weight binning")
 
     ordered = sorted(samples)
     total = len(ordered)

@@ -10,7 +10,7 @@ def build_die(
     samples: list[float],
     n_faces: int = 6,
     metadata: DieMetadata | None = None,
-    strategy: Literal["equal_mass", "equal_width"] = "equal_mass",
+    strategy: Literal["equal_weight", "equal_width"] = "equal_width",
 ) -> Die:
     """Discretize `samples` into `n_faces` faces by `strategy` and wrap them in a `Die`.
 
