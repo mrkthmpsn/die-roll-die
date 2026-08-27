@@ -1,16 +1,164 @@
 # die-scouting
 
-Turn a Bayesian estimate of "quality" (a stat, or a pre-computed score for a specific role) into a weighted die, and roll it — a small illustrative tool for visualizing uncertainty in player-quality estimates.
+An estimate with no uncertainty attached is a lie of omission. Twelve goals in thirty appearances and four in ten are the same rate, and only one of them is worth believing — but "0.4 goals per appearance" says nothing about which you are looking at.
 
-## Status
-
-The pipeline runs end to end on the dataset in [data/](data/), which ships with the repo: `CsvDataAdapter` reads it, `PriorDiscovery` fits a prior from it, and `PosteriorSampler` updates that prior for one player and feeds `Discretizer`. [examples/roll.py](examples/roll.py) does all of it for a named player and any stat.
-
-All three prior families are implemented in `fit_prior` and `PosteriorSampler`, and priors can be fitted once and stored. `BootstrapSampler` still raises `NotImplementedError`.
+This turns the estimate into a die. Six faces, each equally likely to come up, each covering a range of outcomes. Roll it and you get one plausible season. Roll it repeatedly and you get a feel for how much the answer moves:
 
 ```
-uv run python examples/roll.py Erling_Haaland --scope position_general=Forward
+$ uv run python examples/roll.py Erling_Haaland --scope position_general=Forward --priors data/priors.json
+
+Erling Haaland (Erling_Haaland) - goals, scope {'position_general': 'Forward'}
+  record:    112 in 132.0 appearances across 4 seasons
+  prior:     gamma, 0.184 per unit (worth 11.1 of denominator)
+  posterior: 0.797 per unit (worth 143.1 of denominator)
+
+  a D6 (equal_mass) over goals in the next 30 appearances:
+      1      13-19   16.7%
+      2      19-21   16.7%
+      3      21-24   16.7%
+      4      24-26   16.7%
+      5      26-29   16.7%
+      6      29-37   16.7%
 ```
+
+A fair D6 you roll by hand gives you a genuine draw from that distribution, which is the point: the maths is in the ranges, not in the rolling.
+
+## Try it
+
+```
+uv sync
+uv run python examples/fit_priors.py
+uv run python examples/roll.py Bukayo_Saka --scope position_general=Forward --priors data/priors.json
+```
+
+The first command fits a prior for each position group and writes them to `data/priors.json`; the second builds a die for one player. A dataset of 2,804 Premier League player-seasons ships with the repo, so both work on a fresh clone.
+
+Useful flags on `roll.py`: `--faces 20` for a D20, `--denominator 38` to predict over a full season, `--strategy equal_width` for the histogram view, and `--json` to see the payload a frontend would receive.
+
+## What you can point it at
+
+Nothing in `die_scouting/` knows about football. It handles three shapes of measurement, and your data decides which one you have:
+
+**A count over an exposure.** Goals in appearances, tackles in minutes, defects in production hours, support tickets in weeks on the team. The die is over "how many, next time".
+
+**Successes out of attempts.** Shots on target out of shots, passes completed out of attempted, free throws made out of taken. The die is over "how many of the next hundred".
+
+**A measured quantity.** Distance covered per match, average pass length, or a modelled score — an "inverted full-back suitability out of 10" computed however you like, which arrives here as one number per match and gets the same treatment as goals.
+
+The last one is worth dwelling on: this library does not model composite scores, it consumes them. If you have a formula that scores players out of 10, feed the scores in and roll the result.
+
+## Use your own data
+
+`CsvDataAdapter` reads any CSV of one row per entity per period. You tell it which columns fill which role:
+
+```python
+from die_scouting import ColumnMap, CsvDataAdapter
+
+adapter = CsvDataAdapter("shooting.csv", ColumnMap(
+    entity="player_ref",         # which entity a row belongs to
+    entity_type="player",        # what that id names — a literal, not a column
+    denominator="attempts",      # what the value was measured against
+    name="player",               # a label, for lookups and display
+    dimensions=("team", "season"),  # columns you might fit separate priors along
+))
+```
+
+Nothing is guessed from a column's name, so a file with its own conventions needs a map rather than a rename. A column you do not map is not lost — it is used one of two other ways:
+
+- **The stat is chosen per question**, not in the map: `get_population_observations("three_pointers")`. One adapter serves every numeric column in the file.
+- **A scope may filter on any column**, mapped or not: `{"team": "Harriers"}` works whether or not `team` is a dimension.
+
+Only `scopes_for` is restricted to the mapped dimensions, because it works from `Record`s rather than from the file and a `Record` carries only what the map told it to.
+
+**Choosing the denominator is a modelling decision, not a lookup.** If your file has both `attempts` and `minutes`, then `denominator="attempts"` asks what share of his shots go in, and `denominator="minutes"` asks how many he hits per minute on court. Both are legitimate, they are different questions, and the choice decides which distribution family you want.
+
+## How it works
+
+**Observations.** Every row becomes a `Record`: an entity, a value, and the denominator that value was measured against. Haaland's four seasons are 36 goals in 35 appearances, 27 in 31, 22 in 31, 27 in 35. The denominator is what separates a rate you can trust from one you cannot.
+
+**A prior** is what you believe about a player before looking at their record — here, what scoring rates Premier League forwards have in general. It is not hand-picked: `fit_prior` reads every forward-season in the file and fits a distribution to the spread of their rates. For goals it comes out as `alpha=2.04, beta=11.09`, which describes a typical forward scoring 0.18 goals per appearance.
+
+That second number is the useful one. **`beta` is evidence measured in appearances** — this prior is worth about 11 appearances of watching someone play. That is what makes the next step behave sensibly.
+
+**The posterior** is the prior updated with one player's own record, and for this family the update is two additions:
+
+```
+alpha:  2.04 + 112 goals       = 114.04
+beta:  11.09 + 132 appearances = 143.10
+        rate = 114.04 / 143.10 = 0.797 goals per appearance
+```
+
+Haaland's raw rate is 112/132 = 0.848, and the posterior says 0.797 — pulled slightly toward the population, because 11 appearances of prior sit against his 132 of evidence. A player with only 12 appearances would be pulled most of the way instead. That is the whole purpose of the prior: it stops a hot fortnight from reading as greatness, without stopping a long record from speaking for itself.
+
+**Draws.** The posterior is a curve, not a number, so we sample it 100,000 times. Two things vary, and the difference matters:
+
+```
+rate draws     10th 0.703   50th 0.795   90th 0.894   ← how sure we are of his rate
+count draws    10th 17      50th 24      90th 31      ← what he'd actually score in 30
+```
+
+The first is uncertainty about Haaland. The second adds the randomness of football itself: even knowing his rate exactly, thirty appearances is a small sample and goals arrive irregularly. The die is built from the second, which is why it is wider than the first — most of what it shows you is the sport, not your ignorance.
+
+**Faces.** Those 100,000 counts get sorted and cut into six equal piles. Each face therefore has the same 1-in-6 chance, and the ranges do the talking: narrow where outcomes bunch up, wide out in the tails. `--strategy equal_width` inverts it, giving equal ranges and unequal weights, which reads as a histogram rather than a die.
+
+## Choosing a family
+
+`fit_prior` makes you name the distribution family, and will not guess. The family states which values your stat can take **at all**, and no amount of data establishes that — a value nobody has recorded and a value nobody can record look identical in a file.
+
+| Family | Allows | Use when |
+| --- | --- | --- |
+| `gamma` | any positive number, no ceiling | counts over an exposure — goals per appearance |
+| `beta` | 0 to 1 and nothing outside | successes out of attempts — shots on target per shot |
+| `normal` | anything, symmetric around a middle | measurements comfortably away from zero — distance per match |
+
+The names carry no meaning about your data. They come from the gamma and beta functions that appear in the formulas, so "beta is the bounded one" is a fact to memorise rather than derive.
+
+**Getting it wrong does not fail loudly.** Fit a 90% free-throw shooter as a gamma instead of a beta and everything runs — but a gamma has no ceiling, so 21% of the resulting die describes making more than 100 shots out of 100 attempts, and nothing in the output says so. The one guard that exists is in the beta fit, which rejects any row whose value exceeds its own denominator, because that is not successes-out-of-attempts however you squint at it.
+
+## Modules
+
+**DataAdapter** — the only domain-aware module. Supplies one entity's observations, and the population's, as `Record`s. `CsvDataAdapter` implements it over a CSV; anything else — a database, an HTTP API — implements the same two methods.
+
+**PriorDiscovery** — `fit_prior` fits a family's parameters from population-wide observations by method of moments. `scopes_for` and `fit_scopes` run it across a list of scopes, saving what fits and reporting the slices too thin to fit.
+
+**PriorStore** — persists fitted priors, keyed by `(entity_type, stat_id, scope)`. `InMemoryPriorStore` for a process, `JsonPriorStore` for a file. Fitting is an offline job; rolling a die reads what it wrote.
+
+**QualitySampler** — `sample(entity_id, n_draws)` returning draws of an entity's underlying quality. `PosteriorSampler` does the conjugate update and also offers `sample_predictive(entity_id, n_draws, denominator)`, which is what a die is built from. `BootstrapSampler` is not implemented.
+
+**Discretizer** — `discretize(samples, n_faces, strategy)` turns a sample array into weighted faces. No domain knowledge, no opinion about what the numbers mean.
+
+**Die** — `{faces, metadata}`, serialising with `model_dump_json()`. `DieMetadata` is typed rather than a free dict, so a consumer can rely on the names: entity, stat, scope, the prior behind it, the posterior's parameters, the record it was built from, and what denominator it predicts over.
+
+```
+Offline (periodic):  DataAdapter (population) -> fit_prior -> PriorStore
+Online (per roll):   PriorStore + DataAdapter (one entity) -> QualitySampler -> Discretizer -> Die
+```
+
+## Design notes
+
+**The prior fit corrects for noise in its own inputs.** A season's goals-per-appearance is spread by two things: how much players genuinely differ, and the randomness of scoring itself. Only the first belongs in a prior. For counts the second is calculable — a Poisson's spread is fixed by its mean — so it is subtracted. Over the 532 forward-seasons of five or more appearances in the shipped data, 38% of the apparent spread is that randomness, and correcting for it takes the prior from 6.9 to 11.1 appearances' worth of evidence. Seasons under five appearances are excluded outright, their rates being dominated by the small denominator.
+
+The normal family cannot do this, because a normal's spread is not implied by its mean. `fit_prior` instead estimates it by pooling how much each entity's observations vary around that entity's own mean, which needs entities appearing more than once and is stored as the prior's third parameter, `sigma_obs`.
+
+**A missing scope fails rather than falling back.** Ask for a prior nobody fitted and you get an error listing what exists, not the next broadest prior. A die built from the forwards prior and one built from the global prior are different answers, and nothing downstream could tell them apart. `list_scopes` lets a caller see what is available so the choice stays theirs.
+
+**Draws outside the 1st and 99th percentiles are dropped before binning.** Without that, an outer face reports the single most extreme draw as its bound — and that bound moves with how many draws you asked for, climbing from 46 to 73 as the count went from a thousand to half a million. Clipping is skipped when there are too few samples for the tails to hold one, so it applies from about a hundred upward. Pass `clip=None` to keep everything.
+
+**Adjacent equal-mass faces can share an integer bound.** A D20 over predicted goals showed faces of `21`, `21-22` and `22`, so 22 goals is an outcome on three faces of twenty. That is the die being honest about a count distribution having fewer distinct values than the die has faces; the weights stay correct.
+
+**Entity type is in the store key** so goals-per-player and goals-per-club can share a store, and `PosteriorSampler` raises rather than shrinking a player toward a club's prior.
+
+## Data
+
+[data/player_seasons.csv](data/player_seasons.csv) holds 2,804 player-seasons of Premier League goals and appearances covering 2021/22 to 2025/26. [tools/wikipedia_squads.py](tools/wikipedia_squads.py) built it from the squad statistics tables of Wikipedia's club-season articles and can rebuild it; [data/README.md](data/README.md) describes the columns and their caveats.
+
+The denominator is appearances rather than minutes, because Wikipedia records minutes on almost no club-season article. A five-minute substitute appearance therefore counts as much as ninety, which widens the fitted priors relative to a per-90 denominator.
+
+## Licence
+
+The software — `die_scouting/`, `examples/`, `tools/` and `tests/` — is MIT, in [LICENSE](LICENSE).
+
+`data/` is not: it derives from Wikipedia, whose text is CC BY-SA 4.0, so the dataset carries the same licence and its own attribution in [data/LICENSE](data/LICENSE). The two are separate works in one tree, which is why a fork may take the library closed-source while the data file keeps its terms. Redistributing the data, modified or not, means keeping that licence and the notices with it.
 
 ## Development
 
@@ -18,101 +166,3 @@ uv run python examples/roll.py Erling_Haaland --scope position_general=Forward
 uv sync
 uv run pytest
 ```
-
-## Core idea
-
-Any value for a player (a raw stat like goals, or an externally-modeled score like "inverted full-back suitability out of 10") is treated as a stream of observations, each pairing a value with the denominator it accumulated over — twelve goals across thirty nineties, say. Bayesian updating turns "prior belief + this player's own record" into a posterior distribution over their true quality. That posterior gets discretized into weighted die faces and rolled.
-
-The denominator is what makes the die worth looking at: four goals in ten appearances and forty in a hundred imply the same rate, and only the second is evidence you can lean on. Two questions can be asked of the posterior — what the player's underlying rate is, and how many they would record over a stated amount of future playing time.
-
-## Modules
-
-**DataAdapter** — the only provider/domain-aware module. Supplies per-observation values for one player, and population-wide values across many players (for prior discovery). Everything else is domain-agnostic.
-
-`CsvDataAdapter` implements it over a CSV of one row per entity per period, reading any numeric column as the stat and any column as a scope filter, so the same class serves both the goals example and a future modelled score.
-
-Which columns fill which role is a `ColumnMap` given at construction. Nothing is guessed from a column's name, so a file with its own conventions needs a map rather than a rename:
-
-```python
-CsvDataAdapter("mine.csv", ColumnMap(
-    entity="player_id",        # which entity a row belongs to -> Record.entity_id
-    entity_type="player",      # what that id names, so a club's priors cannot overwrite it
-    denominator="games",       # what the value was measured against -> Record.denominator
-    name="full_name",          # a label, for entity_ids_for_name and entity_name
-    dimensions=("position",),  # columns priors may be fitted along -> Record.dimensions
-))
-```
-
-A file's other columns are not mapped, and are used in one of two ways instead. The stat is chosen per call — `get_population_observations("goals")` — and a `scope` may filter on any column at all, mapped or not. Only `scopes_for` is restricted to the mapped dimensions, because it sees `Record`s rather than the file.
-
-**PriorDiscovery** (offline, periodic) — empirical Bayes: fits a prior distribution's parameters from the population-wide spread of a stat, rather than requiring someone to hand-pick numbers. The distribution family is supplied by the caller rather than chosen from the stat's name — Beta for proportions bounded by 0 and 1, Gamma for positive quantities with no ceiling, Normal for values that can sit anywhere. The family states which values the stat can take at all, and no sample establishes that, because an unobserved value and an impossible one look identical in data; the parameters are then fitted from the population by method of moments. All three are implemented.
-
-Each family corrects for the noise in its own inputs, and where that noise comes from differs. A Poisson's spread is fixed by its mean and a binomial's by its mean and its attempts, so both can be calculated and subtracted; a normal's is free, so `fit_prior` estimates it by pooling how much each entity's observations vary around that entity's own mean, which needs entities appearing more than once and is stored as the prior's third parameter, `sigma_obs`.
-
-The gamma fit corrects for the noise in its own inputs. A season's goals-per-appearance is spread both by how much players genuinely differ and by the randomness of scoring itself, the second contributing `mean / denominator` to the variance of an observed rate; subtracting its average leaves the spread a prior should carry. Over the 524 forward-seasons of five or more appearances in the shipped data, 38% of the apparent spread is that randomness, and correcting for it takes the prior from 7.0 to 11.2 appearances' worth of evidence — the difference between a player with three goals in four appearances reading as a genuine 0.75-per-appearance striker or not. Seasons under five appearances are excluded from the fit outright, their rates being dominated by the small denominator.
-
-Scope is optional and composable — a prior can be global, or narrowed by any combination of dimensions (e.g. position group, competition). Stored as `PriorParams` keyed by `(entity_type, stat_id, scope)`, in an `InMemoryPriorStore` or a `JsonPriorStore`. The entity type is in the key so that goals-per-player and goals-per-club can share a store, and `PosteriorSampler` raises rather than shrinking a player toward a club's prior.
-
-Which scopes exist is a list someone writes down rather than something the system derives. `scopes_for` builds that list from the distinct values of a column, and `fit_scopes` fits each one, saving what fits and reporting the slices too thin to fit. A scope nobody fitted is a miss at read time, not a silent fall back to a broader prior, because a die built from the forwards prior and one built from the global prior are different answers and nothing downstream could tell them apart. `list_scopes` tells a caller what is available so the choice stays theirs:
-
-```
-data/priors.json holds no prior for 'goals' scoped to {'position_general': 'Forward', 'season_name': '2024/25'}
-scopes fitted for 'goals':
-  {'position_general': 'Defender'}
-  {'position_general': 'Forward'}
-  {'position_general': 'Goalkeeper'}
-  {'position_general': 'Midfielder'}
-  global
-```
-
-**QualitySampler** (online, per player/roll) — uniform interface: `sample(entity_id, n_draws) -> float[]`, returning draws of the player's underlying rate. Two implementations behind it:
-
-- `PosteriorSampler` — closed-form posterior (conjugate update of the discovered prior with this player's own observations). Gamma updates as Gamma-Poisson, summing values and denominators onto `alpha` and `beta`; beta updates as Beta-Binomial, summing successes onto `alpha` and misses onto `beta`; normal updates by precision-weighting the prior's mean against the observations. It also offers `sample_predictive(entity_id, n_draws, denominator)`, which draws the player's underlying quality and then what they would record over the given denominator — a Poisson count for gamma, binomial successes for beta, a summed value for normal — so the die is over goals-next-season rather than goals-per-ninety. That denominator is supplied by the caller and held fixed, so the answer is "if they play thirty nineties" rather than "next season" — playing time is not itself modelled.
-- `BootstrapSampler` — resample this player's own match records with replacement, recompute, repeat — no named distribution family required
-
-Reads the relevant `PriorParams` as config; never invokes `PriorDiscovery` itself.
-
-**Discretizer** — pure stats, no domain knowledge: bins a sample array into weighted die faces (`{label, weight, value_range}`), by equal-mass or equal-width bin strategy. The face count is caller-chosen, so the same sample array can produce a D6, a D20, or any other die.
-
-Implemented. `equal_mass` splits sorted samples into evenly-sized chunks, so every face carries roughly equal probability and the faces differ in how wide a value range they cover. `equal_width` splits the observed range into fixed-width bins, so the faces differ in weight instead.
-
-On whole-number samples, adjacent `equal_mass` faces can report the same integer as their bounds — a D20 over predicted goals showed faces of `21`, `21-22` and `22`, so 22 goals is an outcome on three faces of twenty. That is the die being honest about a count distribution having fewer distinct values than it has faces, and the weights stay correct.
-
-Samples outside the 1st and 99th percentiles are dropped before binning, by default. Without that, an outer face reports the single most extreme draw as its bound — a die over predicted goals showed a top face of `14-73` where that outcome had probability 2e-6, and the bound climbed from 46 to 73 as the draw count went from a thousand to half a million. Clipping is skipped where the sample count is too small for the tails to hold a whole sample, so the default applies from a hundred samples upward. Pass `clip=None` to bin every sample.
-
-**Die** — the contract handed to a frontend: `{faces, metadata}`, serialising with `model_dump_json()`. The rolling UI never touches raw stats, priors, or resampling.
-
-`metadata` is a `DieMetadata` rather than a free dict, so a consumer can rely on the names: which entity and stat, the scope, the whole `PriorParams` behind it, the posterior's parameters, the entity's own record, what denominator the die predicts over and in what units. `build_die` stamps the binning strategy and the draw count itself. Two dice for the same player under different scopes are different answers, and this is what lets anything holding them tell which is which.
-
-## Pipeline
-
-```
-Offline (periodic):
-  DataAdapter (population-wide) -> PriorDiscovery -> PriorParams (stored, keyed by stat + scope)
-
-Online (per player, per roll):
-  PriorParams + DataAdapter (per-player) -> QualitySampler -> Discretizer -> Die
-```
-
-Each half is a script:
-
-```
-uv run python examples/fit_priors.py
-uv run python examples/roll.py Erling_Haaland --scope position_general=Forward --priors data/priors.json
-```
-
-Without `--priors`, `roll.py` fits the prior inline and discards it, which is fine for one die and wrong for anything answering requests.
-
-## Data
-
-[data/player_seasons.csv](data/player_seasons.csv) ships with the repo: 2,804 player-seasons of Premier League goals and appearances covering 2021/22 to 2025/26, so a fresh clone can roll a die without finding data first. [tools/wikipedia_squads.py](tools/wikipedia_squads.py) built it from the squad statistics tables of Wikipedia's club-season articles and can rebuild it; [data/README.md](data/README.md) describes the columns and their caveats.
-
-Exposure is appearances rather than minutes, because Wikipedia records minutes on almost no club-season article. A five-minute substitute appearance therefore counts as much as ninety, which widens the fitted priors relative to a per-90 denominator.
-
-`CsvDataAdapter` reads any CSV of one row per entity per period, given the column names to treat as the entity, the denominator and the label; football player-seasons are what it was built against, but nothing in `die_scouting/` knows that.
-
-## Licence
-
-The software — `die_scouting/`, `examples/`, `tools/` and `tests/` — is MIT, in [LICENSE](LICENSE).
-
-`data/` is not: it derives from Wikipedia, whose text is CC BY-SA 4.0, so the dataset carries the same licence and its own attribution in [data/LICENSE](data/LICENSE). The two are separate works in one tree, which is why a fork may take the library closed-source while the data file keeps its terms. Redistributing the data, modified or not, means keeping that licence and the notices with it.
