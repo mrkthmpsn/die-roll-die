@@ -2,9 +2,9 @@
 
 die-scouting is a demonstration of probabilistic statistics. It takes a set of statistics — for example, a footballer's goals across several seasons — works out a distribution of what that player's underlying scoring rate might be, and turns that distribution into a weighted die.
 
-The distribution is the substance. A prior is fitted from the population — what forwards in general score — and updated with the player's own record to give a posterior over their true rate. How far that posterior sits from their raw rate depends on how much evidence they bring: four good games barely move it off the population, four good seasons move it almost all the way. That pull is shrinkage, and it is most of what the die is showing you.
+A prior is fitted from the population — what forwards in general score — and updated with the player's own record to give a posterior over their true rate. How far that posterior sits from their raw rate depends on how much evidence they bring: four good games barely move it off the population, four good seasons move it almost all the way. That pull toward the population is called shrinkage.
 
-The die is how you see it. A distribution is hard to read as a curve or a pair of parameters, and easy to read as six faces with percentages against them — and once it is a die, you can roll it, and one roll hands you a plausible season.
+A posterior is hard to read as a curve or a pair of parameters, and easy to read as six faces with percentages against them. Making it a die also makes it rollable, and one roll hands you a plausible season.
 
 Premier League data ships with the repo, but the statistics underneath are general: counts over an exposure, successes out of attempts, or a measurement repeated over time. What is here is a small set of statistical building blocks, demonstrated on football because football has convenient data.
 
@@ -53,7 +53,7 @@ The library is built around the shape of the measurement, not the sport. There a
 
 **A measured quantity.** Distance covered per match, average pass length, or a modelled score — an "inverted full-back suitability out of 10" computed however you like, which arrives here as one number per match and gets the same treatment as goals.
 
-The last one is worth dwelling on: this library does not model composite scores, it consumes them. If you have a formula that scores players out of 10, feed the scores in and roll the result.
+On the last of those: this library does not model composite scores, it consumes them. If you have a formula that scores players out of 10, feed the scores in and roll the result.
 
 ## Use your own data
 
@@ -86,7 +86,7 @@ Only `scopes_for` is restricted to the mapped dimensions, because it works from 
 
 **A prior** is what you believe about a player before looking at their record — here, what scoring rates Premier League forwards have in general. It is not hand-picked: `fit_prior` reads every forward-season in the file and fits a distribution to the spread of their rates. For goals it comes out as `alpha=2.04, beta=11.09`, which describes a typical forward scoring 0.18 goals per appearance.
 
-That second number is the useful one. **`beta` is evidence measured in appearances** — this prior is worth about 11 appearances of watching someone play. That is what makes the next step behave sensibly.
+**`beta` is evidence measured in appearances**: this prior is worth about 11 appearances of watching someone play, which is what sets how far a player's own record can move it.
 
 **The posterior** is the prior updated with one player's own record, and for this family the update is two additions:
 
