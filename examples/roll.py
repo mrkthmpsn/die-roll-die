@@ -125,7 +125,13 @@ def main() -> None:
         help="prior distribution family for this stat",
     )
     parser.add_argument(
-        "--strategy", choices=["equal_mass", "equal_width"], default="equal_mass"
+        "--strategy",
+        choices=["equal_mass", "equal_width"],
+        default="equal_mass",
+        help=(
+            "equal_mass gives every face the same chance and different value ranges; "
+            "equal_width gives every face the same value range and different chances"
+        ),
     )
     parser.add_argument(
         "--priors",

@@ -1,27 +1,33 @@
 # die-scouting
 
-An estimate with no uncertainty attached is a lie of omission. Twelve goals in thirty appearances and four in ten are the same rate, and only one of them is worth believing — but "0.4 goals per appearance" says nothing about which you are looking at.
+die-scouting takes an entity's record — a footballer's goals, say — and turns it into a die you can roll. Each face covers a range of outcomes and carries a probability, so instead of a single number like "0.8 goals per appearance" you see the whole spread of seasons that number could produce.
 
-This turns the estimate into a die. Six faces, each equally likely to come up, each covering a range of outcomes. Roll it and you get one plausible season. Roll it repeatedly and you get a feel for how much the answer moves:
+It is built to demonstrate the statistics rather than to do serious analysis. The methods are standard and the code is small enough to read in an afternoon; the aim is to make ideas like uncertainty, prior belief and shrinkage visible by turning them into something you can hold and roll.
+
+Premier League data ships with it, but the statistics underneath are general. If you have counts over an exposure, successes out of attempts, or a measurement repeated over time, the same code works — so what the repo really provides is a small set of statistical building blocks that happen to be demonstrated on football.
+
+Here is a die for Erling Haaland's goals over his next 30 appearances:
 
 ```
-$ uv run python examples/roll.py Erling_Haaland --scope position_general=Forward --priors data/priors.json
+$ uv run python examples/roll.py Erling_Haaland --scope position_general=Forward --priors data/priors.json --strategy equal_width
 
 Erling Haaland (Erling_Haaland) - goals, scope {'position_general': 'Forward'}
   record:    112 in 132.0 appearances across 4 seasons
   prior:     gamma, 0.184 per unit (worth 11.1 of denominator)
   posterior: 0.797 per unit (worth 143.1 of denominator)
 
-  a D6 (equal_mass) over goals in the next 30 appearances:
-      1      13-19   16.7%
-      2      19-21   16.7%
-      3      21-24   16.7%
-      4      24-26   16.7%
-      5      26-29   16.7%
-      6      29-37   16.7%
+  a D6 (equal_width) over goals in the next 30 appearances:
+      1  12.0-16.2    7.2%
+      2  16.2-20.3   19.7%
+      3  20.3-24.5   29.4%
+      4  24.5-28.7   25.2%
+      5  28.7-32.8   13.3%
+      6  32.8-37.0    5.2%
 ```
 
-A fair D6 you roll by hand gives you a genuine draw from that distribution, which is the point: the maths is in the ranges, not in the rolling.
+Each face covers about four goals, and the percentages say how likely each is: a season of 20 to 25 goals is the most likely single outcome at 29%, while 12 to 16 comes up 7% of the time and 33 to 37 comes up 5%. Read down the right-hand column and you are reading the shape of the distribution.
+
+There is a second way to cut the same numbers, `--strategy equal_mass`, which is the default. It gives every face the same 1-in-6 chance and lets the ranges vary instead, so the faces come out narrow where outcomes bunch together and wide out in the tails. That version is a fair die you could physically roll; this one is closer to a histogram. Both describe the same posterior.
 
 ## Try it
 
@@ -37,7 +43,7 @@ Useful flags on `roll.py`: `--faces 20` for a D20, `--denominator 38` to predict
 
 ## What you can point it at
 
-Nothing in `die_scouting/` knows about football. It handles three shapes of measurement, and your data decides which one you have:
+The library is built around the shape of the measurement, not the sport. There are three shapes it handles, and your data decides which one you have:
 
 **A count over an exposure.** Goals in appearances, tackles in minutes, defects in production hours, support tickets in weeks on the team. The die is over "how many, next time".
 
@@ -99,7 +105,11 @@ count draws    10th 17      50th 24      90th 31      ← what he'd actually sco
 
 The first is uncertainty about Haaland. The second adds the randomness of football itself: even knowing his rate exactly, thirty appearances is a small sample and goals arrive irregularly. The die is built from the second, which is why it is wider than the first — most of what it shows you is the sport, not your ignorance.
 
-**Faces.** Those 100,000 counts get sorted and cut into six equal piles. Each face therefore has the same 1-in-6 chance, and the ranges do the talking: narrow where outcomes bunch up, wide out in the tails. `--strategy equal_width` inverts it, giving equal ranges and unequal weights, which reads as a histogram rather than a die.
+**Faces.** The 100,000 counts are cut into six groups, and there are two ways to do the cutting.
+
+`equal_mass`, the default, sorts the counts and splits them into six piles of the same size. **Every face then has the same 1-in-6 chance of coming up, and the value ranges differ instead** — narrow where outcomes bunch together, wide out in the tails. This is what makes it a die you could physically roll: a fair D6 gives you a genuine draw from the posterior, because each face really is equally likely.
+
+`equal_width` cuts the range into six equal slices instead, so **every face covers the same span of values and the probabilities differ**. That is the version shown at the top of this page, and it reads as a histogram: you can see the shape by looking down the percentages.
 
 ## Choosing a family
 
@@ -125,7 +135,7 @@ The names carry no meaning about your data. They come from the gamma and beta fu
 
 **QualitySampler** — `sample(entity_id, n_draws)` returning draws of an entity's underlying quality. `PosteriorSampler` does the conjugate update and also offers `sample_predictive(entity_id, n_draws, denominator)`, which is what a die is built from. `BootstrapSampler` is not implemented.
 
-**Discretizer** — `discretize(samples, n_faces, strategy)` turns a sample array into weighted faces. No domain knowledge, no opinion about what the numbers mean.
+**Discretizer** — `discretize(samples, n_faces, strategy)` turns a sample array into weighted faces. `equal_mass` holds the probabilities equal and lets the value ranges vary; `equal_width` holds the value ranges equal and lets the probabilities vary. It knows nothing about what the numbers mean.
 
 **Die** — `{faces, metadata}`, serialising with `model_dump_json()`. `DieMetadata` is typed rather than a free dict, so a consumer can rely on the names: entity, stat, scope, the prior behind it, the posterior's parameters, the record it was built from, and what denominator it predicts over.
 

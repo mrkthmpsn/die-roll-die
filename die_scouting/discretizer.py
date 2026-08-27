@@ -15,8 +15,15 @@ def discretize(
 ) -> list[Face]:
     """Bin `samples` into `n_faces` weighted faces by the given strategy.
 
-    `equal_mass` gives every face an equal share of the samples; `equal_width` gives
-    every face an equal slice of the observed value range.
+    The two strategies hold different things constant.
+
+    `equal_mass` gives every face an equal share of the samples, so every face carries the
+    same weight and their `value_range`s differ — narrow where samples bunch together, wide
+    in the tails. A die whose faces are equally likely can be rolled fairly.
+
+    `equal_width` gives every face an equal slice of the observed value range, so every
+    `value_range` is the same size and the weights differ instead, which reads as a
+    histogram of the samples.
 
     `clip` is a pair of quantiles, and samples falling outside them are dropped before
     binning. Without it an outer face reports the single most extreme draw as its bound,
