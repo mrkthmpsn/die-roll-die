@@ -106,8 +106,8 @@ class DieMetadata(BaseModel):
     entity's own record, and how the faces were binned.
 
     Every field is optional, a die over arbitrary samples carrying none of them. `strategy`
-    and `draws` are set by `build_die`; `extra` holds anything a caller needs that this
-    model does not name.
+    and `draws` are set by `assemble_die_from_samples`; `extra` holds anything a caller needs
+    that this model does not name.
     """
 
     entity_id: str | None = None

@@ -1,6 +1,6 @@
 from .csv_adapter import ColumnMap, CsvDataAdapter
 from .data_adapter import DataAdapter
-from .die import build_die
+from .die import assemble_die_from_samples
 from .discretizer import discretize
 from .errors import InsufficientData, PriorFitError, UnsuitableModel
 from .fitting import FitReport, fit_scopes, scopes_for
@@ -30,7 +30,7 @@ __all__ = [
     "QualitySampler",
     "Record",
     "UnsuitableModel",
-    "build_die",
+    "assemble_die_from_samples",
     "discretize",
     "fit_prior",
     "fit_scopes",

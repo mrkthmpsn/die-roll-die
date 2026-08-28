@@ -6,7 +6,7 @@ from .discretizer import discretize
 from .models import Die, DieMetadata
 
 
-def build_die(
+def assemble_die_from_samples(
     samples: list[float],
     n_faces: int = 6,
     metadata: DieMetadata | None = None,

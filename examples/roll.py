@@ -26,7 +26,7 @@ from die_scouting import (
     JsonPriorStore,
     PosteriorSampler,
     PriorFitError,
-    build_die,
+    assemble_die_from_samples,
     fit_prior,
 )
 
@@ -191,7 +191,9 @@ def main() -> None:
     )
 
     samples = sampler.sample_predictive(entity_id, args.draws, args.denominator)
-    die = build_die(samples, n_faces=args.faces, metadata=metadata, strategy=args.strategy)
+    die = assemble_die_from_samples(
+        samples, n_faces=args.faces, metadata=metadata, strategy=args.strategy
+    )
     meta = die.metadata
 
     print(f"{meta.entity_name} ({meta.entity_id}) - {meta.stat_id}, scope {meta.scope or 'none'}")

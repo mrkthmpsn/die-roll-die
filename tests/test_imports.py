@@ -12,7 +12,7 @@ from die_scouting import (
     PosteriorSampler,
     PriorParams,
     Record,
-    build_die,
+    assemble_die_from_samples,
     fit_prior,
 )
 
@@ -57,29 +57,29 @@ def test_bootstrap_source_stub_raises():
         bootstrap.sample("player-1", 100)
 
 
-def test_build_die_builds_a_real_die():
+def test_assemble_die_from_samples_builds_a_real_die():
     samples = [float(i) for i in range(100)]
-    die = build_die(samples, n_faces=6)
+    die = assemble_die_from_samples(samples, n_faces=6)
     assert len(die.faces) == 6
     assert sum(f.weight for f in die.faces) == pytest.approx(1.0)
 
 
-def test_build_die_supports_d20():
+def test_assemble_die_from_samples_supports_d20():
     samples = [float(i) for i in range(1000)]
-    die = build_die(samples, n_faces=20)
+    die = assemble_die_from_samples(samples, n_faces=20)
     assert len(die.faces) == 20
 
 
-def test_build_die_defaults_to_equal_width():
-    die = build_die([float(i) for i in range(100)] + [50.0] * 100, n_faces=4)
+def test_assemble_die_from_samples_defaults_to_equal_width():
+    die = assemble_die_from_samples([float(i) for i in range(100)] + [50.0] * 100, n_faces=4)
     assert die.metadata.strategy == "equal_width"
 
 
-def test_build_die_passes_the_strategy_through():
+def test_assemble_die_from_samples_passes_the_strategy_through():
     samples = [float(i) for i in range(100)] + [50.0] * 100
 
-    weighted = build_die(samples, n_faces=4, strategy="equal_width")
-    unweighted = build_die(samples, n_faces=4, strategy="equal_weight")
+    weighted = assemble_die_from_samples(samples, n_faces=4, strategy="equal_width")
+    unweighted = assemble_die_from_samples(samples, n_faces=4, strategy="equal_weight")
 
     widths = {round(f.value_range[1] - f.value_range[0], 6) for f in weighted.faces}
     weights = {round(f.weight, 6) for f in unweighted.faces}
@@ -88,19 +88,19 @@ def test_build_die_passes_the_strategy_through():
     assert len({round(f.weight, 6) for f in weighted.faces}) > 1
 
 
-def test_build_die_stamps_the_strategy_and_draw_count():
+def test_assemble_die_from_samples_stamps_the_strategy_and_draw_count():
     samples = [float(i) for i in range(200)]
 
-    die = build_die(samples, n_faces=4, strategy="equal_width")
+    die = assemble_die_from_samples(samples, n_faces=4, strategy="equal_width")
 
     assert die.metadata.strategy == "equal_width"
     assert die.metadata.draws == 200
 
 
-def test_build_die_keeps_the_metadata_it_was_given():
+def test_assemble_die_from_samples_keeps_the_metadata_it_was_given():
     metadata = DieMetadata(entity_id="3960", stat_id="goals", entity_name="Harry Kane")
 
-    die = build_die([float(i) for i in range(200)], metadata=metadata)
+    die = assemble_die_from_samples([float(i) for i in range(200)], metadata=metadata)
 
     assert die.metadata.entity_name == "Harry Kane"
     assert die.metadata.stat_id == "goals"
@@ -122,7 +122,7 @@ def test_metadata_round_trips_through_json():
         predicted_denominator=30.0,
         denominator_unit="nineties",
     )
-    die = build_die([float(i) for i in range(200)], metadata=metadata)
+    die = assemble_die_from_samples([float(i) for i in range(200)], metadata=metadata)
 
     restored = Die.model_validate_json(die.model_dump_json())
 
@@ -134,8 +134,10 @@ def test_metadata_round_trips_through_json():
 
 def test_two_scopes_give_dice_that_can_be_told_apart():
     samples = [float(i) for i in range(200)]
-    forwards = build_die(samples, metadata=DieMetadata(scope={"position_general": "Forward"}))
-    global_ = build_die(samples, metadata=DieMetadata())
+    forwards = assemble_die_from_samples(
+        samples, metadata=DieMetadata(scope={"position_general": "Forward"})
+    )
+    global_ = assemble_die_from_samples(samples, metadata=DieMetadata())
 
     assert forwards.metadata.scope != global_.metadata.scope
 
