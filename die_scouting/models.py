@@ -4,6 +4,33 @@ from typing import Any, Literal
 
 from pydantic import BaseModel
 
+Model = Literal["beta_binomial", "gamma_exponential", "gamma_poisson", "normal_normal"]
+
+POSTERIOR_PARAM_NAMES: dict[Model, tuple[str, str]] = {
+    "beta_binomial": ("alpha", "beta"),
+    "gamma_exponential": ("alpha", "beta"),
+    "gamma_poisson": ("alpha", "beta"),
+    "normal_normal": ("mu", "sigma"),
+}
+"""The names of the two parameters each model carries, in the order
+`PosteriorSampler.posterior_params` returns them.
+
+What the pair counts follows the model:
+
+| model | first | second |
+| --- | --- | --- |
+| `beta_binomial` | `alpha`, successes | `beta`, failures |
+| `gamma_exponential` | `alpha`, events | `beta`, the time they took |
+| `gamma_poisson` | `alpha`, events | `beta`, the exposure they occurred in |
+| `normal_normal` | `mu`, the estimated mean | `sigma`, how uncertain that mean is |
+
+Three models name their pair `alpha` and `beta`, after the gamma and beta distributions
+those parameters belong to: `alpha / beta` is a rate of events per unit of time for both
+gamma models, and `alpha / (alpha + beta)` is a proportion for `beta_binomial`. A
+`normal_normal` prior carries a third parameter, `sigma_obs`, holding the spread of
+individual observations.
+"""
+
 
 class Record(BaseModel):
     """Representation of a single entity's single value, and the denominator it was
@@ -48,15 +75,22 @@ class PriorParams(BaseModel):
     `scope` is a set of optional, composable filter dimensions (e.g. position group,
     competition); an empty dict means the global, unscoped prior for this stat.
 
-    `params` holds the model's parameters by name: `alpha` and `beta` for gamma, where
-    `beta` is a rate in units of 1/denominator.
+    `params` holds the model's parameters by name, `POSTERIOR_PARAM_NAMES` giving the two
+    every model carries and what each of them counts; a `normal_normal` prior carries
+    `sigma_obs` besides.
     """
 
     stat_id: str
     entity_type: str
     scope: dict[str, str] = {}
-    model: Literal["beta_binomial", "gamma_exponential", "gamma_poisson", "normal_normal"]
+    model: Model
     params: dict[str, float]
+
+    @property
+    def ordered_params(self) -> tuple[float, float]:
+        """The two values `POSTERIOR_PARAM_NAMES` names for this model, in that order."""
+        first, second = POSTERIOR_PARAM_NAMES[self.model]
+        return self.params[first], self.params[second]
 
 
 class Face(BaseModel):

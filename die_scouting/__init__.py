@@ -4,12 +4,13 @@ from .die import build_die
 from .discretizer import discretize
 from .errors import InsufficientData, PriorFitError, UnsuitableModel
 from .fitting import FitReport, fit_scopes, scopes_for
-from .models import Die, DieMetadata, Face, PriorParams, Record
+from .models import POSTERIOR_PARAM_NAMES, Die, DieMetadata, Face, Model, PriorParams, Record
 from .prior_discovery import fit_prior
 from .prior_store import InMemoryPriorStore, JsonPriorStore, PriorStore
 from .quality_sampler import BootstrapSampler, PosteriorSampler, QualitySampler
 
 __all__ = [
+    "POSTERIOR_PARAM_NAMES",
     "BootstrapSampler",
     "ColumnMap",
     "CsvDataAdapter",
@@ -21,6 +22,7 @@ __all__ = [
     "InMemoryPriorStore",
     "InsufficientData",
     "JsonPriorStore",
+    "Model",
     "PosteriorSampler",
     "PriorFitError",
     "PriorParams",

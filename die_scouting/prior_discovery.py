@@ -2,17 +2,16 @@ from __future__ import annotations
 
 import math
 import statistics
-from typing import Literal
 
 from .errors import InsufficientData, UnsuitableModel
-from .models import PriorParams, Record
+from .models import Model, PriorParams, Record
 
 MIN_DENOMINATOR = 10.0
 
 
 def fit_prior(
     observations: list[Record],
-    model: Literal["beta_binomial", "gamma_exponential", "gamma_poisson", "normal_normal"],
+    model: Model,
     stat_id: str,
     scope: dict[str, str] | None = None,
     min_denominator: float = MIN_DENOMINATOR,

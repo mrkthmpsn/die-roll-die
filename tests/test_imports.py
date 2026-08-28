@@ -4,6 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from die_scouting import (
+    POSTERIOR_PARAM_NAMES,
     BootstrapSampler,
     Die,
     DieMetadata,
@@ -137,3 +138,33 @@ def test_two_scopes_give_dice_that_can_be_told_apart():
     global_ = build_die(samples, metadata=DieMetadata())
 
     assert forwards.metadata.scope != global_.metadata.scope
+
+
+def test_posterior_param_names_covers_every_model():
+    assert set(POSTERIOR_PARAM_NAMES) == {
+        "beta_binomial",
+        "gamma_exponential",
+        "gamma_poisson",
+        "normal_normal",
+    }
+
+
+def test_ordered_params_reads_the_pair_the_mapping_names():
+    gamma = PriorParams(
+        entity_type="player", stat_id="goals", model="gamma_poisson",
+        params={"alpha": 2.0, "beta": 11.0},
+    )
+    normal = PriorParams(
+        entity_type="player", stat_id="distance", model="normal_normal",
+        params={"mu": 9.5, "sigma": 1.2, "sigma_obs": 0.8},
+    )
+    assert gamma.ordered_params == (2.0, 11.0)
+    assert normal.ordered_params == (9.5, 1.2)
+
+
+def test_ordered_params_raises_when_the_prior_lacks_one():
+    prior = PriorParams(
+        entity_type="player", stat_id="goals", model="gamma_poisson", params={"alpha": 2.0}
+    )
+    with pytest.raises(KeyError):
+        prior.ordered_params

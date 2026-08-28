@@ -19,6 +19,7 @@ import argparse
 from pathlib import Path
 
 from die_scouting import (
+    POSTERIOR_PARAM_NAMES,
     ColumnMap,
     CsvDataAdapter,
     DieMetadata,
@@ -41,18 +42,6 @@ def parse_scope(pairs: list[str]) -> dict[str, str]:
             raise SystemExit(f"scope must be given as column=value; got {pair!r}")
         scope[column] = value
     return scope
-
-
-def _prior_pair(prior) -> tuple[float, float]:
-    """Return the prior's two parameters in the order `posterior_params` returns them."""
-    if prior.model == "normal_normal":
-        return prior.params["mu"], prior.params["sigma"]
-    return prior.params["alpha"], prior.params["beta"]
-
-
-def _param_names(model: str) -> tuple[str, str]:
-    """Return the names `posterior_params` returns its two values under, for this model."""
-    return ("mu", "sigma") if model == "normal_normal" else ("alpha", "beta_binomial")
 
 
 def _summarise(model: str, first: float, second: float, stat: str, unit: str) -> str:
@@ -123,7 +112,7 @@ def main() -> None:
     parser.add_argument("--faces", type=int, default=6)
     parser.add_argument(
         "--model",
-        choices=["beta_binomial", "gamma_exponential", "gamma_poisson", "normal_normal"],
+        choices=list(POSTERIOR_PARAM_NAMES),
         default="gamma_poisson",
         help="the conjugate pair to fit and update with; see the README",
     )
@@ -189,7 +178,7 @@ def main() -> None:
         stat_id=args.stat,
         scope=scope,
         prior=prior,
-        posterior_params=dict(zip(_param_names(prior.model), (alpha, beta))),
+        posterior_params=dict(zip(POSTERIOR_PARAM_NAMES[prior.model], (alpha, beta))),
         observed_value=sum(o.value for o in observations),
         observed_denominator=sum(o.denominator for o in observations),
         predicted_denominator=args.denominator,
@@ -207,9 +196,9 @@ def main() -> None:
         f"{meta.denominator_unit} across {meta.extra['seasons']} seasons"
     )
     model = meta.prior.model
-    posterior = tuple(meta.posterior_params[param] for param in _param_names(model))
+    posterior = tuple(meta.posterior_params[param] for param in POSTERIOR_PARAM_NAMES[model])
     units = (meta.stat_id, meta.denominator_unit)
-    print(f"  prior:     {model}, {_summarise(model, *_prior_pair(meta.prior), *units)}")
+    print(f"  prior:     {model}, {_summarise(model, *meta.prior.ordered_params, *units)}")
     print(f"  posterior: {_summarise(model, *posterior, *units)}")
 
     if args.json:

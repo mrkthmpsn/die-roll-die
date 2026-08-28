@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from die_scouting import PosteriorSampler, PriorParams, Record
+from die_scouting import POSTERIOR_PARAM_NAMES, PosteriorSampler, PriorParams, Record
 
 
 class FakeAdapter:
@@ -221,3 +221,30 @@ def test_gamma_exponential_predicts_a_positive_total_time():
 def test_gamma_exponential_predicts_over_a_whole_number_of_events():
     with pytest.raises(ValueError, match="whole number of events"):
         source({}, prior=exponential_prior()).sample_predictive("press", 10, 7.5)
+
+
+@pytest.mark.parametrize(
+    "model, params",
+    [
+        ("gamma_poisson", {"alpha": 3.0, "beta": 10.0}),
+        ("gamma_exponential", {"alpha": 3.0, "beta": 10.0}),
+        ("beta_binomial", {"alpha": 3.0, "beta": 10.0}),
+        ("normal_normal", {"mu": 3.0, "sigma": 10.0, "sigma_obs": 2.0}),
+    ],
+)
+def test_posterior_params_come_back_under_the_names_the_mapping_gives(model, params):
+    """An entity with no observations returns the prior unchanged, so zipping the mapping's
+    names onto the pair must reproduce the prior's own params — which it can only do if the
+    names are in the order the pair comes out in."""
+    prior = PriorParams(entity_type="player", stat_id="s", model=model, params=params)
+    analytic = source({}, prior=prior)
+    names = POSTERIOR_PARAM_NAMES[model]
+    assert dict(zip(names, analytic.posterior_params("unknown"))) == {k: params[k] for k in names}
+
+
+def test_a_normal_prior_without_sigma_obs_is_rejected():
+    prior = PriorParams(
+        entity_type="player", stat_id="s", model="normal_normal", params={"mu": 3.0, "sigma": 1.0}
+    )
+    with pytest.raises(ValueError, match="sigma_obs"):
+        source({}, prior=prior).posterior_params("unknown")

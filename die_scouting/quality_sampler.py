@@ -7,7 +7,7 @@ import math
 import numpy as np
 
 from .data_adapter import DataAdapter
-from .models import PriorParams
+from .models import POSTERIOR_PARAM_NAMES, PriorParams
 
 
 class QualitySampler(Protocol):
@@ -56,6 +56,8 @@ class PosteriorSampler:
         counting events over a fixed time and `gamma_exponential` timing a fixed number of
         events.
 
+        The two are named by `POSTERIOR_PARAM_NAMES` under the prior's model.
+
         An entity with no observations returns the prior's parameters unchanged.
 
         Raises:
@@ -72,24 +74,24 @@ class PosteriorSampler:
                     f"describes a {self.prior.entity_type!r}"
                 )
         if self.prior.model == "gamma_poisson":
-            self._require("alpha", "beta")
+            self._require(*POSTERIOR_PARAM_NAMES[self.prior.model])
             return (
                 self.prior.params["alpha"] + sum(o.value for o in observations),
                 self.prior.params["beta"] + sum(o.denominator for o in observations),
             )
         if self.prior.model == "gamma_exponential":
-            self._require("alpha", "beta")
+            self._require(*POSTERIOR_PARAM_NAMES[self.prior.model])
             return (
                 self.prior.params["alpha"] + sum(o.denominator for o in observations),
                 self.prior.params["beta"] + sum(o.value for o in observations),
             )
         if self.prior.model == "beta_binomial":
-            self._require("alpha", "beta")
+            self._require(*POSTERIOR_PARAM_NAMES[self.prior.model])
             return (
                 self.prior.params["alpha"] + sum(o.value for o in observations),
                 self.prior.params["beta"] + sum(o.denominator - o.value for o in observations),
             )
-        self._require("mu", "sigma", "sigma_obs")
+        self._require(*POSTERIOR_PARAM_NAMES["normal_normal"], "sigma_obs")
         mu, sigma = self.prior.params["mu"], self.prior.params["sigma"]
         observation_variance = self.prior.params["sigma_obs"] ** 2
         precision = 1.0 / sigma**2 + sum(o.denominator for o in observations) / observation_variance

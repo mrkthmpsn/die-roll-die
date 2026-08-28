@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from typing import Literal
-
 from pydantic import BaseModel
 
 from .data_adapter import DataAdapter
 from .errors import InsufficientData
+from .models import Model
 from .prior_discovery import fit_prior
 from .prior_store import PriorStore
 
@@ -46,7 +45,7 @@ def fit_scopes(
     adapter: DataAdapter,
     store: PriorStore,
     stat_id: str,
-    model: Literal["beta_binomial", "gamma_exponential", "gamma_poisson", "normal_normal"],
+    model: Model,
     scopes: list[dict[str, str]],
     min_denominator: float | None = None,
 ) -> FitReport:

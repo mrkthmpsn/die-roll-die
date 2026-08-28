@@ -13,8 +13,8 @@ Using the Wikipedia data, here is a die for Erling Haaland's goals over his next
 $ uv run python examples/roll.py Erling_Haaland --scope position_general=Forward --priors data/priors.json
 
 Erling Haaland (Erling_Haaland) - goals, scope {'position_general': 'Forward'}
-  record:    112 goals in 132.0 appearances across 4 seasons
-  prior:     gamma, 0.197 goals/appearances, worth 11.4 appearances of evidence
+  record:    112 in 132.0 appearances across 4 seasons
+  prior:     gamma_poisson, 0.197 goals/appearances, worth 11.4 appearances of evidence
   posterior: 0.797 goals/appearances, worth 143.4 appearances of evidence
 
   a D6 (equal_width) over goals in the next 30 appearances:
@@ -46,9 +46,11 @@ Useful flags on `roll.py`: `--faces 20` for a D20, `--denominator 38` to predict
 
 ## What you can point it at
 
-Football is used as an example, but the library is built around the shape of the measurement. There are three shapes it handles, and your data decides which one you have:
+Football is used as an example, but the library is built around the shape of the measurement. There are four shapes it handles, and your data decides which one you have:
 
 **A count over an 'exposure'.** Goals in appearances, tackles in minutes, defects in production hours, support tickets in weeks on the team. You choose how much exposure to predict over — 30 appearances, 900 minutes — and the die is over how many events fall in it.
+
+**A time to an event.** Hours between machine failures, days to close a support ticket, minutes between goals conceded. You choose how many events to predict over — five failures, ten tickets — and the die is over the total time they take. This is the same two quantities as a count over an exposure, with the roles reversed: there you fix the time and count the events, here you fix the events and measure the time.
 
 **Successes out of attempts.** Shots on target out of shots, passes completed out of attempted, free throws made out of taken. You choose how many attempts, and the die is over how many of them come off.
 
@@ -129,6 +131,21 @@ The two gamma models describe the same quantities, events and time, and differ o
 
 Each name joins the prior to the likelihood. "Gamma" and "beta" come from the gamma and beta functions in their formulas rather than from anything about your data, so "beta is the bounded one" is a fact to memorise rather than derive.
 
+### What the parameters are called
+
+Every model's prior and posterior are two numbers, and their names come from the same Greek convention as the model names. `POSTERIOR_PARAM_NAMES` in the library maps each model to the pair it uses, and `DieMetadata.posterior_params` labels its two numbers with it:
+
+| Model | First | Second |
+| --- | --- | --- |
+| `gamma_poisson` | `alpha`, events counted | `beta`, exposure they occurred in |
+| `gamma_exponential` | `alpha`, events counted | `beta`, the time they took |
+| `beta_binomial` | `alpha`, successes | `beta`, failures |
+| `normal_normal` | `mu`, the estimated mean | `sigma`, how uncertain that mean is |
+
+Three of the four call their pair `alpha` and `beta`, so **`beta` is a parameter of three models and the name of one**, and a `gamma_poisson` prior has a parameter called `beta` while having nothing to do with the beta distribution. The gamma arithmetic worked through [above](#how-it-works) is what the first two rows look like in practice: goals added to `alpha`, appearances added to `beta`, and `alpha / beta` the rate that comes out. For `beta_binomial` the equivalent is `alpha / (alpha + beta)`, the share of attempts that succeeded.
+
+A `normal_normal` prior carries a third number, `sigma_obs`, which is how much individual observations vary rather than how uncertain the mean is — the two `sigma`s answer different questions, and the Design notes below cover where the third comes from.
+
 **Getting it wrong does not fail loudly.** Fit a 90% free-throw shooter as `gamma_poisson` instead of `beta_binomial` and everything runs — but a gamma has no ceiling, so 21% of the resulting die describes making more than 100 shots out of 100 attempts, and nothing in the output says so. Two guards exist: the beta fit rejects any row whose value exceeds its own denominator, and the gamma-exponential fit rejects a value or denominator that is not positive.
 
 ## Modules
@@ -139,11 +156,11 @@ Each name joins the prior to the likelihood. "Gamma" and "beta" come from the ga
 
 **PriorStore** — persists fitted priors, keyed by `(entity_type, stat_id, scope)`. `InMemoryPriorStore` for a process, `JsonPriorStore` for a file. Fitting is an offline job; rolling a die reads what it wrote.
 
-**QualitySampler** — `sample(entity_id, n_draws)` returning draws of an entity's underlying quality. `PosteriorSampler` does the conjugate update and also offers `sample_predictive(entity_id, n_draws, denominator)`, which is what a die is built from. `BootstrapSampler` is not implemented.
+**QualitySampler** — `sample(entity_id, n_draws)` returning draws of an entity's underlying quality. `PosteriorSampler` does the conjugate update and also offers `sample_predictive(entity_id, n_draws, denominator)`, which is what a die is built from. Its `posterior_params` returns the two numbers as a bare tuple, which `POSTERIOR_PARAM_NAMES` gives the names of. `BootstrapSampler` is not implemented.
 
 **Discretizer** — `discretize(samples, n_faces, strategy)` turns a sample array into weighted faces. `equal_weight` holds the probabilities equal and lets the value ranges vary; `equal_width` holds the value ranges equal and lets the probabilities vary. It knows nothing about what the numbers mean.
 
-**Die** — `{faces, metadata}`, serialising with `model_dump_json()`. `DieMetadata` is typed rather than a free dict, so a consumer can rely on the names: entity, stat, scope, the prior behind it, the posterior's parameters, the record it was built from, and what denominator it predicts over.
+**Die** — `{faces, metadata}`, serialising with `model_dump_json()`. `DieMetadata` is typed rather than a free dict, so a consumer can rely on the names: entity, stat, scope, the prior behind it, the posterior's parameters, the record it was built from, and what denominator it predicts over. The posterior's two parameters are keyed by `POSTERIOR_PARAM_NAMES` under the prior's model, and `PriorParams.ordered_params` reads a prior's own pair out in the same order.
 
 ```
 Offline (periodic):  DataAdapter (population) -> fit_prior -> PriorStore

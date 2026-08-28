@@ -21,7 +21,14 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from die_scouting import ColumnMap, CsvDataAdapter, JsonPriorStore, fit_scopes, scopes_for
+from die_scouting import (
+    POSTERIOR_PARAM_NAMES,
+    ColumnMap,
+    CsvDataAdapter,
+    JsonPriorStore,
+    fit_scopes,
+    scopes_for,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data" / "player_seasons.csv"
@@ -49,7 +56,7 @@ def main() -> None:
     parser.add_argument("--stat", default="goals")
     parser.add_argument(
         "--model",
-        choices=["beta_binomial", "gamma_exponential", "gamma_poisson", "normal_normal"],
+        choices=list(POSTERIOR_PARAM_NAMES),
         default="gamma_poisson",
     )
     parser.add_argument("--scope-column", default="position_general")
