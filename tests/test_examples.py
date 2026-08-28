@@ -1,7 +1,9 @@
 """Covers the presentation logic in `examples/`, which the library's own tests do not import.
 
-That gap is how `_param_names` came to return `beta_binomial` as a parameter name after a
-rename and reach the shipped scripts uncaught.
+Two defects reached the shipped scripts through that gap: `_param_names` returned
+`beta_binomial` as a parameter name after a rename, and `_summarise` had no
+`gamma_exponential` branch, so an exponential prior printed its two parameters under the
+`normal_normal` wording.
 """
 
 from __future__ import annotations
@@ -18,9 +20,21 @@ def test_every_model_has_a_summary(model):
     assert _summarise(model, 4.0, 20.0, "goals", "appearances")
 
 
+def test_an_unknown_model_raises_rather_than_borrowing_another_wording():
+    with pytest.raises(ValueError, match="no summary"):
+        _summarise("gamma_gamma", 4.0, 20.0, "goals", "appearances")
+
+
 def test_a_count_model_reads_as_a_rate_over_its_denominator():
     summary = _summarise("gamma_poisson", 4.0, 20.0, "goals", "appearances")
     assert summary == "0.200 goals/appearances, worth 20.0 appearances of evidence"
+
+
+def test_a_duration_model_divides_the_other_way_round():
+    """`gamma_exponential` holds events in `alpha` and the time they took in `beta`, so the
+    quantity is time per event and the evidence is the count of events."""
+    summary = _summarise("gamma_exponential", 4.0, 20.0, "hours", "failures")
+    assert summary == "5.000 hours/failures, worth 4.0 failures of evidence"
 
 
 def test_a_proportion_model_reads_as_a_share_of_its_attempts():

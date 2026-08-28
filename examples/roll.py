@@ -50,10 +50,14 @@ def _summarise(model: str, first: float, second: float, stat: str, unit: str) ->
     """
     if model == "gamma_poisson":
         return f"{first / second:.3f} {stat}/{unit}, worth {second:.1f} {unit} of evidence"
+    if model == "gamma_exponential":
+        return f"{second / first:.3f} {stat}/{unit}, worth {first:.1f} {unit} of evidence"
     if model == "beta_binomial":
         share = first / (first + second)
         return f"{share:.3f} {stat}/{unit}, worth {first + second:.1f} {unit} of evidence"
-    return f"mean {first:.3f} {stat}/{unit}, spread {second:.3f}"
+    if model == "normal_normal":
+        return f"mean {first:.3f} {stat}/{unit}, spread {second:.3f}"
+    raise ValueError(f"no summary written for a {model} prior")
 
 
 def column_map(args) -> ColumnMap:
