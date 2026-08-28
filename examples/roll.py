@@ -22,11 +22,9 @@ from die_scouting import (
     POSTERIOR_PARAM_NAMES,
     ColumnMap,
     CsvDataAdapter,
-    DieMetadata,
     JsonPriorStore,
-    PosteriorSampler,
     PriorFitError,
-    assemble_die_from_samples,
+    create_die,
     fit_prior,
 )
 
@@ -171,29 +169,19 @@ def main() -> None:
                 "try a different --model, a broader --scope, or a different "
                 "--denominator-column"
             ) from None
-    sampler = PosteriorSampler(prior, adapter, args.stat)
-    observations = adapter.get_entity_observations(entity_id, args.stat, scope)
-    alpha, beta = sampler.posterior_params(entity_id)
-
-    metadata = DieMetadata(
-        entity_id=entity_id,
-        entity_type=args.entity_type,
+    die = create_die(
+        adapter,
+        prior,
+        entity_id,
+        args.denominator,
+        n_faces=args.faces,
+        strategy=args.strategy,
+        draws=args.draws,
         entity_name=name,
-        stat_id=args.stat,
-        scope=scope,
-        prior=prior,
-        posterior_params=dict(zip(POSTERIOR_PARAM_NAMES[prior.model], (alpha, beta))),
-        observed_value=sum(o.value for o in observations),
-        observed_denominator=sum(o.denominator for o in observations),
-        predicted_denominator=args.denominator,
         denominator_unit=args.denominator_column,
-        extra={"seasons": len(observations)},
     )
-
-    samples = sampler.sample_predictive(entity_id, args.draws, args.denominator)
-    die = assemble_die_from_samples(
-        samples, n_faces=args.faces, metadata=metadata, strategy=args.strategy
-    )
+    periods = len(adapter.get_entity_observations(entity_id, args.stat, scope))
+    die.metadata.extra["seasons"] = periods
     meta = die.metadata
 
     print(f"{meta.entity_name} ({meta.entity_id}) - {meta.stat_id}, scope {meta.scope or 'none'}")

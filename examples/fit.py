@@ -26,8 +26,7 @@ from die_scouting import (
     ColumnMap,
     CsvDataAdapter,
     JsonPriorStore,
-    fit_scopes,
-    scopes_for,
+    fit_priors,
 )
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -90,12 +89,9 @@ def main() -> None:
     adapter = CsvDataAdapter(args.data, column_map(args))
     store = JsonPriorStore(args.priors)
 
-    scopes = [{}] + [
-        scope
-        for scope in scopes_for(adapter, args.stat, args.scope_column)
-        if scope[args.scope_column] not in args.exclude
-    ]
-    report = fit_scopes(adapter, store, args.stat, args.model, scopes)
+    report = fit_priors(
+        adapter, store, args.stat, args.model, args.scope_column, args.exclude
+    )
 
     print(f"{args.stat} ({args.model}) -> {args.priors}")
     for scope in report.fitted:

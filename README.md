@@ -36,7 +36,7 @@ That is a weighted die: goal values on each face evenly split, uneven chances of
 
 ```
 uv sync
-uv run python examples/fit_priors.py
+uv run python examples/fit.py
 uv run python examples/roll.py Bukayo_Saka --scope position_general=Forward --priors data/priors.json
 ```
 
@@ -65,13 +65,14 @@ A composite score — an "inverted full-back suitability out of 10" computed how
 ```python
 from die_scouting import ColumnMap, CsvDataAdapter
 
-adapter = CsvDataAdapter("shooting.csv", ColumnMap(
+columns = ColumnMap(
     entity="player_ref",         # which entity a row belongs to
     entity_type="player",        # what that id names — a literal, not a column
     denominator="attempts",      # what the value was measured against
     name="player",               # a label, for lookups and display
     dimensions=("team", "season"),  # columns you might fit separate priors along
-))
+)
+adapter = CsvDataAdapter("shooting.csv", columns)
 ```
 
 Nothing is guessed from a column's name, so a file with its own conventions needs a map rather than a rename. A column you do not map is not lost — it is used one of two other ways:
@@ -82,6 +83,36 @@ Nothing is guessed from a column's name, so a file with its own conventions need
 Only `scopes_for` is restricted to the mapped dimensions, because it works from `Record`s rather than from the file and a `Record` carries only what the map told it to.
 
 **Choosing the denominator is a modelling decision, not a lookup.** If your file has both `attempts` and `minutes`, then `denominator="attempts"` asks what share of his shots go in, and `denominator="minutes"` asks how many he hits per minute on court. Both are legitimate, they are different questions, and the choice decides which model you want.
+
+## From a CSV to a die
+
+One call does the whole thing:
+
+```python
+from die_scouting import build_die_from_csv
+
+die = build_die_from_csv(
+    "shooting.csv", columns,
+    stat_id="three_pointers", model="beta_binomial",
+    entity_id="player-17", denominator=200,   # the next 200 attempts
+)
+print(die.model_dump_json(indent=2))
+```
+
+It refits the prior from the whole file on every call, so for more than one entity, fit once and reuse:
+
+```python
+from die_scouting import InMemoryPriorStore, create_die, fit_priors
+
+store = InMemoryPriorStore()
+report = fit_priors(adapter, store, "three_pointers", "beta_binomial", dimension="position")
+prior = store.get("player", "three_pointers", {"position": "Guard"})
+
+for entity_id in squad:
+    die = create_die(adapter, prior, entity_id, denominator=200)
+```
+
+`fit_priors` returns a `FitReport` naming the scopes it fitted and the ones it skipped, a slice with too few entities being expected when scopes come from a column. `create_die` reads the stat, entity type, scope and model off the prior, so the only thing left to choose is how much opportunity to predict over.
 
 ## How it works
 
@@ -158,13 +189,16 @@ A `normal_normal` prior carries a third number, `sigma_obs`, which is how much i
 
 **QualitySampler** — `sample(entity_id, n_draws)` returning draws of an entity's underlying quality. `PosteriorSampler` does the conjugate update and also offers `sample_predictive(entity_id, n_draws, denominator)`, which is what a die is built from. Its `posterior_params` returns the two numbers as a bare tuple, which `POSTERIOR_PARAM_NAMES` gives the names of. `BootstrapSampler` is not implemented.
 
+**Pipeline** — `fit_priors` fits the global scope plus one per value of a dimension and saves them to a store; `create_die` turns an entity and a prior into a `Die` with its metadata filled in; `build_die_from_csv` runs both against a CSV in one call, refitting the prior each time.
+
 **Discretizer** — `discretize(samples, n_faces, strategy)` turns a sample array into weighted faces. `equal_weight` holds the probabilities equal and lets the value ranges vary; `equal_width` holds the value ranges equal and lets the probabilities vary. It knows nothing about what the numbers mean.
 
-**Die** — `{faces, metadata}`, serialising with `model_dump_json()`. `DieMetadata` is typed rather than a free dict, so a consumer can rely on the names: entity, stat, scope, the prior behind it, the posterior's parameters, the record it was built from, and what denominator it predicts over. The posterior's two parameters are keyed by `POSTERIOR_PARAM_NAMES` under the prior's model, and `PriorParams.ordered_params` reads a prior's own pair out in the same order.
+**Die** — `{faces, metadata}`, serialising with `model_dump_json()`. `assemble_die_from_samples` is the last step, cutting a list of samples into faces; `DieMetadata` is typed rather than a free dict, so a consumer can rely on the names: entity, stat, scope, the prior behind it, the posterior's parameters, the record it was built from, and what denominator it predicts over. The posterior's two parameters are keyed by `POSTERIOR_PARAM_NAMES` under the prior's model, and `PriorParams.ordered_params` reads a prior's own pair out in the same order.
 
 ```
-Offline (periodic):  DataAdapter (population) -> fit_prior -> PriorStore
-Online (per roll):   PriorStore + DataAdapter (one entity) -> QualitySampler -> Discretizer -> Die
+Offline (periodic):  DataAdapter (population) -> fit_prior -> PriorStore          [fit_priors]
+Online (per roll):   PriorStore + DataAdapter (one entity) -> QualitySampler
+                       -> Discretizer -> Die                                     [create_die]
 ```
 
 ## Design notes

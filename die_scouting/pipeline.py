@@ -21,15 +21,25 @@ def fit_priors(
     stat_id: str,
     model: Model,
     dimension: str | None = None,
+    exclude: list[str] | None = None,
     min_denominator: float | None = None,
 ) -> FitReport:
     """Fit the global prior for `stat_id`, plus one per distinct value of `dimension` when
     it is given, and save them to `store`.
 
-    Returns the `FitReport` from `fit_scopes`, so a scope with too little data to fit
-    appears in its `skipped` rather than raising.
+    `exclude` names values of `dimension` to leave unfitted, for a slice known in advance to
+    be uninteresting rather than one too thin to fit — those appear in the report instead.
+
+    Returns the `FitReport` from `fit_scopes`, so a scope with too little data to fit appears
+    in its `skipped` rather than raising.
     """
-    scopes = [{}] if dimension is None else [{}, *scopes_for(adapter, stat_id, dimension)]
+    scopes: list[dict[str, str]] = [{}]
+    if dimension is not None:
+        scopes += [
+            scope
+            for scope in scopes_for(adapter, stat_id, dimension)
+            if scope[dimension] not in (exclude or [])
+        ]
     return fit_scopes(adapter, store, stat_id, model, scopes, min_denominator)
 
 
