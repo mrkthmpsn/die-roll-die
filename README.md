@@ -187,7 +187,7 @@ A `normal_normal` prior carries a third number, `sigma_obs`, which is how much i
 
 **PriorStore** — persists fitted priors, keyed by `(entity_type, stat_id, scope)`. `InMemoryPriorStore` for a process, `JsonPriorStore` for a file. Fitting is an offline job; rolling a die reads what it wrote.
 
-**QualitySampler** — `sample(entity_id, n_draws)` returning draws of an entity's underlying quality. `PosteriorSampler` does the conjugate update and also offers `sample_predictive(entity_id, n_draws, denominator)`, which is what a die is built from. Its `posterior_params` returns the two numbers as a bare tuple, which `POSTERIOR_PARAM_NAMES` gives the names of. `BootstrapSampler` is not implemented.
+**QualitySampler** — `sample(entity_id, n_draws)` returning draws of an entity's underlying quality. `PosteriorSampler` does the conjugate update and also offers `sample_predictive(entity_id, n_draws, denominator)`, which is what a die is built from. Its `posterior_params` returns the two numbers as a bare tuple, which `POSTERIOR_PARAM_NAMES` gives the names of. `BootstrapSampler` draws without a prior, resampling the entity's own records with replacement and taking summed values over summed denominators each time.
 
 **Pipeline** — `fit_priors` fits the global scope plus one per value of a dimension and saves them to a store; `create_die` turns an entity and a prior into a `Die` with its metadata filled in; `build_die_from_csv` runs both against a CSV in one call, refitting the prior each time.
 
@@ -212,6 +212,8 @@ Online (per roll):   PriorStore + DataAdapter (one entity) -> QualitySampler
 **Draws outside the 1st and 99th percentiles are dropped before binning.** Without that, an outer face reports the single most extreme draw as its bound — and that bound moves with how many draws you asked for, climbing from 46 to 73 as the count went from a thousand to half a million. Clipping is skipped when there are too few samples for the tails to hold one, so it applies from about a hundred upward. Pass `clip=None` to keep everything.
 
 **Adjacent equal-mass faces can share an integer bound.** A D20 over predicted goals showed faces of `21`, `21-22` and `22`, so 22 goals is an outcome on three faces of twenty. That is the die being honest about a count distribution having fewer distinct values than the die has faces; the weights stay correct.
+
+**`BootstrapSampler` resamples whole records, so what a record is becomes a modelling choice.** `PosteriorSampler` only sums values and denominators, so a player's goals and nineties total the same whether they arrive as four seasons or 150 matches and the posterior die is identical either way — the Gamma-Poisson already treats a season as a bag of independent minutes. Resampling reuses whole rows, so it gives a different answer at each granularity, and a match is the unit it wants: three to six season rows are too few for the spread of the resampled rates to mean much. `data/player_seasons.csv` is season totals, so the shipped data demonstrates the posterior rather than the bootstrap. Note also that summed values over summed denominators is a biased estimate of the pooled rate when the denominators differ, which is a property of the ratio and not of the resampling.
 
 **Entity type is in the store key** so goals-per-player and goals-per-club can share a store, and `PosteriorSampler` raises rather than shrinking a player toward a club's prior.
 
