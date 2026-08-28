@@ -28,9 +28,9 @@ Erling Haaland (Erling_Haaland) - goals, scope {'position_general': 'Forward'}
 
 The `prior` line is what forwards in general score, fitted from the data: 0.197 goals per appearance, carrying as much weight as 11 appearances would. The `posterior` adds Haaland's own 112 goals in 132 appearances, giving 0.797 goals per appearance on 143 appearances of evidence.
 
-Each face of the die covers about four goals and carries its own chance of coming up. A season of 20 to 25 goals is the likeliest single outcome at 29%, while 12 to 16 comes up 7% of the time and 33 to 37 comes up 5%. Read down the right-hand column and you are reading the shape of the distribution.
+Each face of the die covers about four goals and carries its own chance of coming up. A season of 20 to 25 goals (across an imaginary 30 appearances) is the likeliest single outcome at 29%, while 12 to 16 comes up 7% of the time and 33 to 37 comes up 5%. Read down the right-hand column and you are reading the shape of the distribution.
 
-That is a weighted die: even faces, uneven chances. `--strategy equal_weight` cuts the same numbers the other way — every face equally likely, with the value ranges uneven instead — which is an unweighted die you could fairly roll by hand, and a less direct read.
+That is a weighted die: goal values on each face evenly split, uneven chances of landing on each face. `--strategy equal_weight` cuts the same numbers the other way — every face equally likely, with the value ranges uneven instead.
 
 ## Try it
 
@@ -42,17 +42,17 @@ uv run python examples/roll.py Bukayo_Saka --scope position_general=Forward --pr
 
 The first command fits a prior for each position group and writes them to `data/priors.json`; the second builds a die for one player. A dataset of 2,804 Premier League player-seasons ships with the repo, so both work on a fresh clone.
 
-Useful flags on `roll.py`: `--faces 20` for a D20, `--denominator 38` to predict over a full season, `--strategy equal_width` for the histogram view, and `--json` to see the payload a frontend would receive.
+Useful flags on `roll.py`: `--faces 20` for a D20, `--denominator 38` to predict over a full 38-appearance season, `--strategy equal_width` for the histogram view.
 
 ## What you can point it at
 
-The library is built around the shape of the measurement, not the sport. There are three shapes it handles, and your data decides which one you have:
+Football is used as an example, but the library is built around the shape of the measurement. There are three shapes it handles, and your data decides which one you have:
 
-**A count over an exposure.** Goals in appearances, tackles in minutes, defects in production hours, support tickets in weeks on the team. The die is over "how many, next time".
+**A count over an 'exposure'.** Goals in appearances, tackles in minutes, defects in production hours, support tickets in weeks on the team. You choose how much exposure to predict over — 30 appearances, 900 minutes — and the die is over how many events fall in it.
 
-**Successes out of attempts.** Shots on target out of shots, passes completed out of attempted, free throws made out of taken. The die is over "how many of the next hundred".
+**Successes out of attempts.** Shots on target out of shots, passes completed out of attempted, free throws made out of taken. You choose how many attempts, and the die is over how many of them come off.
 
-**A measured quantity.** Distance covered per match, average pass length, or a modelled score — an "inverted full-back suitability out of 10" computed however you like, which arrives here as one number per match and gets the same treatment as goals.
+**A measured quantity.** Distance covered per match, average pass length, or a modelled score — an "inverted full-back suitability out of 10" computed however you like, arriving here as one number per match. You choose how many matches, and the die is over the total across them.
 
 On the last of those: this library does not model composite scores, it consumes them. If you have a formula that scores players out of 10, feed the scores in and roll the result.
 
