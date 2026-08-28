@@ -5,6 +5,7 @@ from .discretizer import discretize
 from .errors import InsufficientData, PriorFitError, UnsuitableModel
 from .fitting import FitReport, fit_scopes, scopes_for
 from .models import POSTERIOR_PARAM_NAMES, Die, DieMetadata, Face, Model, PriorParams, Record
+from .pipeline import build_die_from_csv, create_die, fit_priors
 from .prior_discovery import fit_prior
 from .prior_store import InMemoryPriorStore, JsonPriorStore, PriorStore
 from .quality_sampler import BootstrapSampler, PosteriorSampler, QualitySampler
@@ -31,8 +32,11 @@ __all__ = [
     "Record",
     "UnsuitableModel",
     "assemble_die_from_samples",
+    "build_die_from_csv",
+    "create_die",
     "discretize",
     "fit_prior",
+    "fit_priors",
     "fit_scopes",
     "scopes_for",
 ]
