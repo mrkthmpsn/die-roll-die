@@ -45,23 +45,23 @@ def parse_scope(pairs: list[str]) -> dict[str, str]:
 
 def _prior_pair(prior) -> tuple[float, float]:
     """Return the prior's two parameters in the order `posterior_params` returns them."""
-    if prior.family == "normal":
+    if prior.model == "normal_normal":
         return prior.params["mu"], prior.params["sigma"]
     return prior.params["alpha"], prior.params["beta"]
 
 
-def _param_names(family: str) -> tuple[str, str]:
-    """Return the names `posterior_params` returns its two values under, for this family."""
-    return ("mu", "sigma") if family == "normal" else ("alpha", "beta")
+def _param_names(model: str) -> tuple[str, str]:
+    """Return the names `posterior_params` returns its two values under, for this model."""
+    return ("mu", "sigma") if model == "normal_normal" else ("alpha", "beta_binomial")
 
 
-def _summarise(family: str, first: float, second: float, stat: str, unit: str) -> str:
-    """Describe a family's two parameters as the quantity they imply, in the caller's own
+def _summarise(model: str, first: float, second: float, stat: str, unit: str) -> str:
+    """Describe a model's two parameters as the quantity they imply, in the caller's own
     column names: how much of `stat` per unit of `unit`, and how much evidence that rests on.
     """
-    if family == "gamma":
+    if model == "gamma_poisson":
         return f"{first / second:.3f} {stat}/{unit}, worth {second:.1f} {unit} of evidence"
-    if family == "beta":
+    if model == "beta_binomial":
         share = first / (first + second)
         return f"{share:.3f} {stat}/{unit}, worth {first + second:.1f} {unit} of evidence"
     return f"mean {first:.3f} {stat}/{unit}, spread {second:.3f}"
@@ -122,10 +122,10 @@ def main() -> None:
     )
     parser.add_argument("--faces", type=int, default=6)
     parser.add_argument(
-        "--family",
-        choices=["beta", "gamma", "normal"],
-        default="gamma",
-        help="prior distribution family for this stat",
+        "--model",
+        choices=["beta_binomial", "gamma_poisson", "normal_normal"],
+        default="gamma_poisson",
+        help="prior distribution model for this stat",
     )
     parser.add_argument(
         "--strategy",
@@ -168,14 +168,14 @@ def main() -> None:
         try:
             prior = fit_prior(
                 adapter.get_population_observations(args.stat, scope),
-                args.family,
+                args.model,
                 args.stat,
                 scope,
             )
         except PriorFitError as error:
             raise SystemExit(
-                f"cannot fit a {args.family} prior for {args.stat!r}: {error}\n"
-                "try a different --family, a broader --scope, or a different "
+                f"cannot fit a {args.model} prior for {args.stat!r}: {error}\n"
+                "try a different --model, a broader --scope, or a different "
                 "--denominator-column"
             ) from None
     sampler = PosteriorSampler(prior, adapter, args.stat)
@@ -189,7 +189,7 @@ def main() -> None:
         stat_id=args.stat,
         scope=scope,
         prior=prior,
-        posterior_params=dict(zip(_param_names(prior.family), (alpha, beta))),
+        posterior_params=dict(zip(_param_names(prior.model), (alpha, beta))),
         observed_value=sum(o.value for o in observations),
         observed_denominator=sum(o.denominator for o in observations),
         predicted_denominator=args.denominator,
@@ -206,11 +206,11 @@ def main() -> None:
         f"  record:    {meta.observed_value:.0f} in {meta.observed_denominator:.1f} "
         f"{meta.denominator_unit} across {meta.extra['seasons']} seasons"
     )
-    family = meta.prior.family
-    posterior = tuple(meta.posterior_params[param] for param in _param_names(family))
+    model = meta.prior.model
+    posterior = tuple(meta.posterior_params[param] for param in _param_names(model))
     units = (meta.stat_id, meta.denominator_unit)
-    print(f"  prior:     {family}, {_summarise(family, *_prior_pair(meta.prior), *units)}")
-    print(f"  posterior: {_summarise(family, *posterior, *units)}")
+    print(f"  prior:     {model}, {_summarise(model, *_prior_pair(meta.prior), *units)}")
+    print(f"  posterior: {_summarise(model, *posterior, *units)}")
 
     if args.json:
         print()

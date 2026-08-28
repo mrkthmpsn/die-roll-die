@@ -9,7 +9,7 @@ class Record(BaseModel):
     """Representation of a single entity's single value, and the denominator it was
     measured against.
 
-    What the pair means follows the prior family it is fitted or updated under: a count
+    What the pair means follows the prior model it is fitted or updated under: a count
     over the opportunity it accumulated in, as twelve goals across thirty nineties
     (`value=12.0, denominator=30.0`); successes over attempts, as thirty headers from a
     hundred shots; or a measurement over the weight it carries, where `value / denominator`
@@ -39,14 +39,14 @@ class PriorParams(BaseModel):
     `scope` is a set of optional, composable filter dimensions (e.g. position group,
     competition); an empty dict means the global, unscoped prior for this stat.
 
-    `params` holds the family's parameters by name: `alpha` and `beta` for gamma, where
+    `params` holds the model's parameters by name: `alpha` and `beta` for gamma, where
     `beta` is a rate in units of 1/denominator.
     """
 
     stat_id: str
     entity_type: str
     scope: dict[str, str] = {}
-    family: Literal["beta", "gamma", "normal"]
+    model: Literal["beta_binomial", "gamma_poisson", "normal_normal"]
     params: dict[str, float]
 
 

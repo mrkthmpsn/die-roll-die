@@ -21,7 +21,7 @@ def gamma_prior(alpha: float = 3.0, beta: float = 10.0) -> PriorParams:
     """Mean rate of 0.3 goals per ninety."""
     return PriorParams(
         entity_type="player",
-        stat_id="non_penalty_goals", family="gamma", params={"alpha": alpha, "beta": beta}
+        stat_id="non_penalty_goals", model="gamma_poisson", params={"alpha": alpha, "beta": beta}
     )
 
 
@@ -112,7 +112,7 @@ def beta_prior(alpha: float = 2.0, beta: float = 8.0) -> PriorParams:
     """Mean proportion of 0.2."""
     return PriorParams(
         entity_type="player",
-        stat_id="pass_completion", family="beta", params={"alpha": alpha, "beta": beta}
+        stat_id="pass_completion", model="beta_binomial", params={"alpha": alpha, "beta": beta}
     )
 
 
@@ -120,7 +120,7 @@ def normal_prior(mu: float = 10.0, sigma: float = 1.0, sigma_obs: float = 2.0) -
     return PriorParams(
         entity_type="player",
         stat_id="distance",
-        family="normal",
+        model="normal_normal",
         params={"mu": mu, "sigma": sigma, "sigma_obs": sigma_obs},
     )
 
@@ -172,7 +172,7 @@ def test_normal_predictive_totals_over_the_denominator():
 
 
 def test_gamma_prior_missing_a_parameter_raises():
-    prior = PriorParams(entity_type="player", stat_id="np_goals", family="gamma", params={"alpha": 3.0})
+    prior = PriorParams(entity_type="player", stat_id="np_goals", model="gamma_poisson", params={"alpha": 3.0})
     with pytest.raises(ValueError, match="beta"):
         source({}, prior=prior).sample("striker", 10)
 

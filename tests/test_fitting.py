@@ -69,7 +69,7 @@ def test_fit_scopes_saves_what_it_fits(adapter):
     store = InMemoryPriorStore()
     scopes = [{}] + scopes_for(adapter, "goals", "position_general")
 
-    report = fit_scopes(adapter, store, "goals", "gamma", scopes)
+    report = fit_scopes(adapter, store, "goals", "gamma_poisson", scopes)
 
     assert {} in report.fitted
     assert {"position_general": "Forward"} in report.fitted
@@ -80,7 +80,7 @@ def test_fit_scopes_skips_a_scope_with_too_little_data(adapter):
     store = InMemoryPriorStore()
     scopes = scopes_for(adapter, "goals", "position_general")
 
-    report = fit_scopes(adapter, store, "goals", "gamma", scopes)
+    report = fit_scopes(adapter, store, "goals", "gamma_poisson", scopes)
 
     skipped_scopes = [scope for scope, _ in report.skipped]
     assert {"position_general": "Goalkeeper"} in skipped_scopes
@@ -91,7 +91,7 @@ def test_fit_scopes_skips_a_scope_with_too_little_data(adapter):
 
 
 def test_fit_scopes_skips_a_scope_whose_values_are_all_zero():
-    """Goalkeepers score no goals, which is a fact about the slice rather than the family."""
+    """Goalkeepers score no goals, which is a fact about the slice rather than the model."""
     adapter = FakeAdapter(
         [season(f"fwd-{i}", 8 + i, 20 + i, "Forward") for i in range(12)]
         + [season(f"gk-{i}", 0, 30 + i, "Goalkeeper") for i in range(12)]
@@ -99,7 +99,7 @@ def test_fit_scopes_skips_a_scope_whose_values_are_all_zero():
     store = InMemoryPriorStore()
     scopes = scopes_for(adapter, "goals", "position_general")
 
-    report = fit_scopes(adapter, store, "goals", "gamma", scopes)
+    report = fit_scopes(adapter, store, "goals", "gamma_poisson", scopes)
 
     assert {"position_general": "Forward"} in report.fitted
     assert [scope for scope, _ in report.skipped] == [{"position_general": "Goalkeeper"}]
@@ -110,4 +110,4 @@ def test_fit_scopes_does_not_swallow_a_wrong_family():
     adapter = FakeAdapter([season(f"fwd-{i}", 40 + i, 20 + i, "Forward") for i in range(12)])
 
     with pytest.raises(UnsuitableFamily):
-        fit_scopes(adapter, InMemoryPriorStore(), "goals", "beta", [{}])
+        fit_scopes(adapter, InMemoryPriorStore(), "goals", "beta_binomial", [{}])

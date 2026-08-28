@@ -12,15 +12,15 @@ MIN_DENOMINATOR = 10.0
 
 def fit_prior(
     observations: list[Record],
-    family: Literal["beta", "gamma", "normal"],
+    model: Literal["beta_binomial", "gamma_poisson", "normal_normal"],
     stat_id: str,
     scope: dict[str, str] | None = None,
     min_denominator: float = MIN_DENOMINATOR,
 ) -> PriorParams:
     """Fit prior parameters for a stat from population-wide observations, by method of
-    moments against `family`.
+    moments against `model`.
 
-    `family` is supplied by the caller: it states which values the stat can take at all,
+    `model` is supplied by the caller: it states which values the stat can take at all,
     which no sample establishes, since an unobserved value and an impossible one look
     alike in data.
 
@@ -35,8 +35,8 @@ def fit_prior(
 
     Raises:
         ValueError: if `observations` is empty, or holds more than one entity type.
-        InsufficientData: if there are too few observations to fit `family`.
-        UnsuitableFamily: if the observations contradict `family`.
+        InsufficientData: if there are too few observations to fit `model`.
+        UnsuitableFamily: if the observations contradict `model`.
     """
     entity_types = {o.entity_type for o in observations}
     if not entity_types:
@@ -46,17 +46,17 @@ def fit_prior(
             f"observations of {stat_id!r} hold more than one entity type "
             f"({', '.join(sorted(entity_types))}); a prior describes one kind of entity"
         )
-    fit = {"beta": _fit_beta, "gamma": _fit_gamma, "normal": _fit_normal}[family]
+    fit = {"beta_binomial": _fit_beta, "gamma_poisson": _fit_gamma, "normal_normal": _fit_normal}[model]
     return PriorParams(
         stat_id=stat_id,
         entity_type=entity_types.pop(),
         scope=scope or {},
-        family=family,
+        model=model,
         params=fit(observations, min_denominator),
     )
 
 
-def _usable(observations: list[Record], min_denominator: float, family: str) -> list[Record]:
+def _usable(observations: list[Record], min_denominator: float, model: str) -> list[Record]:
     """Return the observations whose denominator reaches `min_denominator`.
 
     Raises:
@@ -65,7 +65,7 @@ def _usable(observations: list[Record], min_denominator: float, family: str) -> 
     usable = [o for o in observations if o.denominator >= min_denominator]
     if len(usable) < 2:
         raise InsufficientData(
-            f"fitting a {family} prior needs at least two observations of denominator "
+            f"fitting a {model} prior needs at least two observations of denominator "
             f"{min_denominator} or more; got {len(usable)}"
         )
     return usable
@@ -102,7 +102,7 @@ def _fit_gamma(observations: list[Record], min_denominator: float) -> dict[str, 
         InsufficientData: if fewer than two observations reach `min_denominator`, or if
             their rates have a mean or a variance of zero.
     """
-    usable = _usable(observations, min_denominator, "gamma")
+    usable = _usable(observations, min_denominator, "gamma_poisson")
 
     rates = [o.value / o.denominator for o in usable]
     mean = statistics.fmean(rates)
@@ -139,7 +139,7 @@ def _fit_beta(observations: list[Record], min_denominator: float) -> dict[str, f
                 "a beta prior needs successes counted out of attempts"
             )
 
-    usable = _usable(observations, min_denominator, "beta")
+    usable = _usable(observations, min_denominator, "beta_binomial")
 
     proportions = [o.value / o.denominator for o in usable]
     mean = statistics.fmean(proportions)
@@ -176,7 +176,7 @@ def _fit_normal(observations: list[Record], min_denominator: float) -> dict[str,
             entity has two or more of them, if every repeated observation is identical, or
             if the rates have no spread.
     """
-    usable = _usable(observations, min_denominator, "normal")
+    usable = _usable(observations, min_denominator, "normal_normal")
 
     by_entity: dict[str, list[Record]] = {}
     for o in usable:

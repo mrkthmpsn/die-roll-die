@@ -2,7 +2,7 @@ from __future__ import annotations
 
 
 class PriorFitError(ValueError):
-    """Raised when observations cannot produce a prior of the family asked for."""
+    """Raised when observations cannot produce a prior of the model asked for."""
 
 
 class InsufficientData(PriorFitError):
@@ -10,4 +10,4 @@ class InsufficientData(PriorFitError):
 
 
 class UnsuitableFamily(PriorFitError):
-    """Raised when the observations contradict the family asked for."""
+    """Raised when the observations contradict the model asked for."""

@@ -27,7 +27,7 @@ def test_record_requires_a_denominator():
 
 
 def test_prior_params_instantiates():
-    prior = PriorParams(entity_type="player", stat_id="goals_per_90", family="beta", params={"alpha": 2.0, "beta": 5.0})
+    prior = PriorParams(entity_type="player", stat_id="goals_per_90", model="beta_binomial", params={"alpha": 2.0, "beta": 5.0})
     assert prior.scope == {}
 
 
@@ -40,7 +40,7 @@ def test_face_and_die_instantiate():
 
 def test_fit_prior_needs_observations():
     with pytest.raises(ValueError):
-        fit_prior([], "gamma", "goals_per_90")
+        fit_prior([], "gamma_poisson", "goals_per_90")
 
 
 def test_bootstrap_source_stub_raises():
@@ -114,7 +114,7 @@ def test_metadata_round_trips_through_json():
         prior=PriorParams(
             stat_id="goals",
             entity_type="player",
-            family="gamma",
+            model="gamma_poisson",
             params={"alpha": 5.26, "beta": 16.59},
         ),
         posterior_params={"alpha": 218.26, "beta": 314.92},
@@ -126,7 +126,7 @@ def test_metadata_round_trips_through_json():
     restored = Die.model_validate_json(die.model_dump_json())
 
     assert restored.metadata.scope == {"position_general": "Forward"}
-    assert restored.metadata.prior.family == "gamma"
+    assert restored.metadata.prior.model == "gamma_poisson"
     assert restored.metadata.posterior_params["beta"] == 314.92
     assert restored.metadata.denominator_unit == "nineties"
 

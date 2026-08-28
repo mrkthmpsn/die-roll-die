@@ -12,7 +12,7 @@ def prior(scope: dict[str, str], alpha: float = 5.0, stat_id: str = "goals") -> 
         stat_id=stat_id,
         entity_type="player",
         scope=scope,
-        family="gamma",
+        model="gamma_poisson",
         params={"alpha": alpha, "beta": 16.0},
     )
 

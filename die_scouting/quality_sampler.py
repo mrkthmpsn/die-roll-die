@@ -22,7 +22,7 @@ class PosteriorSampler:
     """Produces draws from a closed-form posterior, by conjugate update of `prior` with
     the entity's own observations.
 
-    Three families are implemented, each with its own update and its own reading of a
+    Three models are implemented, each with its own update and its own reading of a
     `Record`: gamma with Poisson counts, where `value` is a count and `denominator` the
     opportunity it accumulated over; beta with binomial successes, where `value` is
     successes and `denominator` attempts; and normal, where `value / denominator` is a measured
@@ -50,7 +50,7 @@ class PosteriorSampler:
 
         Raises:
             ValueError: if the entity's observations are of a different entity type than
-                the prior describes, or if the prior's params lack a key its family needs.
+                the prior describes, or if the prior's params lack a key its model needs.
         """
         observations = self.data_adapter.get_entity_observations(
             entity_id, self.stat_id, self.prior.scope
@@ -61,13 +61,13 @@ class PosteriorSampler:
                     f"entity {entity_id!r} is a {observation.entity_type!r} and the prior "
                     f"describes a {self.prior.entity_type!r}"
                 )
-        if self.prior.family == "gamma":
+        if self.prior.model == "gamma_poisson":
             self._require("alpha", "beta")
             return (
                 self.prior.params["alpha"] + sum(o.value for o in observations),
                 self.prior.params["beta"] + sum(o.denominator for o in observations),
             )
-        if self.prior.family == "beta":
+        if self.prior.model == "beta_binomial":
             self._require("alpha", "beta")
             return (
                 self.prior.params["alpha"] + sum(o.value for o in observations),
@@ -104,9 +104,9 @@ class PosteriorSampler:
         first, second = self.posterior_params(entity_id)
         draws = self._draw(first, second, n_draws)
 
-        if self.prior.family == "gamma":
+        if self.prior.model == "gamma_poisson":
             return self.rng.poisson(draws * denominator).astype(float).tolist()
-        if self.prior.family == "beta":
+        if self.prior.model == "beta_binomial":
             if denominator != int(denominator):
                 raise ValueError("a beta prior predicts over a whole number of attempts")
             return self.rng.binomial(int(denominator), draws).astype(float).tolist()
@@ -114,16 +114,16 @@ class PosteriorSampler:
         return (draws * denominator + self.rng.normal(0.0, noise, size=n_draws)).tolist()
 
     def _draw(self, first: float, second: float, n_draws: int) -> np.ndarray:
-        if self.prior.family == "gamma":
+        if self.prior.model == "gamma_poisson":
             return self.rng.gamma(shape=first, scale=1.0 / second, size=n_draws)
-        if self.prior.family == "beta":
+        if self.prior.model == "beta_binomial":
             return self.rng.beta(first, second, size=n_draws)
         return self.rng.normal(first, second, size=n_draws)
 
     def _require(self, *keys: str) -> None:
         for key in keys:
             if key not in self.prior.params:
-                raise ValueError(f"a {self.prior.family} prior's params must contain {key!r}")
+                raise ValueError(f"a {self.prior.model} prior's params must contain {key!r}")
 
 
 class BootstrapSampler:

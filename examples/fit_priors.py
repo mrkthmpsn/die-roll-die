@@ -47,7 +47,7 @@ def column_map(args) -> ColumnMap:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--stat", default="goals")
-    parser.add_argument("--family", choices=["beta", "gamma", "normal"], default="gamma")
+    parser.add_argument("--model", choices=["beta_binomial", "gamma_poisson", "normal_normal"], default="gamma_poisson")
     parser.add_argument("--scope-column", default="position_general")
     parser.add_argument(
         "--exclude",
@@ -84,9 +84,9 @@ def main() -> None:
         for scope in scopes_for(adapter, args.stat, args.scope_column)
         if scope[args.scope_column] not in args.exclude
     ]
-    report = fit_scopes(adapter, store, args.stat, args.family, scopes)
+    report = fit_scopes(adapter, store, args.stat, args.model, scopes)
 
-    print(f"{args.stat} ({args.family}) -> {args.priors}")
+    print(f"{args.stat} ({args.model}) -> {args.priors}")
     for scope in report.fitted:
         prior = store.get(args.entity_type, args.stat, scope)
         params = ", ".join(f"{k}={v:.3f}" for k, v in prior.params.items())

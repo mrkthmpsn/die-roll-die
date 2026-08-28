@@ -46,7 +46,7 @@ def fit_scopes(
     adapter: DataAdapter,
     store: PriorStore,
     stat_id: str,
-    family: Literal["beta", "gamma", "normal"],
+    model: Literal["beta_binomial", "gamma_poisson", "normal_normal"],
     scopes: list[dict[str, str]],
     min_denominator: float | None = None,
 ) -> FitReport:
@@ -57,7 +57,7 @@ def fit_scopes(
 
     A scope raising `InsufficientData` is recorded in the report's `skipped` and the run
     continues, a thin slice being expected when scopes are enumerated from a column. An
-    `UnsuitableFamily` is not caught, since it says `family` is wrong for `stat_id` rather
+    `UnsuitableFamily` is not caught, since it says `model` is wrong for `stat_id` rather
     than for one slice.
     """
     report = FitReport()
@@ -65,9 +65,9 @@ def fit_scopes(
         observations = adapter.get_population_observations(stat_id, scope)
         try:
             if min_denominator is None:
-                params = fit_prior(observations, family, stat_id, scope)
+                params = fit_prior(observations, model, stat_id, scope)
             else:
-                params = fit_prior(observations, family, stat_id, scope, min_denominator)
+                params = fit_prior(observations, model, stat_id, scope, min_denominator)
         except InsufficientData as error:
             report.skipped.append((scope, str(error)))
             continue

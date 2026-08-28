@@ -22,15 +22,15 @@ def gamma_poisson_observations(alpha: float, beta: float, n: int, seed: int = 7)
 
 def test_fit_prior_records_the_stat_and_scope():
     scope = {"position_general": "Forward"}
-    prior = fit_prior(gamma_poisson_observations(5.0, 16.0, 200), "gamma", "goals", scope)
+    prior = fit_prior(gamma_poisson_observations(5.0, 16.0, 200), "gamma_poisson", "goals", scope)
     assert prior.stat_id == "goals"
     assert prior.scope == scope
-    assert prior.family == "gamma"
+    assert prior.model == "gamma_poisson"
     assert set(prior.params) == {"alpha", "beta"}
 
 
 def test_fit_prior_recovers_a_known_gamma():
-    prior = fit_prior(gamma_poisson_observations(5.0, 16.0, 4000), "gamma", "goals")
+    prior = fit_prior(gamma_poisson_observations(5.0, 16.0, 4000), "gamma_poisson", "goals")
     alpha, beta = prior.params["alpha"], prior.params["beta"]
     assert alpha / beta == pytest.approx(5.0 / 16.0, rel=0.05)
     assert alpha == pytest.approx(5.0, rel=0.15)
@@ -42,7 +42,7 @@ def test_correcting_for_poisson_noise_narrows_the_prior():
     rates = np.array([o.value / o.denominator for o in observations])
     uncorrected_alpha = rates.mean() ** 2 / rates.var(ddof=1)
 
-    prior = fit_prior(observations, "gamma", "goals")
+    prior = fit_prior(observations, "gamma_poisson", "goals")
     assert prior.params["alpha"] > uncorrected_alpha
     assert uncorrected_alpha < 0.75 * 5.0
 
@@ -53,8 +53,8 @@ def test_min_denominator_excludes_short_observations():
         Record(entity_type="player", entity_id="2", value=3.0, denominator=10.0),
         Record(entity_type="player", entity_id="3", value=9.0, denominator=20.0),
     ]
-    with_cameo = fit_prior(observations, "gamma", "goals", min_denominator=0.5)
-    without = fit_prior(observations, "gamma", "goals")
+    with_cameo = fit_prior(observations, "gamma_poisson", "goals", min_denominator=0.5)
+    without = fit_prior(observations, "gamma_poisson", "goals")
     assert with_cameo.params["alpha"] / with_cameo.params["beta"] > (
         without.params["alpha"] / without.params["beta"]
     )
@@ -66,13 +66,13 @@ def test_fit_prior_needs_two_observations_above_min_denominator():
         Record(entity_type="player", entity_id="2", value=3.0, denominator=10.0),
     ]
     with pytest.raises(InsufficientData, match="at least two observations"):
-        fit_prior(observations, "gamma", "goals")
+        fit_prior(observations, "gamma_poisson", "goals")
 
 
 def test_fit_prior_rejects_observations_that_are_all_zero():
     observations = [Record(entity_type="player", entity_id=str(i), value=0.0, denominator=10.0) for i in range(5)]
     with pytest.raises(InsufficientData, match="value is zero"):
-        fit_prior(observations, "gamma", "goals")
+        fit_prior(observations, "gamma_poisson", "goals")
 
 
 def beta_binomial_observations(
@@ -112,7 +112,7 @@ def normal_observations(
 
 
 def test_fit_prior_recovers_a_known_beta():
-    prior = fit_prior(beta_binomial_observations(6.0, 14.0, 3000), "beta", "pass_completion")
+    prior = fit_prior(beta_binomial_observations(6.0, 14.0, 3000), "beta_binomial", "pass_completion")
     alpha, beta = prior.params["alpha"], prior.params["beta"]
     assert alpha / (alpha + beta) == pytest.approx(6.0 / 20.0, rel=0.05)
     assert alpha == pytest.approx(6.0, rel=0.25)
@@ -125,7 +125,7 @@ def test_beta_correction_narrows_the_prior():
     m, v = proportions.mean(), proportions.var(ddof=1)
     uncorrected = m * (m * (1 - m) / v - 1)
 
-    prior = fit_prior(observations, "beta", "pass_completion")
+    prior = fit_prior(observations, "beta_binomial", "pass_completion")
     assert prior.params["alpha"] > uncorrected
 
 
@@ -135,12 +135,12 @@ def test_beta_rejects_values_above_their_denominator():
         Record(entity_type="player", entity_id="fine", value=3.0, denominator=10.0),
     ]
     with pytest.raises(UnsuitableFamily, match="over"):
-        fit_prior(observations, "beta", "pass_completion")
+        fit_prior(observations, "beta_binomial", "pass_completion")
 
 
 def test_fit_prior_recovers_a_known_normal():
     observations = normal_observations(10.0, 1.0, 2.0, entities=400, seasons=4)
-    prior = fit_prior(observations, "normal", "distance", min_denominator=0.0)
+    prior = fit_prior(observations, "normal_normal", "distance", min_denominator=0.0)
     assert prior.params["mu"] == pytest.approx(10.0, rel=0.02)
     assert prior.params["sigma"] == pytest.approx(1.0, rel=0.15)
     assert prior.params["sigma_obs"] == pytest.approx(2.0, rel=0.15)
@@ -149,7 +149,7 @@ def test_fit_prior_recovers_a_known_normal():
 def test_normal_needs_an_entity_with_repeated_observations():
     observations = normal_observations(10.0, 1.0, 2.0, entities=50, seasons=1)
     with pytest.raises(InsufficientData, match="two or more"):
-        fit_prior(observations, "normal", "distance", min_denominator=0.0)
+        fit_prior(observations, "normal_normal", "distance", min_denominator=0.0)
 
 
 def test_both_fit_errors_are_value_errors():
@@ -159,7 +159,7 @@ def test_both_fit_errors_are_value_errors():
 
 
 def test_fit_prior_takes_the_entity_type_from_the_observations():
-    prior = fit_prior(gamma_poisson_observations(5.0, 16.0, 200), "gamma", "goals")
+    prior = fit_prior(gamma_poisson_observations(5.0, 16.0, 200), "gamma_poisson", "goals")
     assert prior.entity_type == "player"
 
 
@@ -167,9 +167,9 @@ def test_fit_prior_rejects_a_mixed_set_of_entity_types():
     observations = gamma_poisson_observations(5.0, 16.0, 200)
     observations[0] = observations[0].model_copy(update={"entity_type": "club"})
     with pytest.raises(ValueError, match="more than one entity type"):
-        fit_prior(observations, "gamma", "goals")
+        fit_prior(observations, "gamma_poisson", "goals")
 
 
 def test_fit_prior_rejects_an_empty_set():
     with pytest.raises(ValueError, match="no observations"):
-        fit_prior([], "gamma", "goals")
+        fit_prior([], "gamma_poisson", "goals")
