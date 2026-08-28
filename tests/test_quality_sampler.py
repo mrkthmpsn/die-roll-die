@@ -3,7 +3,13 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from die_scouting import POSTERIOR_PARAM_NAMES, PosteriorSampler, PriorParams, Record
+from die_scouting import (
+    POSTERIOR_PARAM_NAMES,
+    BootstrapSampler,
+    PosteriorSampler,
+    PriorParams,
+    Record,
+)
 
 
 class FakeAdapter:
@@ -248,3 +254,77 @@ def test_a_normal_prior_without_sigma_obs_is_rejected():
     )
     with pytest.raises(ValueError, match="sigma_obs"):
         source({}, prior=prior).posterior_params("unknown")
+
+
+def resampler(observations: dict[str, list[Record]], seed: int = 0) -> BootstrapSampler:
+    return BootstrapSampler(
+        data_adapter=FakeAdapter(observations),
+        stat_id="non_penalty_goals",
+        rng=np.random.default_rng(seed),
+    )
+
+
+def test_bootstrap_returns_the_number_of_draws_asked_for():
+    bootstrap = resampler({"striker": [season("striker", 10, 30), season("striker", 20, 30)]})
+    assert len(bootstrap.sample("striker", 500)) == 500
+
+
+def test_a_seeded_bootstrap_repeats_its_draws():
+    records = {"striker": [season("striker", 10, 30), season("striker", 20, 30)]}
+    assert resampler(records, seed=7).sample("striker", 50) == resampler(
+        records, seed=7
+    ).sample("striker", 50)
+
+
+def test_bootstrap_draws_vary_across_resamples():
+    bootstrap = resampler({"striker": [season("striker", 3, 30), season("striker", 21, 30)]})
+    assert len(set(bootstrap.sample("striker", 200))) > 1
+
+
+def test_no_draw_leaves_the_range_of_the_observed_rates():
+    bootstrap = resampler(
+        {
+            "striker": [
+                season("striker", 3, 30),
+                season("striker", 12, 30),
+                season("striker", 21, 30),
+            ]
+        }
+    )
+    draws = bootstrap.sample("striker", 500)
+    assert min(draws) >= 0.1, "the worst season's rate"
+    assert max(draws) <= 0.7, "the best season's rate"
+
+
+def test_bootstrap_draws_centre_on_the_pooled_rate():
+    """With denominators equal, a draw is the mean of the resampled rates, so the draws
+    centre on the pooled rate. Denominators that differ make the ratio of sums a biased
+    estimate of it, which is a property of the statistic rather than of the resampling.
+    """
+    bootstrap = resampler(
+        {"striker": [season("striker", 10, 30), season("striker", 20, 30), season("striker", 6, 30)]}
+    )
+    draws = bootstrap.sample("striker", 5000)
+    assert sum(draws) / len(draws) == pytest.approx(36 / 90, abs=0.01)
+
+
+def test_identical_observations_resample_to_one_rate():
+    bootstrap = resampler({"striker": [season("striker", 12, 30), season("striker", 12, 30)]})
+    assert set(bootstrap.sample("striker", 100)) == {0.4}
+
+
+def test_bootstrap_rejects_a_single_observation():
+    bootstrap = resampler({"striker": [season("striker", 12, 30)]})
+    with pytest.raises(ValueError, match="at least 2"):
+        bootstrap.sample("striker", 100)
+
+
+def test_bootstrap_rejects_an_entity_with_no_observations():
+    with pytest.raises(ValueError, match="at least 2"):
+        resampler({}).sample("unknown-player", 100)
+
+
+def test_bootstrap_rejects_a_denominator_of_zero():
+    bootstrap = resampler({"striker": [season("striker", 12, 30), season("striker", 0, 0)]})
+    with pytest.raises(ValueError, match="denominator"):
+        bootstrap.sample("striker", 100)

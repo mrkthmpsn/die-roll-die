@@ -156,11 +156,44 @@ class PosteriorSampler:
 class BootstrapSampler:
     """Produces draws by resampling the entity's own observations with replacement and
     recomputing the stat each time.
+
+    One draw is the sum of the resampled observations' values divided by the sum of their
+    denominators, so a draw can only fall between the lowest and highest rate any single
+    observation carries.
     """
 
-    def __init__(self, data_adapter: DataAdapter, stat_id: str) -> None:
+    def __init__(
+        self,
+        data_adapter: DataAdapter,
+        stat_id: str,
+        scope: dict[str, str] | None = None,
+        rng: np.random.Generator | None = None,
+    ) -> None:
         self.data_adapter = data_adapter
         self.stat_id = stat_id
+        self.scope = scope
+        self.rng = np.random.default_rng() if rng is None else rng
 
     def sample(self, entity_id: str, n_draws: int) -> list[float]:
-        raise NotImplementedError
+        """Draw n_draws values of the entity's rate, each the ratio of summed values to
+        summed denominators over one resample of its observations.
+
+        Raises:
+            ValueError: if the entity has fewer than two observations, one observation
+                resampling only to itself, or if any denominator is not positive.
+        """
+        observations = self.data_adapter.get_entity_observations(
+            entity_id, self.stat_id, self.scope
+        )
+        if len(observations) < 2:
+            raise ValueError(
+                f"entity {entity_id!r} has {len(observations)} observations and resampling "
+                f"needs at least 2"
+            )
+        values = np.array([o.value for o in observations], dtype=float)
+        denominators = np.array([o.denominator for o in observations], dtype=float)
+        if not np.all(denominators > 0):
+            raise ValueError(f"entity {entity_id!r} has an observation with a denominator of 0")
+
+        picks = self.rng.integers(0, len(observations), size=(n_draws, len(observations)))
+        return (values[picks].sum(axis=1) / denominators[picks].sum(axis=1)).tolist()

@@ -5,7 +5,6 @@ from pydantic import ValidationError
 
 from die_scouting import (
     POSTERIOR_PARAM_NAMES,
-    BootstrapSampler,
     Die,
     DieMetadata,
     Face,
@@ -42,19 +41,6 @@ def test_face_and_die_instantiate():
 def test_fit_prior_needs_observations():
     with pytest.raises(ValueError):
         fit_prior([], "gamma_poisson", "goals_per_90")
-
-
-def test_bootstrap_source_stub_raises():
-    class FakeAdapter:
-        def get_entity_observations(self, entity_id, stat_id, scope=None):
-            return []
-
-        def get_population_observations(self, stat_id, scope=None):
-            return []
-
-    bootstrap = BootstrapSampler(data_adapter=FakeAdapter(), stat_id="goals_per_90")
-    with pytest.raises(NotImplementedError):
-        bootstrap.sample("player-1", 100)
 
 
 def test_assemble_die_from_samples_builds_a_real_die():
