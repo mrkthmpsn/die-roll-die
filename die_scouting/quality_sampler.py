@@ -154,12 +154,11 @@ class PosteriorSampler:
 
 
 class BootstrapSampler:
-    """Produces draws by resampling the entity's own observations with replacement and
-    recomputing the stat each time.
+    """Produces draws by case resampling the entity's own observations: whole records
+    drawn with replacement, so a value keeps the denominator it was measured against.
 
-    One draw is the sum of the resampled observations' values divided by the sum of their
-    denominators, so a draw can only fall between the lowest and highest rate any single
-    observation carries.
+    One draw is the sum of the drawn values divided by the sum of their denominators, so a
+    draw can only fall between the lowest and highest rate any single observation carries.
     """
 
     def __init__(

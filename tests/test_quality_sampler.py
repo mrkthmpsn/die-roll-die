@@ -296,16 +296,42 @@ def test_no_draw_leaves_the_range_of_the_observed_rates():
     assert max(draws) <= 0.7, "the best season's rate"
 
 
+def match_career(entity_id: str) -> list[Record]:
+    """Sixty appearances holding 30 goals in 51 nineties, denominators varying only as a
+    substitute's do.
+    """
+    goals = [1.0, 0.0, 0.0, 2.0, 0.0, 0.0] * 10
+    nineties = [1.0, 1.0, 0.4, 1.0, 0.7, 1.0] * 10
+    return [
+        Record(entity_type="player", entity_id=entity_id, value=goal, denominator=ninety)
+        for goal, ninety in zip(goals, nineties)
+    ]
+
+
 def test_bootstrap_draws_centre_on_the_pooled_rate():
-    """With denominators equal, a draw is the mean of the resampled rates, so the draws
-    centre on the pooled rate. Denominators that differ make the ratio of sums a biased
-    estimate of it, which is a property of the statistic rather than of the resampling.
+    """Case resampling draws whole records, so a draw is a ratio of sums rather than a
+    mean of rates. Across rows whose denominators are close, that ratio's bias is smaller
+    than the Monte Carlo error of five thousand draws.
+    """
+    bootstrap = resampler({"striker": match_career("striker")})
+    draws = bootstrap.sample("striker", 5000)
+    assert sum(draws) / len(draws) == pytest.approx(30 / 51, abs=0.01)
+
+
+def test_the_ratio_of_sums_is_biased_when_denominators_differ():
+    """Three seasons of 10/20, 20/30 and 6/50 pool to 0.36, while resampling three of them
+    with replacement has an expectation of 0.3869 across the 27 equally likely resamples.
+    Each resample counts once however much exposure it drew, and the resamples that omit
+    the 50-ninety row are both the short ones and the high-rate ones, so the draws centre
+    above the pooled rate.
     """
     bootstrap = resampler(
-        {"striker": [season("striker", 10, 30), season("striker", 20, 30), season("striker", 6, 30)]}
+        {"striker": [season("striker", 10, 20), season("striker", 20, 30), season("striker", 6, 50)]}
     )
     draws = bootstrap.sample("striker", 5000)
-    assert sum(draws) / len(draws) == pytest.approx(36 / 90, abs=0.01)
+    mean = sum(draws) / len(draws)
+    assert mean == pytest.approx(0.3869, abs=0.01)
+    assert mean > 36 / 100, "the pooled rate, which the draws do not centre on"
 
 
 def test_identical_observations_resample_to_one_rate():
