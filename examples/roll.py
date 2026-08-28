@@ -180,14 +180,12 @@ def main() -> None:
         entity_name=name,
         denominator_unit=args.denominator_column,
     )
-    periods = len(adapter.get_entity_observations(entity_id, args.stat, scope))
-    die.metadata.extra["seasons"] = periods
     meta = die.metadata
 
     print(f"{meta.entity_name} ({meta.entity_id}) - {meta.stat_id}, scope {meta.scope or 'none'}")
     print(
         f"  record:    {meta.observed_value:.0f} in {meta.observed_denominator:.1f} "
-        f"{meta.denominator_unit} across {meta.extra['seasons']} seasons"
+        f"{meta.denominator_unit} across {meta.observed_periods} seasons"
     )
     model = meta.prior.model
     posterior = tuple(meta.posterior_params[param] for param in POSTERIOR_PARAM_NAMES[model])

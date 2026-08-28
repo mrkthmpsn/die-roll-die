@@ -108,6 +108,10 @@ class DieMetadata(BaseModel):
     Every field is optional, a die over arbitrary samples carrying none of them. `strategy`
     and `draws` are set by `assemble_die_from_samples`; `extra` holds anything a caller needs
     that this model does not name.
+
+    `observed_value` and `observed_denominator` are sums over the entity's observations and
+    `observed_periods` counts them, so a record spanning two periods can be told from one
+    spanning nine.
     """
 
     entity_id: str | None = None
@@ -119,6 +123,7 @@ class DieMetadata(BaseModel):
     posterior_params: dict[str, float] = {}
     observed_value: float | None = None
     observed_denominator: float | None = None
+    observed_periods: int | None = None
     predicted_denominator: float | None = None
     denominator_unit: str | None = None
     strategy: Literal["equal_weight", "equal_width"] | None = None

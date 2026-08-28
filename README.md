@@ -193,7 +193,7 @@ A `normal_normal` prior carries a third number, `sigma_obs`, which is how much i
 
 **Discretizer** — `discretize(samples, n_faces, strategy)` turns a sample array into weighted faces. `equal_weight` holds the probabilities equal and lets the value ranges vary; `equal_width` holds the value ranges equal and lets the probabilities vary. It knows nothing about what the numbers mean.
 
-**Die** — `{faces, metadata}`, serialising with `model_dump_json()`. `assemble_die_from_samples` is the last step, cutting a list of samples into faces; `DieMetadata` is typed rather than a free dict, so a consumer can rely on the names: entity, stat, scope, the prior behind it, the posterior's parameters, the record it was built from, and what denominator it predicts over. The posterior's two parameters are keyed by `POSTERIOR_PARAM_NAMES` under the prior's model, and `PriorParams.ordered_params` reads a prior's own pair out in the same order.
+**Die** — `{faces, metadata}`, serialising with `model_dump_json()`. `assemble_die_from_samples` is the last step, cutting a list of samples into faces; `DieMetadata` is typed rather than a free dict, so a consumer can rely on the names: entity, stat, scope, the prior behind it, the posterior's parameters, the record it was built from and how many observations that spans, and what denominator it predicts over. The posterior's two parameters are keyed by `POSTERIOR_PARAM_NAMES` under the prior's model, and `PriorParams.ordered_params` reads a prior's own pair out in the same order.
 
 ```
 Offline (periodic):  DataAdapter (population) -> fit_prior -> PriorStore          [fit_priors]

@@ -121,6 +121,7 @@ def test_metadata_round_trips_through_json():
         posterior_params={"alpha": 218.26, "beta": 314.92},
         predicted_denominator=30.0,
         denominator_unit="nineties",
+        observed_periods=4,
     )
     die = assemble_die_from_samples([float(i) for i in range(200)], metadata=metadata)
 
@@ -130,6 +131,7 @@ def test_metadata_round_trips_through_json():
     assert restored.metadata.prior.model == "gamma_poisson"
     assert restored.metadata.posterior_params["beta"] == 314.92
     assert restored.metadata.denominator_unit == "nineties"
+    assert restored.metadata.observed_periods == 4
 
 
 def test_two_scopes_give_dice_that_can_be_told_apart():

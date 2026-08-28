@@ -84,6 +84,7 @@ def create_die(
         posterior_params=dict(zip(POSTERIOR_PARAM_NAMES[prior.model], (first, second))),
         observed_value=sum(o.value for o in observations),
         observed_denominator=sum(o.denominator for o in observations),
+        observed_periods=len(observations),
         predicted_denominator=denominator,
         denominator_unit=denominator_unit,
     )

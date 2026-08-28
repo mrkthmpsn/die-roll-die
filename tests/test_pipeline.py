@@ -81,6 +81,7 @@ def test_the_die_carries_the_metadata_a_consumer_reads(adapter):
     assert meta.prior == prior
     assert set(meta.posterior_params) == {"alpha", "beta"}
     assert (meta.observed_value, meta.observed_denominator) == (27.0, 62.0)
+    assert meta.observed_periods == 2
     assert (meta.predicted_denominator, meta.denominator_unit) == (30.0, "appearances")
     assert meta.draws == 100_000
 
