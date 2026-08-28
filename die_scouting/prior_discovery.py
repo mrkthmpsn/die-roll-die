@@ -7,7 +7,7 @@ from typing import Literal
 from .errors import InsufficientData, UnsuitableFamily
 from .models import PriorParams, Record
 
-MIN_DENOMINATOR = 5.0
+MIN_DENOMINATOR = 10.0
 
 
 def fit_prior(

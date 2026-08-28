@@ -14,19 +14,19 @@ $ uv run python examples/roll.py Erling_Haaland --scope position_general=Forward
 
 Erling Haaland (Erling_Haaland) - goals, scope {'position_general': 'Forward'}
   record:    112 goals in 132.0 appearances across 4 seasons
-  prior:     gamma, 0.184 goals/appearances, worth 11.1 appearances of evidence
-  posterior: 0.797 goals/appearances, worth 143.1 appearances of evidence
+  prior:     gamma, 0.197 goals/appearances, worth 11.4 appearances of evidence
+  posterior: 0.797 goals/appearances, worth 143.4 appearances of evidence
 
   a D6 (equal_width) over goals in the next 30 appearances:
       1  12.0-16.2    7.2%
-      2  16.2-20.3   19.6%
-      3  20.3-24.5   29.5%
-      4  24.5-28.7   25.2%
+      2  16.2-20.3   19.9%
+      3  20.3-24.5   29.2%
+      4  24.5-28.7   25.1%
       5  28.7-32.8   13.3%
-      6  32.8-37.0    5.2%
+      6  32.8-37.0    5.3%
 ```
 
-The `prior` line is what forwards in general score, fitted from the data: 0.184 goals per appearance, carrying as much weight as 11 appearances would. The `posterior` adds Haaland's own 112 goals in 132 appearances, giving 0.797 goals per appearance on 143 appearances of evidence.
+The `prior` line is what forwards in general score, fitted from the data: 0.197 goals per appearance, carrying as much weight as 11 appearances would. The `posterior` adds Haaland's own 112 goals in 132 appearances, giving 0.797 goals per appearance on 143 appearances of evidence.
 
 Each face of the die covers about four goals and carries its own chance of coming up. A season of 20 to 25 goals is the likeliest single outcome at 29%, while 12 to 16 comes up 7% of the time and 33 to 37 comes up 5%. Read down the right-hand column and you are reading the shape of the distribution.
 
@@ -85,24 +85,24 @@ Only `scopes_for` is restricted to the mapped dimensions, because it works from 
 
 **Observations.** Every row becomes a `Record`: an entity, a value, and the denominator that value was measured against. Haaland's four seasons are 36 goals in 35 appearances, 27 in 31, 22 in 31, 27 in 35. The denominator is what separates a rate you can trust from one you cannot.
 
-**A prior** is what you believe about a player before looking at their record — here, what scoring rates Premier League forwards have in general. It is not hand-picked: `fit_prior` reads every forward-season in the file and fits a distribution to the spread of their rates. For goals it comes out as `alpha=2.04, beta=11.09`, which describes a typical forward scoring 0.18 goals per appearance.
+**A prior** is what you believe about a player before looking at their record — here, what scoring rates Premier League forwards have in general. It is not hand-picked: `fit_prior` reads every forward-season in the file and fits a distribution to the spread of their rates. For goals it comes out as `alpha=2.26, beta=11.44`, which describes a typical forward scoring 0.20 goals per appearance.
 
 **`beta` is evidence measured in appearances**: this prior is worth about 11 appearances of watching someone play, which is what sets how far a player's own record can move it.
 
 **The posterior** is the prior updated with one player's own record, and for this family the update is two additions:
 
 ```
-alpha:  2.04 + 112 goals       = 114.04
-beta:  11.09 + 132 appearances = 143.10
-        rate = 114.04 / 143.10 = 0.797 goals per appearance
+alpha:  2.26 + 112 goals       = 114.26
+beta:  11.44 + 132 appearances = 143.44
+        rate = 114.26 / 143.44 = 0.797 goals per appearance
 ```
 
-Haaland's raw rate is 112/132 = 0.848, and the posterior says 0.797 — pulled slightly toward the population, because 11 appearances of prior sit against his 132 of evidence. A player with only 12 appearances would be pulled most of the way instead. That is the whole purpose of the prior: it stops a hot fortnight from reading as greatness, without stopping a long record from speaking for itself.
+Haaland's raw rate is 112/132 = 0.848, and the posterior says 0.797 — pulled slightly toward the population, because 11 appearances of prior sit against his 132 of evidence. A player with 11 appearances of their own would be pulled halfway instead. That is the whole purpose of the prior: it stops a hot fortnight from reading as greatness, without stopping a long record from speaking for itself.
 
 **Draws.** The posterior is a curve, not a number, so we sample it 100,000 times. Two things vary, and the difference matters:
 
 ```
-rate draws     10th 0.703   50th 0.795   90th 0.894   ← how sure we are of his rate
+rate draws     10th 0.703   50th 0.794   90th 0.894   ← how sure we are of his rate
 count draws    10th 17      50th 24      90th 31      ← what he'd actually score in 30
 ```
 
@@ -149,7 +149,7 @@ Online (per roll):   PriorStore + DataAdapter (one entity) -> QualitySampler -> 
 
 ## Design notes
 
-**The prior fit corrects for noise in its own inputs.** A season's goals-per-appearance is spread by two things: how much players genuinely differ, and the randomness of scoring itself. Only the first belongs in a prior. For counts the second is calculable — a Poisson's spread is fixed by its mean — so it is subtracted. Over the 532 forward-seasons of five or more appearances in the shipped data, 38% of the apparent spread is that randomness, and correcting for it takes the prior from 6.9 to 11.1 appearances' worth of evidence. Seasons under five appearances are excluded outright, their rates being dominated by the small denominator.
+**The prior fit corrects for noise in its own inputs.** A season's goals-per-appearance is spread by two things: how much players genuinely differ, and the randomness of scoring itself. Only the first belongs in a prior. For counts the second is calculable — a Poisson's spread is fixed by its mean — so it is subtracted. Over the 483 forward-seasons of ten or more appearances in the shipped data, 34% of the apparent spread is that randomness, and correcting for it takes the prior from 7.5 to 11.4 appearances' worth of evidence. Seasons under ten appearances are excluded outright, their rates being dominated by the small denominator — and the threshold is a modelling choice, since a prior over any forward would include everybody while a prior over a forward who plays should not.
 
 The normal family cannot do this, because a normal's spread is not implied by its mean. `fit_prior` instead estimates it by pooling how much each entity's observations vary around that entity's own mean, which needs entities appearing more than once and is stored as the prior's third parameter, `sigma_obs`.
 
