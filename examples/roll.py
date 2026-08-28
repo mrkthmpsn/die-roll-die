@@ -55,13 +55,16 @@ def _param_names(family: str) -> tuple[str, str]:
     return ("mu", "sigma") if family == "normal" else ("alpha", "beta")
 
 
-def _summarise(family: str, first: float, second: float) -> str:
-    """Describe a family's two parameters as the quantity they imply."""
+def _summarise(family: str, first: float, second: float, stat: str, unit: str) -> str:
+    """Describe a family's two parameters as the quantity they imply, in the caller's own
+    column names: how much of `stat` per unit of `unit`, and how much evidence that rests on.
+    """
     if family == "gamma":
-        return f"{first / second:.3f} per unit (worth {second:.1f} of denominator)"
+        return f"{first / second:.3f} {stat}/{unit}, worth {second:.1f} {unit} of evidence"
     if family == "beta":
-        return f"{first / (first + second):.3f} of attempts (worth {first + second:.1f} attempts)"
-    return f"{first:.3f} per unit, spread {second:.3f}"
+        share = first / (first + second)
+        return f"{share:.3f} {stat}/{unit}, worth {first + second:.1f} {unit} of evidence"
+    return f"mean {first:.3f} {stat}/{unit}, spread {second:.3f}"
 
 
 def column_map(args) -> ColumnMap:
@@ -205,8 +208,9 @@ def main() -> None:
     )
     family = meta.prior.family
     posterior = tuple(meta.posterior_params[param] for param in _param_names(family))
-    print(f"  prior:     {family}, {_summarise(family, *_prior_pair(meta.prior))}")
-    print(f"  posterior: {_summarise(family, *posterior)}")
+    units = (meta.stat_id, meta.denominator_unit)
+    print(f"  prior:     {family}, {_summarise(family, *_prior_pair(meta.prior), *units)}")
+    print(f"  posterior: {_summarise(family, *posterior, *units)}")
 
     if args.json:
         print()

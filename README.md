@@ -2,21 +2,20 @@
 
 die-scouting is a demonstration of probabilistic statistics. It takes a set of statistics — for example, a footballer's goals across several seasons — works out a distribution of what that player's underlying scoring rate might be, and turns that distribution into a weighted die.
 
-A prior is fitted from the population — what forwards in general score — and updated with the player's own record to give a posterior over their true rate. How far that posterior sits from their raw rate depends on how much evidence they bring: four good games barely move it off the population, four good seasons move it almost all the way. That pull toward the population is called shrinkage.
+A prior is fitted from a population's data (e.g. what forwards in general score) and updated with the player's own record to give a posterior over their true rate. To make this easier to conceptualise, the posterior can be turned into a virtual die, to be virtually rolled with results reflecting the probabilities of the data.
 
-A posterior is hard to read as a curve or a pair of parameters, and easy to read as six faces with percentages against them. Making it a die also makes it rollable, and one roll hands you a plausible season.
+The repo includes five seasons of Premier League goals and appearances data taken from Wikipedia, but the underlying framework can be used with a your own dataset(s).
 
-Premier League data ships with the repo, but the statistics underneath are general: counts over an exposure, successes out of attempts, or a measurement repeated over time. What is here is a small set of statistical building blocks, demonstrated on football because football has convenient data.
-
-Here is a die for Erling Haaland's goals over his next 30 appearances:
+## Example
+Using the Wikipedia data, here is a die for Erling Haaland's goals over his next 30 appearances, scoped against the prior distribution of forwards in the dataset:
 
 ```
 $ uv run python examples/roll.py Erling_Haaland --scope position_general=Forward --priors data/priors.json
 
 Erling Haaland (Erling_Haaland) - goals, scope {'position_general': 'Forward'}
-  record:    112 in 132.0 appearances across 4 seasons
-  prior:     gamma, 0.184 per unit (worth 11.1 of denominator)
-  posterior: 0.797 per unit (worth 143.1 of denominator)
+  record:    112 goals in 132.0 appearances across 4 seasons
+  prior:     gamma, 0.184 goals/appearances, worth 11.1 appearances of evidence
+  posterior: 0.797 goals/appearances, worth 143.1 appearances of evidence
 
   a D6 (equal_width) over goals in the next 30 appearances:
       1  12.0-16.2    7.2%
@@ -27,7 +26,9 @@ Erling Haaland (Erling_Haaland) - goals, scope {'position_general': 'Forward'}
       6  32.8-37.0    5.2%
 ```
 
-Each face covers about four goals and carries its own chance of coming up. A season of 20 to 25 goals is the likeliest single outcome at 29%, while 12 to 16 comes up 7% of the time and 33 to 37 comes up 5%. Read down the right-hand column and you are reading the shape of the distribution.
+The `prior` line is what forwards in general score, fitted from the data: 0.184 goals per appearance, carrying as much weight as 11 appearances would. The `posterior` adds Haaland's own 112 goals in 132 appearances, giving 0.797 goals per appearance on 143 appearances of evidence.
+
+Each face of the die covers about four goals and carries its own chance of coming up. A season of 20 to 25 goals is the likeliest single outcome at 29%, while 12 to 16 comes up 7% of the time and 33 to 37 comes up 5%. Read down the right-hand column and you are reading the shape of the distribution.
 
 That is a weighted die: even faces, uneven chances. `--strategy equal_weight` cuts the same numbers the other way — every face equally likely, with the value ranges uneven instead — which is an unweighted die you could fairly roll by hand, and a less direct read.
 
