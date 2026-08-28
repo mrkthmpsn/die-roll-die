@@ -52,9 +52,9 @@ Football is used as an example, but the library is built around the shape of the
 
 **Successes out of attempts.** Shots on target out of shots, passes completed out of attempted, free throws made out of taken. You choose how many attempts, and the die is over how many of them come off.
 
-**A measured quantity.** Distance covered per match, average pass length, or a modelled score — an "inverted full-back suitability out of 10" computed however you like, arriving here as one number per match. You choose how many matches, and the die is over the total across them.
+**A measured quantity.** Distance covered per match, revenue per week, hours of downtime per month. You choose how many periods, and the die is over the total across them — so this shape wants quantities that add up to something meaningful.
 
-On the last of those: this library does not model composite scores, it consumes them. If you have a formula that scores players out of 10, feed the scores in and roll the result.
+A composite score — an "inverted full-back suitability out of 10" computed however you like — is consumed rather than modelled here: work out the score per match by whatever formula you please, and feed the scores in as the stat. Note that a score bounded at 0 and 10 is a beta after rescaling to 0-1, not a normal, and that the die will be over the total across the periods you choose rather than the average.
 
 ## Use your own data
 
