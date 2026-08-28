@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from die_scouting import InsufficientData, Record, UnsuitableFamily, fit_prior
+from die_scouting import InsufficientData, Record, UnsuitableModel, fit_prior
 
 
 def gamma_poisson_observations(alpha: float, beta: float, n: int, seed: int = 7) -> list[Record]:
@@ -134,7 +134,7 @@ def test_beta_rejects_values_above_their_denominator():
         Record(entity_type="player", entity_id="over", value=12.0, denominator=10.0),
         Record(entity_type="player", entity_id="fine", value=3.0, denominator=10.0),
     ]
-    with pytest.raises(UnsuitableFamily, match="over"):
+    with pytest.raises(UnsuitableModel, match="over"):
         fit_prior(observations, "beta_binomial", "pass_completion")
 
 
@@ -155,7 +155,7 @@ def test_normal_needs_an_entity_with_repeated_observations():
 def test_both_fit_errors_are_value_errors():
     """Callers catching ValueError keep working, since both types subclass it."""
     assert issubclass(InsufficientData, ValueError)
-    assert issubclass(UnsuitableFamily, ValueError)
+    assert issubclass(UnsuitableModel, ValueError)
 
 
 def test_fit_prior_takes_the_entity_type_from_the_observations():
@@ -173,3 +173,50 @@ def test_fit_prior_rejects_a_mixed_set_of_entity_types():
 def test_fit_prior_rejects_an_empty_set():
     with pytest.raises(ValueError, match="no observations"):
         fit_prior([], "gamma_poisson", "goals")
+
+
+def exponential_observations(
+    alpha: float, beta: float, n: int, seed: int = 17
+) -> list[Record]:
+    """Draw `n` observations whose true rates come from Gamma(alpha, beta) and whose values
+    are the total time taken by a whole number of events arriving at that rate.
+    """
+    rng = np.random.default_rng(seed)
+    rates = rng.gamma(alpha, 1.0 / beta, size=n)
+    events = rng.integers(10, 60, size=n)
+    totals = rng.gamma(events, 1.0 / rates)
+    return [
+        Record(
+            entity_type="machine",
+            entity_id=str(i),
+            value=float(total),
+            denominator=float(count),
+        )
+        for i, (total, count) in enumerate(zip(totals, events))
+    ]
+
+
+def test_fit_prior_recovers_a_known_gamma_exponential():
+    prior = fit_prior(exponential_observations(6.0, 2.0, 2000), "gamma_exponential", "downtime")
+    alpha, beta = prior.params["alpha"], prior.params["beta"]
+    assert alpha / beta == pytest.approx(3.0, rel=0.05)
+    assert alpha == pytest.approx(6.0, rel=0.25)
+    assert beta == pytest.approx(2.0, rel=0.25)
+
+
+def test_gamma_exponential_correction_narrows_the_prior():
+    observations = exponential_observations(6.0, 2.0, 2000)
+    rates = np.array([(o.denominator - 1) / o.value for o in observations])
+    uncorrected = rates.mean() ** 2 / rates.var(ddof=1)
+
+    prior = fit_prior(observations, "gamma_exponential", "downtime")
+    assert prior.params["alpha"] > uncorrected
+
+
+def test_gamma_exponential_rejects_a_zero_value():
+    observations = [
+        Record(entity_type="machine", entity_id="idle", value=0.0, denominator=12.0),
+        Record(entity_type="machine", entity_id="fine", value=4.0, denominator=12.0),
+    ]
+    with pytest.raises(UnsuitableModel, match="idle"):
+        fit_prior(observations, "gamma_exponential", "downtime")

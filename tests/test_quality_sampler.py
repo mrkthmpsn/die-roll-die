@@ -182,3 +182,42 @@ def test_a_prior_for_another_entity_type_is_rejected():
     club_prior = gamma_prior().model_copy(update={"entity_type": "club"})
     with pytest.raises(ValueError, match="describes a 'club'"):
         source(observations, prior=club_prior).sample("striker", 10)
+
+
+def exponential_prior(alpha: float = 6.0, beta: float = 2.0) -> PriorParams:
+    """Mean rate of 3 events per unit of time."""
+    return PriorParams(
+        entity_type="player",
+        stat_id="downtime",
+        model="gamma_exponential",
+        params={"alpha": alpha, "beta": beta},
+    )
+
+
+def test_gamma_exponential_adds_events_to_alpha_and_time_to_beta():
+    observations = {"press": [season("press", 20.0, 50.0), season("press", 10.0, 25.0)]}
+    alpha, beta = source(observations, prior=exponential_prior()).posterior_params("press")
+    assert (alpha, beta) == (6.0 + 75.0, 2.0 + 30.0)
+
+
+def test_both_gamma_models_agree_when_given_the_same_events_and_time():
+    """The update is shared; only which Record field holds which quantity differs."""
+    poisson = {"p": [season("p", 30.0, 12.0)]}
+    exponential = {"p": [season("p", 12.0, 30.0)]}
+
+    counts = source(poisson, prior=gamma_prior(6.0, 2.0)).posterior_params("p")
+    times = source(exponential, prior=exponential_prior(6.0, 2.0)).posterior_params("p")
+
+    assert counts == times
+
+
+def test_gamma_exponential_predicts_a_positive_total_time():
+    observations = {"press": [season("press", 20.0, 50.0)]}
+    draws = source(observations, prior=exponential_prior()).sample_predictive("press", 500, 10)
+    assert all(d > 0 for d in draws)
+    assert not all(float(d).is_integer() for d in draws), "time is continuous"
+
+
+def test_gamma_exponential_predicts_over_a_whole_number_of_events():
+    with pytest.raises(ValueError, match="whole number of events"):
+        source({}, prior=exponential_prior()).sample_predictive("press", 10, 7.5)

@@ -9,5 +9,5 @@ class InsufficientData(PriorFitError):
     """Raised when the observations are the right shape but there are too few of them."""
 
 
-class UnsuitableFamily(PriorFitError):
+class UnsuitableModel(PriorFitError):
     """Raised when the observations contradict the model asked for."""

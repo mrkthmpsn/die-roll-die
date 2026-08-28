@@ -22,11 +22,16 @@ class PosteriorSampler:
     """Produces draws from a closed-form posterior, by conjugate update of `prior` with
     the entity's own observations.
 
-    Three models are implemented, each with its own update and its own reading of a
-    `Record`: gamma with Poisson counts, where `value` is a count and `denominator` the
-    opportunity it accumulated over; beta with binomial successes, where `value` is
-    successes and `denominator` attempts; and normal, where `value / denominator` is a measured
-    quantity per unit of denominator.
+    Four models are implemented, each reading a `Record` its own way:
+
+    - `gamma_poisson`: `value` is a count of events and `denominator` the exposure they
+      occurred in.
+    - `gamma_exponential`: `value` is an amount of time and `denominator` the number of
+      events that filled it — the same two quantities as `gamma_poisson`, in the opposite
+      fields, because there the time was fixed and here the events are.
+    - `beta_binomial`: `value` is a count of successes and `denominator` a count of
+      attempts.
+    - `normal_normal`: `value / denominator` is a measured quantity per unit of denominator.
     """
 
     def __init__(
@@ -43,8 +48,13 @@ class PosteriorSampler:
 
     def posterior_params(self, entity_id: str) -> tuple[float, float]:
         """Return the two parameters of the posterior, being the prior's updated by the
-        entity's observations: shape and rate for gamma, successes and failures for beta,
-        mean and standard deviation for normal.
+        entity's observations: shape and rate for the two gamma models, successes and
+        failures for beta_binomial, mean and standard deviation for normal_normal.
+
+        Both gamma models add the number of events to `alpha` and the amount of time to
+        `beta`; they differ only in which `Record` field holds which, `gamma_poisson`
+        counting events over a fixed time and `gamma_exponential` timing a fixed number of
+        events.
 
         An entity with no observations returns the prior's parameters unchanged.
 
@@ -67,6 +77,12 @@ class PosteriorSampler:
                 self.prior.params["alpha"] + sum(o.value for o in observations),
                 self.prior.params["beta"] + sum(o.denominator for o in observations),
             )
+        if self.prior.model == "gamma_exponential":
+            self._require("alpha", "beta")
+            return (
+                self.prior.params["alpha"] + sum(o.denominator for o in observations),
+                self.prior.params["beta"] + sum(o.value for o in observations),
+            )
         if self.prior.model == "beta_binomial":
             self._require("alpha", "beta")
             return (
@@ -88,16 +104,19 @@ class PosteriorSampler:
         return self._draw(first, second, n_draws).tolist()
 
     def sample_predictive(self, entity_id: str, n_draws: int, denominator: float) -> list[float]:
-        """Draw n_draws totals the entity would record over `denominator`: a Poisson count for
-        gamma, a binomial count of successes out of `denominator` attempts for beta, and a
-        summed value carrying its own observation noise for normal.
+        """Draw n_draws totals the entity would record over `denominator`, which the model
+        decides the meaning of: an amount of exposure for `gamma_poisson`, giving a Poisson
+        count; a number of attempts for `beta_binomial`, giving a count of successes; a
+        number of events for `gamma_exponential`, giving the total time they take; and a
+        number of periods for `normal_normal`, giving a summed value.
 
         `denominator` is held fixed across the draws, so the spread reflects uncertainty about
         the entity's quality at a stated amount of opportunity.
 
         Raises:
-            ValueError: if `denominator` is negative, or is not a whole number of attempts for
-                a beta prior.
+            ValueError: if `denominator` is negative, or is not a whole number where the
+                model counts it — attempts for `beta_binomial`, events for
+                `gamma_exponential`.
         """
         if denominator < 0:
             raise ValueError("denominator must not be negative")
@@ -106,6 +125,12 @@ class PosteriorSampler:
 
         if self.prior.model == "gamma_poisson":
             return self.rng.poisson(draws * denominator).astype(float).tolist()
+        if self.prior.model == "gamma_exponential":
+            if denominator != int(denominator):
+                raise ValueError(
+                    "a gamma_exponential prior predicts over a whole number of events"
+                )
+            return self.rng.gamma(shape=denominator, scale=1.0 / draws).tolist()
         if self.prior.model == "beta_binomial":
             if denominator != int(denominator):
                 raise ValueError("a beta prior predicts over a whole number of attempts")
@@ -114,7 +139,7 @@ class PosteriorSampler:
         return (draws * denominator + self.rng.normal(0.0, noise, size=n_draws)).tolist()
 
     def _draw(self, first: float, second: float, n_draws: int) -> np.ndarray:
-        if self.prior.model == "gamma_poisson":
+        if self.prior.model in ("gamma_poisson", "gamma_exponential"):
             return self.rng.gamma(shape=first, scale=1.0 / second, size=n_draws)
         if self.prior.model == "beta_binomial":
             return self.rng.beta(first, second, size=n_draws)

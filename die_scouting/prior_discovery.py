@@ -4,7 +4,7 @@ import math
 import statistics
 from typing import Literal
 
-from .errors import InsufficientData, UnsuitableFamily
+from .errors import InsufficientData, UnsuitableModel
 from .models import PriorParams, Record
 
 MIN_DENOMINATOR = 10.0
@@ -12,7 +12,7 @@ MIN_DENOMINATOR = 10.0
 
 def fit_prior(
     observations: list[Record],
-    model: Literal["beta_binomial", "gamma_poisson", "normal_normal"],
+    model: Literal["beta_binomial", "gamma_exponential", "gamma_poisson", "normal_normal"],
     stat_id: str,
     scope: dict[str, str] | None = None,
     min_denominator: float = MIN_DENOMINATOR,
@@ -36,7 +36,7 @@ def fit_prior(
     Raises:
         ValueError: if `observations` is empty, or holds more than one entity type.
         InsufficientData: if there are too few observations to fit `model`.
-        UnsuitableFamily: if the observations contradict `model`.
+        UnsuitableModel: if the observations contradict `model`.
     """
     entity_types = {o.entity_type for o in observations}
     if not entity_types:
@@ -46,7 +46,12 @@ def fit_prior(
             f"observations of {stat_id!r} hold more than one entity type "
             f"({', '.join(sorted(entity_types))}); a prior describes one kind of entity"
         )
-    fit = {"beta_binomial": _fit_beta, "gamma_poisson": _fit_gamma, "normal_normal": _fit_normal}[model]
+    fit = {
+        "beta_binomial": _fit_beta,
+        "gamma_exponential": _fit_gamma_exponential,
+        "gamma_poisson": _fit_gamma,
+        "normal_normal": _fit_normal,
+    }[model]
     return PriorParams(
         stat_id=stat_id,
         entity_type=entity_types.pop(),
@@ -129,12 +134,12 @@ def _fit_beta(observations: list[Record], min_denominator: float) -> dict[str, f
     Raises:
         InsufficientData: if fewer than two observations reach `min_denominator`, or if
             their mean proportion is 0 or 1.
-        UnsuitableFamily: if any observation's value is negative or exceeds its
+        UnsuitableModel: if any observation's value is negative or exceeds its
             denominator, or if their spread exceeds what a beta with that mean can produce.
     """
     for o in observations:
         if o.value < 0 or o.value > o.denominator:
-            raise UnsuitableFamily(
+            raise UnsuitableModel(
                 f"entity {o.entity_id!r} has value {o.value} against denominator {o.denominator}; "
                 "a beta prior needs successes counted out of attempts"
             )
@@ -154,7 +159,7 @@ def _fit_beta(observations: list[Record], min_denominator: float) -> dict[str, f
 
     concentration = mean * (1 - mean) / variance - 1
     if concentration <= 0:
-        raise UnsuitableFamily(
+        raise UnsuitableModel(
             "the observations' proportions are more spread than any beta with their mean"
         )
 
@@ -214,3 +219,54 @@ def _fit_normal(observations: list[Record], min_denominator: float) -> dict[str,
         "sigma": math.sqrt(variance),
         "sigma_obs": math.sqrt(observation_variance),
     }
+
+
+def _fit_gamma_exponential(
+    observations: list[Record], min_denominator: float
+) -> dict[str, float]:
+    """Return `alpha` and `beta` for a gamma over the observations' rates, where `value` is
+    an amount of time and `denominator` the number of events that filled it.
+
+    This is `gamma_poisson` with the two quantities swapped: there the time was fixed and
+    the events counted, here the events are fixed and the time measured.
+
+    The rate is estimated as `(denominator - 1) / value` rather than `denominator / value`,
+    the latter overstating an exponential rate by a factor of `n / (n - 1)`. That estimate
+    carries noise of `rate ** 2 / (n - 2)`, where a rate estimated from a count over an
+    exposure carried `rate / exposure`; subtracting its average across the observations
+    leaves the spread the prior should carry, and where the subtraction is not positive the
+    uncorrected variance is used.
+
+    Raises:
+        InsufficientData: if fewer than two observations reach `min_denominator`, if fewer
+            than two count three or more events, or if their rates have a mean or a
+            variance of zero.
+        UnsuitableModel: if any observation's value or denominator is not positive.
+    """
+    for o in observations:
+        if o.value <= 0 or o.denominator <= 0:
+            raise UnsuitableModel(
+                f"entity {o.entity_id!r} has value {o.value} over denominator "
+                f"{o.denominator}; a gamma_exponential prior needs a positive amount of "
+                "time and a positive count of events"
+            )
+
+    usable = [
+        o for o in _usable(observations, min_denominator, "gamma_exponential")
+        if o.denominator >= 3
+    ]
+    if len(usable) < 2:
+        raise InsufficientData(
+            "fitting a gamma_exponential prior needs at least two observations of three or "
+            "more events, the spread of a rate estimated from fewer being undefined"
+        )
+
+    rates = [(o.denominator - 1) / o.value for o in usable]
+    mean = statistics.fmean(rates)
+    if mean <= 0:
+        raise InsufficientData("every observation's count is zero, so there is no rate to estimate")
+
+    exponential_variance = mean**2 * statistics.fmean(1.0 / (o.denominator - 2) for o in usable)
+    variance = _corrected_variance(statistics.variance(rates), exponential_variance)
+
+    return {"alpha": mean**2 / variance, "beta": mean / variance}

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from die_scouting import InMemoryPriorStore, Record, UnsuitableFamily, fit_scopes, scopes_for
+from die_scouting import InMemoryPriorStore, Record, UnsuitableModel, fit_scopes, scopes_for
 
 
 class FakeAdapter:
@@ -109,5 +109,5 @@ def test_fit_scopes_does_not_swallow_a_wrong_family():
     """A beta needs successes counted out of attempts, and these values exceed theirs."""
     adapter = FakeAdapter([season(f"fwd-{i}", 40 + i, 20 + i, "Forward") for i in range(12)])
 
-    with pytest.raises(UnsuitableFamily):
+    with pytest.raises(UnsuitableModel):
         fit_scopes(adapter, InMemoryPriorStore(), "goals", "beta_binomial", [{}])

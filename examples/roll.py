@@ -123,9 +123,9 @@ def main() -> None:
     parser.add_argument("--faces", type=int, default=6)
     parser.add_argument(
         "--model",
-        choices=["beta_binomial", "gamma_poisson", "normal_normal"],
+        choices=["beta_binomial", "gamma_exponential", "gamma_poisson", "normal_normal"],
         default="gamma_poisson",
-        help="prior distribution model for this stat",
+        help="the conjugate pair to fit and update with; see the README",
     )
     parser.add_argument(
         "--strategy",

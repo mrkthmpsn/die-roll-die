@@ -2,7 +2,7 @@ from .csv_adapter import ColumnMap, CsvDataAdapter
 from .data_adapter import DataAdapter
 from .die import build_die
 from .discretizer import discretize
-from .errors import InsufficientData, PriorFitError, UnsuitableFamily
+from .errors import InsufficientData, PriorFitError, UnsuitableModel
 from .fitting import FitReport, fit_scopes, scopes_for
 from .models import Die, DieMetadata, Face, PriorParams, Record
 from .prior_discovery import fit_prior
@@ -27,7 +27,7 @@ __all__ = [
     "PriorStore",
     "QualitySampler",
     "Record",
-    "UnsuitableFamily",
+    "UnsuitableModel",
     "build_die",
     "discretize",
     "fit_prior",

@@ -47,7 +47,11 @@ def column_map(args) -> ColumnMap:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--stat", default="goals")
-    parser.add_argument("--model", choices=["beta_binomial", "gamma_poisson", "normal_normal"], default="gamma_poisson")
+    parser.add_argument(
+        "--model",
+        choices=["beta_binomial", "gamma_exponential", "gamma_poisson", "normal_normal"],
+        default="gamma_poisson",
+    )
     parser.add_argument("--scope-column", default="position_general")
     parser.add_argument(
         "--exclude",

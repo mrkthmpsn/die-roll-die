@@ -9,12 +9,21 @@ class Record(BaseModel):
     """Representation of a single entity's single value, and the denominator it was
     measured against.
 
-    What the pair means follows the prior model it is fitted or updated under: a count
-    over the opportunity it accumulated in, as twelve goals across thirty nineties
-    (`value=12.0, denominator=30.0`); successes over attempts, as thirty headers from a
-    hundred shots; or a measurement over the weight it carries, where `value / denominator`
-    is the measured quantity per unit. A denominator of `1.0` states that the value stands
-    on its own.
+    What the pair means follows the model a prior is fitted or updated under:
+
+    | model | `value` | `denominator` |
+    | --- | --- | --- |
+    | `gamma_poisson` | count of events | exposure they occurred in |
+    | `gamma_exponential` | amount of time | count of events filling it |
+    | `beta_binomial` | count of successes | count of attempts |
+    | `normal_normal` | measured quantity | weight it carries |
+
+    Twelve goals across thirty appearances is `value=12.0, denominator=30.0` under
+    `gamma_poisson`. The `gamma_exponential` row inverts the others deliberately: it holds
+    the same two quantities as `gamma_poisson`, an amount of time and a number of events,
+    but in the opposite fields, because `gamma_poisson` fixes the time and counts the
+    events while `gamma_exponential` fixes the events and measures the time. A denominator
+    of `1.0` states that the value stands on its own.
 
     `entity_type` says what kind of thing `entity_id` names, so a player's observations and
     a club's cannot be mistaken for one another downstream.
@@ -46,7 +55,7 @@ class PriorParams(BaseModel):
     stat_id: str
     entity_type: str
     scope: dict[str, str] = {}
-    model: Literal["beta_binomial", "gamma_poisson", "normal_normal"]
+    model: Literal["beta_binomial", "gamma_exponential", "gamma_poisson", "normal_normal"]
     params: dict[str, float]
 
 

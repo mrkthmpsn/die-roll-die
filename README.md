@@ -79,7 +79,7 @@ Nothing is guessed from a column's name, so a file with its own conventions need
 
 Only `scopes_for` is restricted to the mapped dimensions, because it works from `Record`s rather than from the file and a `Record` carries only what the map told it to.
 
-**Choosing the denominator is a modelling decision, not a lookup.** If your file has both `attempts` and `minutes`, then `denominator="attempts"` asks what share of his shots go in, and `denominator="minutes"` asks how many he hits per minute on court. Both are legitimate, they are different questions, and the choice decides which distribution family you want.
+**Choosing the denominator is a modelling decision, not a lookup.** If your file has both `attempts` and `minutes`, then `denominator="attempts"` asks what share of his shots go in, and `denominator="minutes"` asks how many he hits per minute on court. Both are legitimate, they are different questions, and the choice decides which model you want.
 
 ## How it works
 
@@ -89,7 +89,7 @@ Only `scopes_for` is restricted to the mapped dimensions, because it works from 
 
 **`beta` is evidence measured in appearances**: this prior is worth about 11 appearances of watching someone play, which is what sets how far a player's own record can move it.
 
-**The posterior** is the prior updated with one player's own record, and for this family the update is two additions:
+**The posterior** is the prior updated with one player's own record, and for this model the update is two additions:
 
 ```
 alpha:  2.26 + 112 goals       = 114.26
@@ -114,25 +114,28 @@ The first is uncertainty about Haaland. The second adds the randomness of footba
 
 `equal_weight` sorts the counts and splits them into six piles of the same size instead. **Every face then has the same 1-in-6 chance and the value ranges differ**, narrow where outcomes bunch together and wide out in the tails. That is an unweighted die with uneven faces, and it has one property the other lacks: a physical D6 rolled by hand gives a genuine draw from the posterior, because each face really is equally likely.
 
-## Choosing a family
+## Choosing a model
 
-`fit_prior` makes you name the distribution family, and will not guess. The family states which values your stat can take **at all**, and no amount of data establishes that — a value nobody has recorded and a value nobody can record look identical in a file.
+`fit_prior` makes you name the model, and will not guess. A model is a pair — a prior distribution, and an assumption about what your observations do given it — and it states which values your stat can take **at all**, which no amount of data establishes: a value nobody has recorded and a value nobody can record look identical in a file.
 
-| Family | Allows | Use when |
-| --- | --- | --- |
-| `gamma` | any positive number, no ceiling | counts over an exposure — goals per appearance |
-| `beta` | 0 to 1 and nothing outside | successes out of attempts — shots on target per shot |
-| `normal` | anything, symmetric around a middle | measurements comfortably away from zero — distance per match |
+| Model | Rate covers | `value` | `denominator` | Use when |
+| --- | --- | --- | --- | --- |
+| `gamma_poisson` | positive, no ceiling | count of events | exposure they occurred in | you fixed the time and counted — goals per appearance |
+| `gamma_exponential` | positive, no ceiling | amount of time | count of events | you fixed the count and timed it — hours per five incidents |
+| `beta_binomial` | 0 to 1, nothing outside | successes | attempts | successes out of attempts — shots on target per shot |
+| `normal_normal` | anything, symmetric | measured quantity | weight | measurements away from zero — distance per match |
 
-The names carry no meaning about your data. They come from the gamma and beta functions that appear in the formulas, so "beta is the bounded one" is a fact to memorise rather than derive.
+The two gamma models describe the same quantities, events and time, and differ only in which one your data holds fixed. Their update is identical; what changes is which field holds which, and what `sample_predictive` gives back — a count of events for `gamma_poisson`, a total time for `gamma_exponential`.
 
-**Getting it wrong does not fail loudly.** Fit a 90% free-throw shooter as a gamma instead of a beta and everything runs — but a gamma has no ceiling, so 21% of the resulting die describes making more than 100 shots out of 100 attempts, and nothing in the output says so. The one guard that exists is in the beta fit, which rejects any row whose value exceeds its own denominator, because that is not successes-out-of-attempts however you squint at it.
+Each name joins the prior to the likelihood. "Gamma" and "beta" come from the gamma and beta functions in their formulas rather than from anything about your data, so "beta is the bounded one" is a fact to memorise rather than derive.
+
+**Getting it wrong does not fail loudly.** Fit a 90% free-throw shooter as `gamma_poisson` instead of `beta_binomial` and everything runs — but a gamma has no ceiling, so 21% of the resulting die describes making more than 100 shots out of 100 attempts, and nothing in the output says so. Two guards exist: the beta fit rejects any row whose value exceeds its own denominator, and the gamma-exponential fit rejects a value or denominator that is not positive.
 
 ## Modules
 
 **DataAdapter** — the only domain-aware module. Supplies one entity's observations, and the population's, as `Record`s. `CsvDataAdapter` implements it over a CSV; anything else — a database, an HTTP API — implements the same two methods.
 
-**PriorDiscovery** — `fit_prior` fits a family's parameters from population-wide observations by method of moments. `scopes_for` and `fit_scopes` run it across a list of scopes, saving what fits and reporting the slices too thin to fit.
+**PriorDiscovery** — `fit_prior` fits a model's parameters from population-wide observations by method of moments. `scopes_for` and `fit_scopes` run it across a list of scopes, saving what fits and reporting the slices too thin to fit.
 
 **PriorStore** — persists fitted priors, keyed by `(entity_type, stat_id, scope)`. `InMemoryPriorStore` for a process, `JsonPriorStore` for a file. Fitting is an offline job; rolling a die reads what it wrote.
 
@@ -151,7 +154,7 @@ Online (per roll):   PriorStore + DataAdapter (one entity) -> QualitySampler -> 
 
 **The prior fit corrects for noise in its own inputs.** A season's goals-per-appearance is spread by two things: how much players genuinely differ, and the randomness of scoring itself. Only the first belongs in a prior. For counts the second is calculable — a Poisson's spread is fixed by its mean — so it is subtracted. Over the 483 forward-seasons of ten or more appearances in the shipped data, 34% of the apparent spread is that randomness, and correcting for it takes the prior from 7.5 to 11.4 appearances' worth of evidence. Seasons under ten appearances are excluded outright, their rates being dominated by the small denominator — and the threshold is a modelling choice, since a prior over any forward would include everybody while a prior over a forward who plays should not.
 
-The normal family cannot do this, because a normal's spread is not implied by its mean. `fit_prior` instead estimates it by pooling how much each entity's observations vary around that entity's own mean, which needs entities appearing more than once and is stored as the prior's third parameter, `sigma_obs`.
+`normal_normal` cannot do this, because a normal's spread is not implied by its mean. `fit_prior` instead estimates it by pooling how much each entity's observations vary around that entity's own mean, which needs entities appearing more than once and is stored as the prior's third parameter, `sigma_obs`.
 
 **A missing scope fails rather than falling back.** Ask for a prior nobody fitted and you get an error listing what exists, not the next broadest prior. A die built from the forwards prior and one built from the global prior are different answers, and nothing downstream could tell them apart. `list_scopes` lets a caller see what is available so the choice stays theirs.
 
