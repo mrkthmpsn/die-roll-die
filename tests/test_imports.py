@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
+
+import die_scouting
 from pydantic import ValidationError
 
 from die_scouting import (
@@ -17,6 +20,13 @@ from die_scouting import (
     assemble_die_from_samples,
     fit_prior,
 )
+
+
+def test_the_package_ships_a_py_typed_marker():
+    """Without it an installed consumer's type checker reads every import as `Any`, which a
+    clone never shows, being source rather than a distribution.
+    """
+    assert (Path(die_scouting.__file__).parent / "py.typed").exists()
 
 
 def test_record_instantiates():

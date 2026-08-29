@@ -239,3 +239,7 @@ The software — `die_scouting/`, `examples/`, `tools/` and `tests/` — is MIT,
 uv sync
 uv run pytest
 ```
+
+The package ships a PEP 561 `py.typed` marker, so an install carries its annotations and
+`Die`, `PriorParams` and the rest keep their field types under mypy or pyright rather than
+resolving to `Any`.
