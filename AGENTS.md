@@ -1,4 +1,4 @@
-# die-scouting — agent instructions
+# die-roll-die — agent instructions
 
 See [README.md](README.md) for what this project is and how the modules fit together.
 

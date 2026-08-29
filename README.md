@@ -1,6 +1,6 @@
-# die-scouting
+# die-roll-die
 
-die-scouting is a demonstration of probabilistic statistics. It takes a set of statistics — for example, a footballer's goals across several seasons — works out a distribution of what that player's underlying scoring rate might be, and turns that distribution into a weighted die.
+die-roll-die is a demonstration of probabilistic statistics. It takes a set of statistics — for example, a footballer's goals across several seasons — works out a distribution of what that player's underlying scoring rate might be, and turns that distribution into a weighted die.
 
 A prior is fitted from a population's data (e.g. what forwards in general score) and updated with the player's own record to give a posterior over their true rate. To make this easier to conceptualise, the posterior can be turned into a virtual die, to be virtually rolled with results reflecting the probabilities of the data.
 
@@ -243,6 +243,10 @@ uv run pytest
 The package ships a PEP 561 `py.typed` marker, so an install carries its annotations and
 `Die`, `PriorParams` and the rest keep their field types under mypy or pyright rather than
 resolving to `Any`.
+
+The distribution installs as `die-roll-die` and imports as `die_scouting`, the repository
+having been named after the die it rolls and the package after what it does with a player's
+record.
 
 `die_scouting.__version__` reports the version, so a bug report can name one. It is the
 single source: `pyproject.toml` declares the version dynamic and `[tool.hatch.version]`

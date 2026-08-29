@@ -34,7 +34,7 @@ def test_the_version_matches_the_installed_distribution():
     """`pyproject.toml` takes its version from `__version__` through `[tool.hatch.version]`,
     so the two drift only if the literal moves without the project being reinstalled.
     """
-    assert die_scouting.__version__ == importlib.metadata.version("die-scouting")
+    assert die_scouting.__version__ == importlib.metadata.version("die-roll-die")
 
 
 def test_record_instantiates():
