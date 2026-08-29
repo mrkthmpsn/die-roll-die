@@ -1,5 +1,7 @@
 # die-roll-die
 
+[![test](https://github.com/mrkthmpsn/die-roll-die/actions/workflows/test.yml/badge.svg)](https://github.com/mrkthmpsn/die-roll-die/actions/workflows/test.yml)
+
 die-roll-die is a demonstration of probabilistic statistics. It takes a set of statistics — for example, a footballer's goals across several seasons — works out a distribution of what that player's underlying scoring rate might be, and turns that distribution into a weighted die.
 
 A prior is fitted from a population's data (e.g. what forwards in general score) and updated with the player's own record to give a posterior over their true rate. To make this easier to conceptualise, the posterior can be turned into a virtual die, to be virtually rolled with results reflecting the probabilities of the data.
@@ -32,7 +34,25 @@ Each face of the die covers about four goals and carries its own chance of comin
 
 That is a weighted die: goal values on each face evenly split, uneven chances of landing on each face. `--strategy equal_weight` cuts the same numbers the other way — every face equally likely, with the value ranges uneven instead.
 
-## Try it
+## Install
+
+```
+uv add die-roll-die
+```
+
+or `pip install die-roll-die`. The distribution is `die-roll-die` and the import is
+`die_roll_die`:
+
+```python
+from die_roll_die import ColumnMap, build_die_from_csv
+```
+
+[From a CSV to a die](#from-a-csv-to-a-die) is the shortest working example, and
+[Use your own data](#use-your-own-data) covers pointing it at a file of your own.
+
+## Try the demo from a clone
+
+The repository carries the dataset and two example scripts, which an install does not:
 
 ```
 uv sync
