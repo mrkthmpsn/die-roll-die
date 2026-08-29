@@ -24,6 +24,7 @@ from die_scouting import (
     CsvDataAdapter,
     JsonPriorStore,
     PriorFitError,
+    UnreadablePriorStore,
     create_die,
     fit_prior,
 )
@@ -73,7 +74,10 @@ def read_prior(path: Path, entity_type: str, stat_id: str, scope: dict[str, str]
     """Return the stored prior for this entity type, stat and scope, or exit listing what
     is stored.
     """
-    store = JsonPriorStore(path)
+    try:
+        store = JsonPriorStore(path)
+    except UnreadablePriorStore as error:
+        raise SystemExit(str(error)) from None
     prior = store.get(entity_type, stat_id, scope)
     if prior is not None:
         return prior

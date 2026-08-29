@@ -1,8 +1,16 @@
 from __future__ import annotations
 
+import json
+
 import pytest
 
-from die_scouting import InMemoryPriorStore, JsonPriorStore, PriorParams
+from die_scouting import (
+    PRIOR_STORE_SCHEMA_VERSION,
+    InMemoryPriorStore,
+    JsonPriorStore,
+    PriorParams,
+    UnreadablePriorStore,
+)
 
 FORWARD = {"position_general": "Forward"}
 
@@ -89,3 +97,46 @@ def test_two_entity_types_share_a_stat_without_colliding(store):
     assert store.get("club", "goals", {}).params["alpha"] == 9.0
     assert store.list_scopes("player", "goals") == [{}]
     assert store.list_scopes("club", "goals") == [{}]
+
+
+def test_the_written_file_is_versioned_and_holds_a_list_of_priors(tmp_path):
+    path = tmp_path / "priors.json"
+    JsonPriorStore(path).save(prior(FORWARD))
+
+    payload = json.loads(path.read_text(encoding="utf-8"))
+
+    assert payload["schema_version"] == PRIOR_STORE_SCHEMA_VERSION
+    assert [p["scope"] for p in payload["priors"]] == [FORWARD]
+
+
+def test_a_stored_prior_carries_what_it_is_keyed_by(tmp_path):
+    """The lookup key is rebuilt on load, so it is not written down and cannot go stale."""
+    path = tmp_path / "priors.json"
+    JsonPriorStore(path).save(prior(FORWARD))
+
+    stored = json.loads(path.read_text(encoding="utf-8"))["priors"][0]
+
+    assert (stored["entity_type"], stored["stat_id"], stored["scope"]) == (
+        "player",
+        "goals",
+        FORWARD,
+    )
+
+
+def test_a_file_from_a_later_version_is_refused(tmp_path):
+    path = tmp_path / "priors.json"
+    path.write_text(json.dumps({"schema_version": 99, "priors": []}), encoding="utf-8")
+
+    with pytest.raises(UnreadablePriorStore, match="version 99"):
+        JsonPriorStore(path)
+
+
+def test_an_unversioned_file_is_refused_rather_than_read(tmp_path):
+    """The shape written before versioning: priors under encoded keys, no version."""
+    path = tmp_path / "priors.json"
+    path.write_text(
+        json.dumps({'["player","goals",[]]': prior({}).model_dump()}), encoding="utf-8"
+    )
+
+    with pytest.raises(UnreadablePriorStore, match="version 0"):
+        JsonPriorStore(path)

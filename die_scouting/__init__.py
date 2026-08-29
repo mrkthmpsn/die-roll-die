@@ -9,6 +9,7 @@ from .errors import (
     MissingPriorParam,
     PriorFitError,
     SamplingError,
+    UnreadablePriorStore,
     UnsuitableDenominator,
     UnsuitableModel,
 )
@@ -25,11 +26,17 @@ from .models import (
 )
 from .pipeline import build_die_from_csv, create_die, fit_priors
 from .prior_discovery import fit_prior
-from .prior_store import InMemoryPriorStore, JsonPriorStore, PriorStore
+from .prior_store import (
+    PRIOR_STORE_SCHEMA_VERSION,
+    InMemoryPriorStore,
+    JsonPriorStore,
+    PriorStore,
+)
 from .quality_sampler import BootstrapSampler, PosteriorSampler, QualitySampler
 
 __all__ = [
     "DIE_SCHEMA_VERSION",
+    "PRIOR_STORE_SCHEMA_VERSION",
     "POSTERIOR_PARAM_NAMES",
     "BootstrapSampler",
     "ColumnMap",
@@ -53,6 +60,7 @@ __all__ = [
     "QualitySampler",
     "Record",
     "SamplingError",
+    "UnreadablePriorStore",
     "UnsuitableDenominator",
     "UnsuitableModel",
     "assemble_die_from_samples",

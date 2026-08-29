@@ -4,7 +4,17 @@ import json
 from pathlib import Path
 from typing import Protocol
 
+from .errors import UnreadablePriorStore
 from .models import PriorParams
+
+
+PRIOR_STORE_SCHEMA_VERSION: int = 1
+"""The version of the file shape `JsonPriorStore` writes, carried in it as `schema_version`.
+
+Incremented when the file's shape changes: a renamed or removed field of a stored prior, or
+a change to how the priors are laid out. A file stating any other version raises
+`UnreadablePriorStore` on load rather than being read as this one.
+"""
 
 
 class PriorStore(Protocol):
@@ -64,16 +74,33 @@ class InMemoryPriorStore:
 class JsonPriorStore:
     """Holds priors in a JSON file, read on construction and rewritten on every save.
 
+    The file is `{"schema_version": PRIOR_STORE_SCHEMA_VERSION, "priors": [...]}`, the
+    priors being a list of serialised `PriorParams`. Each carries the entity type, stat and
+    scope it is keyed by, so the lookup key `get` uses is rebuilt on load rather than
+    written down.
+
     A path that does not exist is an empty store, so a first run needs no setup. Each save
     rewrites the whole file, so a run that stops partway keeps the priors already saved.
+
+    Raises:
+        UnreadablePriorStore: if the file states a schema version this library does not read.
     """
 
     def __init__(self, path: str | Path) -> None:
         self.path = Path(path)
         self._priors: dict[str, PriorParams] = {}
-        if self.path.exists():
-            raw = json.loads(self.path.read_text(encoding="utf-8"))
-            self._priors = {key: PriorParams.model_validate(value) for key, value in raw.items()}
+        if not self.path.exists():
+            return
+        raw = json.loads(self.path.read_text(encoding="utf-8"))
+        version = raw.get("schema_version", 0) if isinstance(raw, dict) else 0
+        if version != PRIOR_STORE_SCHEMA_VERSION:
+            raise UnreadablePriorStore(
+                f"{self.path} is a version {version} prior store and this library reads "
+                f"version {PRIOR_STORE_SCHEMA_VERSION}; refit the priors to rewrite it"
+            )
+        for value in raw["priors"]:
+            params = PriorParams.model_validate(value)
+            self._priors[_key(params.entity_type, params.stat_id, params.scope)] = params
 
     def save(self, params: PriorParams) -> None:
         """Store `params` and rewrite the file, replacing any prior held for the same
@@ -97,6 +124,9 @@ class JsonPriorStore:
         ])
 
     def _write(self) -> None:
-        payload = {key: params.model_dump() for key, params in self._priors.items()}
+        payload = {
+            "schema_version": PRIOR_STORE_SCHEMA_VERSION,
+            "priors": [params.model_dump() for params in self._priors.values()],
+        }
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.path.write_text(json.dumps(payload, indent=2), encoding="utf-8")

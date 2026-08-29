@@ -185,7 +185,7 @@ A `normal_normal` prior carries a third number, `sigma_obs`, which is how much i
 
 **PriorDiscovery** — `fit_prior` fits a model's parameters from population-wide observations by method of moments. `scopes_for` and `fit_scopes` run it across a list of scopes, saving what fits and reporting the slices too thin to fit.
 
-**PriorStore** — persists fitted priors, keyed by `(entity_type, stat_id, scope)`. `InMemoryPriorStore` for a process, `JsonPriorStore` for a file. Fitting is an offline job; rolling a die reads what it wrote.
+**PriorStore** — persists fitted priors, keyed by `(entity_type, stat_id, scope)`. `InMemoryPriorStore` for a process, `JsonPriorStore` for a file. That file carries a `schema_version` of its own, and one stating a version the library does not read raises rather than being read as the current shape; the key is rebuilt from each prior on load rather than written down, so changing how it is built cannot strand entries behind a lookup that misses. Fitting is an offline job; rolling a die reads what it wrote.
 
 **QualitySampler** — `sample(entity_id, n_draws)` returning draws of an entity's underlying quality. `PosteriorSampler` does the conjugate update and also offers `sample_predictive(entity_id, n_draws, denominator)`, which is what a die is built from. Its `posterior_params` returns the two numbers as a bare tuple, which `POSTERIOR_PARAM_NAMES` gives the names of. `BootstrapSampler` draws without a prior, resampling the entity's own records with replacement and taking summed values over summed denominators each time.
 

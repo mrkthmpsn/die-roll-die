@@ -34,3 +34,7 @@ class UnsuitableDenominator(SamplingError):
 
 class InsufficientObservations(SamplingError):
     """Raised when an entity has too few observations to resample."""
+
+
+class UnreadablePriorStore(ValueError):
+    """Raised when a prior store's file states a schema version this library does not read."""
