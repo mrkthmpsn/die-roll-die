@@ -34,7 +34,10 @@ from .prior_store import (
 )
 from .quality_sampler import BootstrapSampler, PosteriorSampler, QualitySampler
 
+__version__ = "0.0.1"
+
 __all__ = [
+    "__version__",
     "DIE_SCHEMA_VERSION",
     "PRIOR_STORE_SCHEMA_VERSION",
     "POSTERIOR_PARAM_NAMES",

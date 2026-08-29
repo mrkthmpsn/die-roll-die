@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.metadata
 import json
 from pathlib import Path
 
@@ -27,6 +28,13 @@ def test_the_package_ships_a_py_typed_marker():
     clone never shows, being source rather than a distribution.
     """
     assert (Path(die_scouting.__file__).parent / "py.typed").exists()
+
+
+def test_the_version_matches_the_installed_distribution():
+    """`pyproject.toml` takes its version from `__version__` through `[tool.hatch.version]`,
+    so the two drift only if the literal moves without the project being reinstalled.
+    """
+    assert die_scouting.__version__ == importlib.metadata.version("die-scouting")
 
 
 def test_record_instantiates():

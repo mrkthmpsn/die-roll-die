@@ -1,6 +1,6 @@
 [project]
 name = "die-scouting"
-version = "0.0.1"
+dynamic = ["version"]
 description = "Bayesian quality distributions turned into weighted dice, illustrating uncertainty in per-entity estimates."
 readme = "README.md"
 license = "MIT"
@@ -26,6 +26,9 @@ dev = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "die_scouting/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["die_scouting"]

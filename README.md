@@ -243,3 +243,7 @@ uv run pytest
 The package ships a PEP 561 `py.typed` marker, so an install carries its annotations and
 `Die`, `PriorParams` and the rest keep their field types under mypy or pyright rather than
 resolving to `Any`.
+
+`die_scouting.__version__` reports the version, so a bug report can name one. It is the
+single source: `pyproject.toml` declares the version dynamic and `[tool.hatch.version]`
+reads it out of `die_scouting/__init__.py` at build time.
