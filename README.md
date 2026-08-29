@@ -189,6 +189,8 @@ A `normal_normal` prior carries a third number, `sigma_obs`, which is how much i
 
 **QualitySampler** — `sample(entity_id, n_draws)` returning draws of an entity's underlying quality. `PosteriorSampler` does the conjugate update and also offers `sample_predictive(entity_id, n_draws, denominator)`, which is what a die is built from. Its `posterior_params` returns the two numbers as a bare tuple, which `POSTERIOR_PARAM_NAMES` gives the names of. `BootstrapSampler` draws without a prior, resampling the entity's own records with replacement and taking summed values over summed denominators each time.
 
+**Errors** — two trees, both under `ValueError` so a caller catching that keeps working. `PriorFitError` covers fitting, with `InsufficientData` for a scope holding too little to estimate from and `UnsuitableModel` for observations that contradict the model asked for. `SamplingError` covers drawing, with `EntityTypeMismatch`, `MissingPriorParam`, `UnsuitableDenominator` and `InsufficientObservations`. Neither tree is under the other, so a handler around `create_die` can tell a prior that would not fit from a die that cannot be rolled.
+
 **Pipeline** — `fit_priors` fits the global scope plus one per value of a dimension and saves them to a store; `create_die` turns an entity and a prior into a `Die` with its metadata filled in; `build_die_from_csv` runs both against a CSV in one call, refitting the prior each time.
 
 **Discretizer** — `discretize(samples, n_faces, strategy)` turns a sample array into weighted faces. `equal_weight` holds the probabilities equal and lets the value ranges vary; `equal_width` holds the value ranges equal and lets the probabilities vary. It knows nothing about what the numbers mean.

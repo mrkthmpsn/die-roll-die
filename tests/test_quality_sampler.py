@@ -6,9 +6,13 @@ import pytest
 from die_scouting import (
     POSTERIOR_PARAM_NAMES,
     BootstrapSampler,
+    EntityTypeMismatch,
+    InsufficientObservations,
+    MissingPriorParam,
     PosteriorSampler,
     PriorParams,
     Record,
+    UnsuitableDenominator,
 )
 
 
@@ -103,7 +107,7 @@ def test_predictive_at_a_zero_denominator_scores_nothing():
 
 
 def test_predictive_rejects_a_negative_denominator():
-    with pytest.raises(ValueError, match="denominator"):
+    with pytest.raises(UnsuitableDenominator, match="denominator"):
         source({}).sample_predictive("striker", 10, denominator=-1.0)
 
 
@@ -151,7 +155,7 @@ def test_beta_predictive_counts_successes_out_of_attempts():
 
 
 def test_beta_predictive_rejects_fractional_attempts():
-    with pytest.raises(ValueError, match="whole number of attempts"):
+    with pytest.raises(UnsuitableDenominator, match="whole number of attempts"):
         source({}, prior=beta_prior()).sample_predictive("passer", 10, 12.5)
 
 
@@ -179,14 +183,14 @@ def test_normal_predictive_totals_over_the_denominator():
 
 def test_gamma_prior_missing_a_parameter_raises():
     prior = PriorParams(entity_type="player", stat_id="np_goals", model="gamma_poisson", params={"alpha": 3.0})
-    with pytest.raises(ValueError, match="beta"):
+    with pytest.raises(MissingPriorParam, match="beta"):
         source({}, prior=prior).sample("striker", 10)
 
 
 def test_a_prior_for_another_entity_type_is_rejected():
     observations = {"striker": [season("striker", 40, 100)]}
     club_prior = gamma_prior().model_copy(update={"entity_type": "club"})
-    with pytest.raises(ValueError, match="describes a 'club'"):
+    with pytest.raises(EntityTypeMismatch, match="describes a 'club'"):
         source(observations, prior=club_prior).sample("striker", 10)
 
 
@@ -225,7 +229,7 @@ def test_gamma_exponential_predicts_a_positive_total_time():
 
 
 def test_gamma_exponential_predicts_over_a_whole_number_of_events():
-    with pytest.raises(ValueError, match="whole number of events"):
+    with pytest.raises(UnsuitableDenominator, match="whole number of events"):
         source({}, prior=exponential_prior()).sample_predictive("press", 10, 7.5)
 
 
@@ -252,7 +256,7 @@ def test_a_normal_prior_without_sigma_obs_is_rejected():
     prior = PriorParams(
         entity_type="player", stat_id="s", model="normal_normal", params={"mu": 3.0, "sigma": 1.0}
     )
-    with pytest.raises(ValueError, match="sigma_obs"):
+    with pytest.raises(MissingPriorParam, match="sigma_obs"):
         source({}, prior=prior).posterior_params("unknown")
 
 
@@ -341,16 +345,24 @@ def test_identical_observations_resample_to_one_rate():
 
 def test_bootstrap_rejects_a_single_observation():
     bootstrap = resampler({"striker": [season("striker", 12, 30)]})
-    with pytest.raises(ValueError, match="at least 2"):
+    with pytest.raises(InsufficientObservations, match="at least 2"):
         bootstrap.sample("striker", 100)
 
 
 def test_bootstrap_rejects_an_entity_with_no_observations():
-    with pytest.raises(ValueError, match="at least 2"):
+    with pytest.raises(InsufficientObservations, match="at least 2"):
         resampler({}).sample("unknown-player", 100)
 
 
 def test_bootstrap_rejects_a_denominator_of_zero():
     bootstrap = resampler({"striker": [season("striker", 12, 30), season("striker", 0, 0)]})
-    with pytest.raises(ValueError, match="denominator"):
+    with pytest.raises(UnsuitableDenominator, match="denominator"):
         bootstrap.sample("striker", 100)
+
+
+def test_the_sampler_errors_are_value_errors():
+    """Callers catching ValueError keep working, since all four types subclass it."""
+    assert issubclass(EntityTypeMismatch, ValueError)
+    assert issubclass(MissingPriorParam, ValueError)
+    assert issubclass(UnsuitableDenominator, ValueError)
+    assert issubclass(InsufficientObservations, ValueError)
