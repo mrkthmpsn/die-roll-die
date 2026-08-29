@@ -96,7 +96,8 @@ class JsonPriorStore:
         if version != PRIOR_STORE_SCHEMA_VERSION:
             raise UnreadablePriorStore(
                 f"{self.path} is a version {version} prior store and this library reads "
-                f"version {PRIOR_STORE_SCHEMA_VERSION}; refit the priors to rewrite it"
+                f"version {PRIOR_STORE_SCHEMA_VERSION}; delete it and refit, this store "
+                f"rewriting only a file it could read"
             )
         for value in raw["priors"]:
             params = PriorParams.model_validate(value)

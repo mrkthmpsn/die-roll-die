@@ -26,6 +26,7 @@ from die_scouting import (
     ColumnMap,
     CsvDataAdapter,
     JsonPriorStore,
+    UnreadablePriorStore,
     fit_priors,
 )
 
@@ -87,7 +88,10 @@ def main() -> None:
         raise SystemExit(f"no data at {args.data}")
 
     adapter = CsvDataAdapter(args.data, column_map(args))
-    store = JsonPriorStore(args.priors)
+    try:
+        store = JsonPriorStore(args.priors)
+    except UnreadablePriorStore as error:
+        raise SystemExit(str(error)) from None
 
     report = fit_priors(
         adapter, store, args.stat, args.model, args.scope_column, args.exclude
