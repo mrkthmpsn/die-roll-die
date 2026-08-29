@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import json
+
 import pytest
 from pydantic import ValidationError
 
 from die_scouting import (
+    DIE_SCHEMA_VERSION,
     POSTERIOR_PARAM_NAMES,
     Die,
     DieMetadata,
@@ -36,6 +39,26 @@ def test_face_and_die_instantiate():
     die = Die(faces=[face])
     assert die.metadata.entity_id is None
     assert die.metadata.extra == {}
+
+
+def test_a_die_carries_the_schema_version():
+    die = assemble_die_from_samples([float(i) for i in range(100)], n_faces=6)
+    assert die.schema_version == 1, "the literal moves when the payload's shape does"
+    assert die.schema_version == DIE_SCHEMA_VERSION
+
+
+def test_schema_version_is_the_payload_s_first_key():
+    """A reader branches on the version before parsing the rest."""
+    payload = json.loads(assemble_die_from_samples([1.0, 2.0, 3.0]).model_dump_json())
+    assert next(iter(payload)) == "schema_version"
+
+
+def test_a_payload_from_a_later_version_still_loads():
+    """Refusing an unknown version would take the decision away from the reader."""
+    die = Die.model_validate_json(
+        json.dumps({"schema_version": 99, "faces": [], "metadata": {}})
+    )
+    assert die.schema_version == 99
 
 
 def test_fit_prior_needs_observations():
@@ -118,6 +141,7 @@ def test_metadata_round_trips_through_json():
     assert restored.metadata.posterior_params["beta"] == 314.92
     assert restored.metadata.denominator_unit == "nineties"
     assert restored.metadata.observed_periods == 4
+    assert restored.schema_version == DIE_SCHEMA_VERSION
 
 
 def test_two_scopes_give_dice_that_can_be_told_apart():

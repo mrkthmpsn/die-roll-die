@@ -13,13 +13,23 @@ from .errors import (
     UnsuitableModel,
 )
 from .fitting import FitReport, fit_scopes, scopes_for
-from .models import POSTERIOR_PARAM_NAMES, Die, DieMetadata, Face, Model, PriorParams, Record
+from .models import (
+    DIE_SCHEMA_VERSION,
+    POSTERIOR_PARAM_NAMES,
+    Die,
+    DieMetadata,
+    Face,
+    Model,
+    PriorParams,
+    Record,
+)
 from .pipeline import build_die_from_csv, create_die, fit_priors
 from .prior_discovery import fit_prior
 from .prior_store import InMemoryPriorStore, JsonPriorStore, PriorStore
 from .quality_sampler import BootstrapSampler, PosteriorSampler, QualitySampler
 
 __all__ = [
+    "DIE_SCHEMA_VERSION",
     "POSTERIOR_PARAM_NAMES",
     "BootstrapSampler",
     "ColumnMap",

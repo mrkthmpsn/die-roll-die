@@ -32,6 +32,15 @@ individual observations.
 """
 
 
+DIE_SCHEMA_VERSION: int = 1
+"""The version of the shape `Die.model_dump_json()` writes, carried in the payload as
+`schema_version`.
+
+Incremented when a field is renamed, removed, or changes meaning; adding an optional field
+leaves it alone, a reader that ignores keys it does not know being unaffected by one.
+"""
+
+
 class Record(BaseModel):
     """Representation of a single entity's single value, and the denominator it was
     measured against.
@@ -132,7 +141,14 @@ class DieMetadata(BaseModel):
 
 
 class Die(BaseModel):
-    """Basic representation of a die."""
+    """Basic representation of a die.
 
+    `schema_version` is `DIE_SCHEMA_VERSION` at the time the die was built and is the first
+    key of the serialised payload, so a reader can branch on it before parsing the rest. It
+    is a plain int rather than a fixed literal, so a payload naming a version this library
+    does not know validates; what to do about one is the reader's decision.
+    """
+
+    schema_version: int = DIE_SCHEMA_VERSION
     faces: list[Face]
     metadata: DieMetadata = DieMetadata()
