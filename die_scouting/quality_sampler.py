@@ -123,12 +123,15 @@ class PosteriorSampler:
         the entity's quality at a stated amount of opportunity.
 
         Raises:
-            UnsuitableDenominator: if `denominator` is negative, or is not a whole number
-                where the model counts it — attempts for `beta_binomial`, events for
+            UnsuitableDenominator: if `denominator` is not positive, or is not a whole
+                number where the model counts it — attempts for `beta_binomial`, events for
                 `gamma_exponential`.
         """
-        if denominator < 0:
-            raise UnsuitableDenominator("denominator must not be negative")
+        if denominator <= 0:
+            raise UnsuitableDenominator(
+                "denominator must be positive: a die is a spread of outcomes and zero "
+                "opportunity has one outcome"
+            )
         first, second = self.posterior_params(entity_id)
         draws = self._draw(first, second, n_draws)
 

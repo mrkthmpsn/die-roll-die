@@ -8,6 +8,7 @@ from die_scouting import (
     CsvDataAdapter,
     InMemoryPriorStore,
     InsufficientData,
+    UnsuitableDenominator,
     build_die_from_csv,
     create_die,
     fit_priors,
@@ -140,3 +141,16 @@ def test_the_one_call_route_raises_on_a_scope_it_cannot_fit(csv_path):
             30,
             scope={"position_general": "Goalkeeper"},
         )
+
+
+def test_create_die_rejects_a_zero_denominator_under_either_strategy(adapter):
+    """`equal_weight` used to return six faces of `(0.0, 0.0)`, which serialises and renders
+    as a prediction; `equal_width` failed inside binning, three calls from the argument.
+    """
+    store = InMemoryPriorStore()
+    fit_priors(adapter, store, "goals", "gamma_poisson", min_denominator=1.0)
+    prior = store.get("player", "goals", {})
+
+    for strategy in ("equal_weight", "equal_width"):
+        with pytest.raises(UnsuitableDenominator, match="zero opportunity"):
+            create_die(adapter, prior, "1", denominator=0, strategy=strategy)

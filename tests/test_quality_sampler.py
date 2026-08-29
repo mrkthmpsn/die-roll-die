@@ -99,11 +99,12 @@ def test_predictive_mean_tracks_posterior_mean_times_denominator():
     assert np.mean(draws) == pytest.approx((alpha / beta) * 30.0, rel=0.05)
 
 
-def test_predictive_at_a_zero_denominator_scores_nothing():
-    draws = source({"striker": [season("striker", 40, 100)]}).sample_predictive(
-        "striker", 100, denominator=0.0
-    )
-    assert set(draws) == {0.0}
+def test_predictive_rejects_a_zero_denominator():
+    """Every draw would be zero, which is one outcome rather than a spread."""
+    with pytest.raises(UnsuitableDenominator, match="zero opportunity"):
+        source({"striker": [season("striker", 40, 100)]}).sample_predictive(
+            "striker", 100, denominator=0.0
+        )
 
 
 def test_predictive_rejects_a_negative_denominator():

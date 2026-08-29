@@ -25,6 +25,7 @@ from die_scouting import (
     JsonPriorStore,
     PriorFitError,
     UnreadablePriorStore,
+    UnsuitableDenominator,
     create_die,
     fit_prior,
 )
@@ -173,17 +174,20 @@ def main() -> None:
                 "try a different --model, a broader --scope, or a different "
                 "--denominator-column"
             ) from None
-    die = create_die(
-        adapter,
-        prior,
-        entity_id,
-        args.denominator,
-        n_faces=args.faces,
-        strategy=args.strategy,
-        draws=args.draws,
-        entity_name=name,
-        denominator_unit=args.denominator_column,
-    )
+    try:
+        die = create_die(
+            adapter,
+            prior,
+            entity_id,
+            args.denominator,
+            n_faces=args.faces,
+            strategy=args.strategy,
+            draws=args.draws,
+            entity_name=name,
+            denominator_unit=args.denominator_column,
+        )
+    except UnsuitableDenominator as error:
+        raise SystemExit(f"--denominator {args.denominator:g}: {error}") from None
     meta = die.metadata
 
     print(f"{meta.entity_name} ({meta.entity_id}) - {meta.stat_id}, scope {meta.scope or 'none'}")
