@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from die_scouting import InMemoryPriorStore, Record, UnsuitableModel, fit_scopes, scopes_for
+from die_roll_die import InMemoryPriorStore, Record, UnsuitableModel, fit_scopes, scopes_for
 
 
 class FakeAdapter:

@@ -6,10 +6,10 @@ from pathlib import Path
 
 import pytest
 
-import die_scouting
+import die_roll_die
 from pydantic import ValidationError
 
-from die_scouting import (
+from die_roll_die import (
     DIE_SCHEMA_VERSION,
     POSTERIOR_PARAM_NAMES,
     Die,
@@ -27,14 +27,14 @@ def test_the_package_ships_a_py_typed_marker():
     """Without it an installed consumer's type checker reads every import as `Any`, which a
     clone never shows, being source rather than a distribution.
     """
-    assert (Path(die_scouting.__file__).parent / "py.typed").exists()
+    assert (Path(die_roll_die.__file__).parent / "py.typed").exists()
 
 
 def test_the_version_matches_the_installed_distribution():
     """`pyproject.toml` takes its version from `__version__` through `[tool.hatch.version]`,
     so the two drift only if the literal moves without the project being reinstalled.
     """
-    assert die_scouting.__version__ == importlib.metadata.version("die-roll-die")
+    assert die_roll_die.__version__ == importlib.metadata.version("die-roll-die")
 
 
 def test_record_instantiates():

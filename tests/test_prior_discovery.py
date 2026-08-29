@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from die_scouting import InsufficientData, Record, UnsuitableModel, fit_prior
+from die_roll_die import InsufficientData, Record, UnsuitableModel, fit_prior
 
 
 def gamma_poisson_observations(alpha: float, beta: float, n: int, seed: int = 7) -> list[Record]:

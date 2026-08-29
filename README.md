@@ -63,7 +63,7 @@ A composite score — an "inverted full-back suitability out of 10" computed how
 `CsvDataAdapter` reads any CSV of one row per entity per period. You tell it which columns fill which role:
 
 ```python
-from die_scouting import ColumnMap, CsvDataAdapter
+from die_roll_die import ColumnMap, CsvDataAdapter
 
 columns = ColumnMap(
     entity="player_ref",         # which entity a row belongs to
@@ -89,7 +89,7 @@ Only `scopes_for` is restricted to the mapped dimensions, because it works from 
 One call does the whole thing:
 
 ```python
-from die_scouting import build_die_from_csv
+from die_roll_die import build_die_from_csv
 
 die = build_die_from_csv(
     "shooting.csv", columns,
@@ -102,7 +102,7 @@ print(die.model_dump_json(indent=2))
 It refits the prior from the whole file on every call, so for more than one entity, fit once and reuse:
 
 ```python
-from die_scouting import InMemoryPriorStore, create_die, fit_priors
+from die_roll_die import InMemoryPriorStore, create_die, fit_priors
 
 store = InMemoryPriorStore()
 report = fit_priors(adapter, store, "three_pointers", "beta_binomial", dimension="position")
@@ -229,7 +229,7 @@ The denominator is appearances rather than minutes, because Wikipedia records mi
 
 ## Licence
 
-The software — `die_scouting/`, `examples/`, `tools/` and `tests/` — is MIT, in [LICENSE](LICENSE).
+The software — `die_roll_die/`, `examples/`, `tools/` and `tests/` — is MIT, in [LICENSE](LICENSE).
 
 `data/` is not: it derives from Wikipedia, whose text is CC BY-SA 4.0, so the dataset carries the same licence and its own attribution in [data/LICENSE](data/LICENSE). The two are separate works in one tree, which is why a fork may take the library closed-source while the data file keeps its terms. Redistributing the data, modified or not, means keeping that licence and the notices with it.
 
@@ -244,10 +244,6 @@ The package ships a PEP 561 `py.typed` marker, so an install carries its annotat
 `Die`, `PriorParams` and the rest keep their field types under mypy or pyright rather than
 resolving to `Any`.
 
-The distribution installs as `die-roll-die` and imports as `die_scouting`, the repository
-having been named after the die it rolls and the package after what it does with a player's
-record.
-
-`die_scouting.__version__` reports the version, so a bug report can name one. It is the
+`die_roll_die.__version__` reports the version, so a bug report can name one. It is the
 single source: `pyproject.toml` declares the version dynamic and `[tool.hatch.version]`
-reads it out of `die_scouting/__init__.py` at build time.
+reads it out of `die_roll_die/__init__.py` at build time.

@@ -6,7 +6,7 @@ See [README.md](README.md) for what this project is and how the modules fit toge
 
 **Describe the thing itself — its structure, its arguments and return, the rules governing its own fields. Not its role in a story about the system.**
 
-These rules were derived from a rewrite exercise where the user rewrote every docstring in `die_scouting/`. The pattern was consistent, and it is not about length: the two docstrings kept nearly intact were among the longest, while several rejected ones were already short.
+These rules were derived from a rewrite exercise where the user rewrote every docstring in `die_roll_die/`. The pattern was consistent, and it is not about length: the two docstrings kept nearly intact were among the longest, while several rejected ones were already short.
 
 ### 1. No em-dash asides that characterize rather than inform
 

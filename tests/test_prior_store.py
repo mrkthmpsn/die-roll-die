@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from die_scouting import (
+from die_roll_die import (
     PRIOR_STORE_SCHEMA_VERSION,
     InMemoryPriorStore,
     JsonPriorStore,

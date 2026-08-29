@@ -18,7 +18,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from die_scouting import (
+from die_roll_die import (
     POSTERIOR_PARAM_NAMES,
     ColumnMap,
     CsvDataAdapter,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from die_scouting.csv_adapter import ColumnMap, CsvDataAdapter
+from die_roll_die.csv_adapter import ColumnMap, CsvDataAdapter
 
 CSV = """\
 player_source_id,player_name,season_name,position,position_general,appearances,goals,total_xg

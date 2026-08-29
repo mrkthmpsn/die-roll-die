@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from die_scouting import POSTERIOR_PARAM_NAMES
+from die_roll_die import POSTERIOR_PARAM_NAMES
 from examples.fit import describe
 from examples.roll import _summarise, parse_scope
 

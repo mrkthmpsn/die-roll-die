@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from die_scouting import discretize
+from die_roll_die import discretize
 
 
 def test_equal_weight_face_count_and_weight_sum():

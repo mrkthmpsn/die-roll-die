@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from die_scouting import (
+from die_roll_die import (
     ColumnMap,
     CsvDataAdapter,
     InMemoryPriorStore,
