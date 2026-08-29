@@ -67,8 +67,10 @@ def create_die(
     the denominator's units are properties of the source rather than of a `Record`.
 
     Raises:
-        ValueError: if `denominator` is negative or, where the model counts it, fractional;
-            or if the entity's observations disagree with `prior` about the entity type.
+        UnsuitableDenominator: if `denominator` is negative or, where the model counts it,
+            fractional.
+        EntityTypeMismatch: if the entity's observations disagree with `prior` about the
+            entity type.
     """
     sampler = PosteriorSampler(prior, adapter, prior.stat_id, rng)
     observations = adapter.get_entity_observations(entity_id, prior.stat_id, prior.scope)
@@ -117,7 +119,8 @@ def build_die_from_csv(
 
     Raises:
         PriorFitError: if the population under `scope` cannot fit `model`.
-        ValueError: if `denominator` is negative or, where the model counts it, fractional.
+        UnsuitableDenominator: if `denominator` is negative or, where the model counts it,
+            fractional.
     """
     adapter = CsvDataAdapter(path, column_map)
     scope = scope or {}

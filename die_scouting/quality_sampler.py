@@ -7,6 +7,12 @@ import math
 import numpy as np
 
 from .data_adapter import DataAdapter
+from .errors import (
+    EntityTypeMismatch,
+    InsufficientObservations,
+    MissingPriorParam,
+    UnsuitableDenominator,
+)
 from .models import POSTERIOR_PARAM_NAMES, PriorParams
 
 
@@ -61,15 +67,16 @@ class PosteriorSampler:
         An entity with no observations returns the prior's parameters unchanged.
 
         Raises:
-            ValueError: if the entity's observations are of a different entity type than
-                the prior describes, or if the prior's params lack a key its model needs.
+            EntityTypeMismatch: if the entity's observations are of a different entity type
+                than the prior describes.
+            MissingPriorParam: if the prior's params lack a key its model needs.
         """
         observations = self.data_adapter.get_entity_observations(
             entity_id, self.stat_id, self.prior.scope
         )
         for observation in observations:
             if observation.entity_type != self.prior.entity_type:
-                raise ValueError(
+                raise EntityTypeMismatch(
                     f"entity {entity_id!r} is a {observation.entity_type!r} and the prior "
                     f"describes a {self.prior.entity_type!r}"
                 )
@@ -116,12 +123,12 @@ class PosteriorSampler:
         the entity's quality at a stated amount of opportunity.
 
         Raises:
-            ValueError: if `denominator` is negative, or is not a whole number where the
-                model counts it — attempts for `beta_binomial`, events for
+            UnsuitableDenominator: if `denominator` is negative, or is not a whole number
+                where the model counts it — attempts for `beta_binomial`, events for
                 `gamma_exponential`.
         """
         if denominator < 0:
-            raise ValueError("denominator must not be negative")
+            raise UnsuitableDenominator("denominator must not be negative")
         first, second = self.posterior_params(entity_id)
         draws = self._draw(first, second, n_draws)
 
@@ -129,13 +136,13 @@ class PosteriorSampler:
             return self.rng.poisson(draws * denominator).astype(float).tolist()
         if self.prior.model == "gamma_exponential":
             if denominator != int(denominator):
-                raise ValueError(
+                raise UnsuitableDenominator(
                     "a gamma_exponential prior predicts over a whole number of events"
                 )
             return self.rng.gamma(shape=denominator, scale=1.0 / draws).tolist()
         if self.prior.model == "beta_binomial":
             if denominator != int(denominator):
-                raise ValueError("a beta prior predicts over a whole number of attempts")
+                raise UnsuitableDenominator("a beta prior predicts over a whole number of attempts")
             return self.rng.binomial(int(denominator), draws).astype(float).tolist()
         noise = self.prior.params["sigma_obs"] * math.sqrt(denominator)
         return (draws * denominator + self.rng.normal(0.0, noise, size=n_draws)).tolist()
@@ -150,7 +157,9 @@ class PosteriorSampler:
     def _require(self, *keys: str) -> None:
         for key in keys:
             if key not in self.prior.params:
-                raise ValueError(f"a {self.prior.model} prior's params must contain {key!r}")
+                raise MissingPriorParam(
+                    f"a {self.prior.model} prior's params must contain {key!r}"
+                )
 
 
 class BootstrapSampler:
@@ -178,21 +187,24 @@ class BootstrapSampler:
         summed denominators over one resample of its observations.
 
         Raises:
-            ValueError: if the entity has fewer than two observations, one observation
-                resampling only to itself, or if any denominator is not positive.
+            InsufficientObservations: if the entity has fewer than two observations, one
+                observation resampling only to itself.
+            UnsuitableDenominator: if any denominator is not positive.
         """
         observations = self.data_adapter.get_entity_observations(
             entity_id, self.stat_id, self.scope
         )
         if len(observations) < 2:
-            raise ValueError(
+            raise InsufficientObservations(
                 f"entity {entity_id!r} has {len(observations)} observations and resampling "
                 f"needs at least 2"
             )
         values = np.array([o.value for o in observations], dtype=float)
         denominators = np.array([o.denominator for o in observations], dtype=float)
         if not np.all(denominators > 0):
-            raise ValueError(f"entity {entity_id!r} has an observation with a denominator of 0")
+            raise UnsuitableDenominator(
+                f"entity {entity_id!r} has an observation with a denominator of 0"
+            )
 
         picks = self.rng.integers(0, len(observations), size=(n_draws, len(observations)))
         return (values[picks].sum(axis=1) / denominators[picks].sum(axis=1)).tolist()
