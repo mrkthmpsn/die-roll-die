@@ -240,6 +240,11 @@ uv sync
 uv run pytest
 ```
 
+Every push runs the suite on Python 3.11, 3.12 and 3.13 on Linux, installing with
+`uv sync --frozen` so that a lock which has drifted from `pyproject.toml` fails the run, then
+fits priors and rolls a die through the two example scripts. A second job builds the wheel
+and checks the typing marker is inside it.
+
 The package ships a PEP 561 `py.typed` marker, so an install carries its annotations and
 `Die`, `PriorParams` and the rest keep their field types under mypy or pyright rather than
 resolving to `Any`.

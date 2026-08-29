@@ -1,0 +1,45 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          python-version: ${{ matrix.python-version }}
+      - name: install from the committed files alone
+        run: uv sync --frozen
+      - run: uv run pytest
+      - name: fit priors and roll a die
+        run: |
+          uv run python examples/fit.py
+          uv run python examples/roll.py Bukayo_Saka --scope position_general=Forward --priors data/priors.json
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          python-version: "3.12"
+      - run: uv build
+      - name: the wheel carries the typing marker
+        run: unzip -l dist/*.whl | grep -q 'die_roll_die/py.typed'
