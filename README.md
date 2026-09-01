@@ -6,7 +6,7 @@ die-roll-die is a demonstration of probabilistic statistics (and a Sideshow Bob 
 
 A prior is fitted from a population's data (e.g. the goal-scoring rate of forwards in general) and updated with an entity's individual record (e.g. a striker's goals and appearances) to give a posterior over their true rate. To make this easier to conceptualise, the posterior can be turned into a virtual die, to be virtually rolled with results reflecting the probabilities of the data.
 
-The repo includes five seasons of Premier League goals and appearances data taken from Wikipedia, but the underlying framework can be used with a your own dataset(s).
+The repo includes five seasons of Premier League goals and appearances data taken from Wikipedia, but the underlying framework can be used with your own dataset(s).
 
 ## Example
 Using the Wikipedia data, here is a die for Erling Haaland's goals over his next 30 appearances, scoped against the prior distribution of forwards in the dataset:
