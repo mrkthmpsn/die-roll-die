@@ -14,6 +14,17 @@ player_source_id,player_name,season_name,position,position_general,appearances,g
 """
 
 
+CLEAN_CSV = """id,games,tries
+7,12,4
+7,9,2
+"""
+
+KEEPERS_CSV = """id,minutes,saves
+1,90,
+2,0,5
+3,,4
+"""
+
 COLUMNS = ColumnMap(
     entity="player_source_id",
     entity_type="player",
@@ -82,9 +93,44 @@ def test_entity_ids_for_name_matches_case_insensitively(adapter):
     assert adapter.entity_ids_for_name("Nobody") == []
 
 
-def test_unknown_stat_is_rejected(adapter):
-    with pytest.raises(ValueError, match="total_xg"):
+def test_a_column_holding_no_number_says_so(adapter):
+    """`total_xg` is in the header and blank in every row, so it is not a numeric column —
+    which is a different thing from not being a column at all.
+    """
+    with pytest.raises(ValueError, match="total_xg' is a column of the file but no row kept"):
         adapter.get_population_observations("total_xg")
+
+
+def test_a_stat_absent_from_the_header_says_that_instead(adapter):
+    with pytest.raises(ValueError, match="'minutes' is not a column of the file"):
+        adapter.get_population_observations("minutes")
+
+
+def test_dropped_rows_counts_what_the_denominator_filter_removed(adapter):
+    """Cara Costa's row has `appearances` of 0."""
+    assert adapter.dropped_rows == 1
+
+
+def test_dropped_rows_is_zero_for_a_file_that_passes_whole(tmp_path):
+    path = tmp_path / "clean.csv"
+    path.write_text(CLEAN_CSV, encoding="utf-8")
+    adapter = CsvDataAdapter(
+        path, ColumnMap(entity="id", entity_type="player", denominator="games")
+    )
+    assert adapter.dropped_rows == 0
+
+
+def test_the_message_names_the_filter_when_it_removed_the_rows(tmp_path):
+    """`saves` holds a number in two rows the filter drops and in none it keeps, so the
+    count is what points at why the column looks empty.
+    """
+    path = tmp_path / "keepers.csv"
+    path.write_text(KEEPERS_CSV, encoding="utf-8")
+    adapter = CsvDataAdapter(
+        path, ColumnMap(entity="id", entity_type="player", denominator="minutes")
+    )
+    with pytest.raises(ValueError, match="2 rows were dropped"):
+        adapter.get_population_observations("saves")
 
 
 def test_unknown_scope_key_is_rejected(adapter):

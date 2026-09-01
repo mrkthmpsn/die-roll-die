@@ -98,6 +98,8 @@ def main() -> None:
     )
 
     print(f"{args.stat} ({args.model}) -> {args.priors}")
+    if adapter.dropped_rows:
+        print(f"  {adapter.dropped_rows} rows dropped for a denominator of zero or blank")
     for scope in report.fitted:
         prior = store.get(args.entity_type, args.stat, scope)
         params = ", ".join(f"{k}={v:.3f}" for k, v in prior.params.items())

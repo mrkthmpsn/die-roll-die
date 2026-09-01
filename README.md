@@ -201,7 +201,7 @@ A `normal_normal` prior carries a third number, `sigma_obs`, which is how much i
 
 ## Modules
 
-**DataAdapter** — the only domain-aware module. Supplies one entity's observations, and the population's, as `Record`s. `CsvDataAdapter` implements it over a CSV; anything else — a database, an HTTP API — implements the same two methods.
+**DataAdapter** — the only domain-aware module. Supplies one entity's observations, and the population's, as `Record`s. `CsvDataAdapter` implements it over a CSV; anything else — a database, an HTTP API — implements the same two methods. `CsvDataAdapter` drops rows whose denominator is zero, blank or unparseable, a rate over no exposure being nothing to fit from, and counts them in `dropped_rows` so a caller can see how much of their file was read.
 
 **PriorDiscovery** — `fit_prior` fits a model's parameters from population-wide observations by method of moments. `scopes_for` and `fit_scopes` run it across a list of scopes, saving what fits and reporting the slices too thin to fit.
 

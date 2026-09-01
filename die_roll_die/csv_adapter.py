@@ -50,7 +50,8 @@ class CsvDataAdapter:
     match, which may be any column of the file whether mapped or not.
 
     Rows whose denominator is zero, blank or unparseable are dropped when the file is read,
-    as are rows whose `stat_id` column is blank when records are requested.
+    and `dropped_rows` counts them; rows whose `stat_id` column is blank are dropped when
+    records are requested.
 
     Raises:
         ValueError: if any column named by `columns` is not in the file.
@@ -82,6 +83,7 @@ class CsvDataAdapter:
             denominator = _as_float(row[columns.denominator])
             if denominator is not None and denominator > 0:
                 self._rows.append(row)
+        self.dropped_rows: int = len(rows) - len(self._rows)
 
         self.numeric_columns: tuple[str, ...] = tuple(
             column
@@ -135,9 +137,21 @@ class CsvDataAdapter:
         self, stat_id: str, scope: dict[str, str] | None, entity_id: str | None = None
     ) -> list[Record]:
         if stat_id not in self.numeric_columns:
+            if stat_id not in self.columns:
+                raise ValueError(
+                    f"stat {stat_id!r} is not a column of the file; "
+                    f"columns are {', '.join(self.columns)}"
+                )
+            dropped = ""
+            if self.dropped_rows:
+                counted = "row was" if self.dropped_rows == 1 else "rows were"
+                dropped = (
+                    f"; {self.dropped_rows} {counted} dropped for a denominator that is "
+                    f"zero, blank or unparseable"
+                )
             raise ValueError(
-                f"stat {stat_id!r} is not a numeric column of the file; "
-                f"numeric columns are {', '.join(self.numeric_columns)}"
+                f"stat {stat_id!r} is a column of the file but no row kept from it holds a "
+                f"number in that column{dropped}"
             )
         scope = scope or {}
         for key in scope:
