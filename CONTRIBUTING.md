@@ -2,8 +2,8 @@
 
 This file is for someone who wants to read the code rather than only use it — to change it, to
 check it, or to decide whether it does what they need. The [README](README.md) shows what the
-library produces and walks through the arithmetic behind a die; this one covers how the code is
-arranged, which judgement calls sit inside it, and what those calls cost.
+library produces and how to point it at your own data; this one covers how the code is arranged,
+which judgement calls sit inside it, and what those calls cost.
 
 ## Working on it
 
@@ -82,8 +82,7 @@ question a file can support, rather than one adapter per stat.
 What the library does statistically, in short: it estimates how much entities of one kind differ
 from each other, which is the **prior**; it combines that with one entity's own record to get a
 better estimate for them than either source gives alone, which is the **posterior**; and it turns
-the spread of that estimate into the faces of a die. The README's
-[How it works](README.md#how-it-works) walks the arithmetic with real numbers.
+the spread of that estimate into the faces of a die.
 
 Four steps in that involved a decision with a genuine alternative. None is hidden — they are all
 visible in the code — but none announces itself either, so each is written out here with what it
