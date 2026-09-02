@@ -25,6 +25,14 @@ The library is about 1,450 lines over twelve modules and runs as a chain: a file
 observations, observations become a prior, a prior plus one entity's observations become a
 posterior, and draws from that posterior become a die. Each module owns one link.
 
+The chain splits in two, and the split is why `PriorStore` exists:
+
+```
+Offline (periodic):  DataAdapter (population) -> fit_prior -> PriorStore          [fit_priors]
+Online (per roll):   PriorStore + DataAdapter (one entity) -> QualitySampler
+                       -> Discretizer -> Die                                     [create_die]
+```
+
 | Module | What it does |
 | --- | --- |
 | `models.py` | The shapes everything else passes around: `Record`, `PriorParams`, `Face`, `Die`. |
