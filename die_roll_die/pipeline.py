@@ -8,7 +8,7 @@ import numpy as np
 from .csv_adapter import ColumnMap, CsvDataAdapter
 from .data_adapter import DataAdapter
 from .die import assemble_die_from_samples
-from .fitting import FitReport, fit_scopes, scopes_for
+from .fitting import FitReport, fit_scopes, observed_scopes
 from .models import POSTERIOR_PARAM_NAMES, Die, DieMetadata, Model, PriorParams
 from .prior_discovery import fit_prior
 from .prior_store import PriorStore
@@ -37,7 +37,7 @@ def fit_priors(
     if dimension is not None:
         scopes += [
             scope
-            for scope in scopes_for(adapter, stat_id, dimension)
+            for scope in observed_scopes(adapter, stat_id, dimension)
             if scope[dimension] not in (exclude or [])
         ]
     return fit_scopes(adapter, store, stat_id, model, scopes, min_denominator)

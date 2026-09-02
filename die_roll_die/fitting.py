@@ -18,7 +18,7 @@ class FitReport(BaseModel):
     skipped: list[tuple[dict[str, str], str]] = []
 
 
-def scopes_for(adapter: DataAdapter, stat_id: str, dimension: str) -> list[dict[str, str]]:
+def observed_scopes(adapter: DataAdapter, stat_id: str, dimension: str) -> list[dict[str, str]]:
     """Return one scope per distinct value of `dimension` across the population's
     observations for `stat_id`, ready to hand to `fit_scopes`.
 
@@ -52,7 +52,7 @@ def fit_scopes(
     """Fit a prior for each scope and save those that fit, returning a `FitReport`.
 
     `scopes` is the caller's list of which priors should exist, typically the empty scope
-    plus whatever `scopes_for` enumerates; nothing here derives it.
+    plus whatever `observed_scopes` enumerates; nothing here derives it.
 
     A scope raising `InsufficientData` is recorded in the report's `skipped` and the run
     continues, a thin slice being expected when scopes are enumerated from a column. An

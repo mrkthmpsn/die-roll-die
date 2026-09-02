@@ -13,7 +13,7 @@ from .errors import (
     UnsuitableDenominator,
     UnsuitableModel,
 )
-from .fitting import FitReport, fit_scopes, scopes_for
+from .fitting import FitReport, fit_scopes, observed_scopes
 from .models import (
     DIE_SCHEMA_VERSION,
     POSTERIOR_PARAM_NAMES,
@@ -39,8 +39,8 @@ __version__ = "0.1.0"
 __all__ = [
     "__version__",
     "DIE_SCHEMA_VERSION",
-    "PRIOR_STORE_SCHEMA_VERSION",
     "POSTERIOR_PARAM_NAMES",
+    "PRIOR_STORE_SCHEMA_VERSION",
     "BootstrapSampler",
     "ColumnMap",
     "CsvDataAdapter",
@@ -73,5 +73,5 @@ __all__ = [
     "fit_prior",
     "fit_priors",
     "fit_scopes",
-    "scopes_for",
+    "observed_scopes",
 ]

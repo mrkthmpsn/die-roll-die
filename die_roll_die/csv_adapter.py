@@ -30,7 +30,7 @@ class ColumnMap(BaseModel):
 
     The column holding the stat is not mapped, being chosen per call as `stat_id`; nor are
     the columns a `scope` filters on, which are checked against the file's header when the
-    scope is used. Filtering therefore works on any column of the file, while `scopes_for`
+    scope is used. Filtering therefore works on any column of the file, while `observed_scopes`
     can only enumerate a mapped dimension.
     """
 

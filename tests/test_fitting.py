@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from die_roll_die import InMemoryPriorStore, Record, UnsuitableModel, fit_scopes, scopes_for
+from die_roll_die import InMemoryPriorStore, Record, UnsuitableModel, fit_scopes, observed_scopes
 
 
 class FakeAdapter:
@@ -43,31 +43,31 @@ def adapter():
     )
 
 
-def test_scopes_for_returns_one_scope_per_distinct_value(adapter):
-    assert scopes_for(adapter, "goals", "position_general") == [
+def test_observed_scopes_returns_one_scope_per_distinct_value(adapter):
+    assert observed_scopes(adapter, "goals", "position_general") == [
         {"position_general": "Defender"},
         {"position_general": "Forward"},
         {"position_general": "Goalkeeper"},
     ]
 
 
-def test_scopes_for_ignores_records_without_the_column():
+def test_observed_scopes_ignores_records_without_the_column():
     adapter = FakeAdapter(
         [season("fwd-1", 8, 20, "Forward"), Record(entity_id="x", entity_type="player", value=1, denominator=2)]
     )
-    assert scopes_for(adapter, "goals", "position_general") == [
+    assert observed_scopes(adapter, "goals", "position_general") == [
         {"position_general": "Forward"}
     ]
 
 
-def test_scopes_for_rejects_a_column_nothing_carries(adapter):
+def test_observed_scopes_rejects_a_column_nothing_carries(adapter):
     with pytest.raises(ValueError, match="team_name"):
-        scopes_for(adapter, "goals", "team_name")
+        observed_scopes(adapter, "goals", "team_name")
 
 
 def test_fit_scopes_saves_what_it_fits(adapter):
     store = InMemoryPriorStore()
-    scopes = [{}] + scopes_for(adapter, "goals", "position_general")
+    scopes = [{}] + observed_scopes(adapter, "goals", "position_general")
 
     report = fit_scopes(adapter, store, "goals", "gamma_poisson", scopes)
 
@@ -78,7 +78,7 @@ def test_fit_scopes_saves_what_it_fits(adapter):
 
 def test_fit_scopes_skips_a_scope_with_too_little_data(adapter):
     store = InMemoryPriorStore()
-    scopes = scopes_for(adapter, "goals", "position_general")
+    scopes = observed_scopes(adapter, "goals", "position_general")
 
     report = fit_scopes(adapter, store, "goals", "gamma_poisson", scopes)
 
@@ -97,7 +97,7 @@ def test_fit_scopes_skips_a_scope_whose_values_are_all_zero():
         + [season(f"gk-{i}", 0, 30 + i, "Goalkeeper") for i in range(12)]
     )
     store = InMemoryPriorStore()
-    scopes = scopes_for(adapter, "goals", "position_general")
+    scopes = observed_scopes(adapter, "goals", "position_general")
 
     report = fit_scopes(adapter, store, "goals", "gamma_poisson", scopes)
 

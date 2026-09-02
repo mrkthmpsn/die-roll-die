@@ -66,7 +66,7 @@ class Record(BaseModel):
 
     `dimensions` holds the values of the columns priors might be fitted along — a position
     group, a season. It exists because a Record outlives the source it came from: whatever
-    produced it can inspect its own file or API, and nothing downstream can, so `scopes_for`
+    produced it can inspect its own file or API, and nothing downstream can, so `observed_scopes`
     has only this to enumerate.
     """
 
