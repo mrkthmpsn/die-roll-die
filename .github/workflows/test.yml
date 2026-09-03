@@ -25,7 +25,7 @@ jobs:
           enable-cache: true
           python-version: ${{ matrix.python-version }}
       - name: install from the committed files alone
-        run: uv sync --frozen
+        run: uv sync --locked
       - run: uv run pytest
       - name: fit priors and roll a die
         run: |

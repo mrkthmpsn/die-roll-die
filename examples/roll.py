@@ -10,7 +10,7 @@ Usage:
     uv run python examples/roll.py Erling_Haaland
     uv run python examples/roll.py Bukayo_Saka --scope position_general=Forward
     uv run python examples/roll.py Mohamed_Salah --scope season_name=2024/25 --faces 8
-    uv run python examples/roll.py Cole_Palmer --faces 10 --strategy equal_width
+    uv run python examples/roll.py Cole_Palmer --faces 10 --strategy equal_weight
 """
 
 from __future__ import annotations

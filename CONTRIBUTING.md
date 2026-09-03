@@ -14,20 +14,22 @@ uv sync
 uv run pytest
 ```
 
-`uv sync` installs the library in editable mode along with the development dependencies.
+`uv sync` installs the library in editable mode. The `dev` group includes the `scrape` group, so
+it also pulls `requests`, `beautifulsoup4` and `lxml`, which only `tools/wikipedia_squads.py`
+uses.
 
 ## Running the checks
 
-The test suite is the primary check:
+`pytest` is the only gate — there is no linter or type checker in CI:
 
 ```
 uv run pytest
 ```
 
-Every push and pull request runs the same suite on Python 3.11, 3.12 and 3.13 on Linux. The
-workflow installs with `uv sync --frozen`, so a `uv.lock` that has drifted from `pyproject.toml`
-fails the run; it then executes both scripts in `examples/` end to end, builds the wheel, and
-checks that the `py.typed` marker is inside it.
+Every push and pull request runs the suite on Python 3.11, 3.12 and 3.13 on Linux. That job
+installs with `uv sync --locked`, which fails if the lock would have to change to satisfy
+`pyproject.toml`, and then runs both scripts in `examples/` end to end. A second job builds the
+wheel on 3.12 and checks that the `py.typed` marker is inside it.
 
 ## Conventions
 
@@ -38,19 +40,22 @@ checks that the `py.typed` marker is inside it.
   `Die.model_dump_json()` and the file `JsonPriorStore` writes — because consumers parse both.
   Each carries a `schema_version` to be incremented when a field is renamed, removed, or kept
   while its meaning changes.
-- **Tests mirror the modules** one for one, with a sentence-long name per test describing the
-  behaviour it pins.
-- **Type annotations** are expected throughout. The package ships a PEP 561 `py.typed` marker, so
-  an installed consumer's type checker reads them.
+- **Tests sit in the file mirroring the module** they cover, with a sentence-long name per test
+  describing the behaviour it pins. Seven modules have a mirror; `models.py` and `die.py` are
+  covered by `tests/test_imports.py`, which also holds the packaging checks.
+- **Type annotations** are a convention rather than a gate: nothing in CI type-checks. The
+  package ships a PEP 561 `py.typed` marker, so an installed consumer's checker reads them, which
+  is what makes an unannotated addition a visible regression for them rather than for us.
 
 ## Submitting a change
 
-1. Work on a branch, and open a pull request against `main`. CI must pass before it merges.
+1. Work on a branch and open a pull request against `main`. Both CI jobs must pass: the test
+   matrix on 3.11, 3.12 and 3.13, and the wheel build.
 2. Add tests beside the ones for the module you changed, in the file that mirrors it. Behaviour
    in `examples/` counts: `tests/test_examples.py` exists because two defects reached those
    scripts through the gap where nothing imported them.
-3. If you changed dependencies, commit the updated `uv.lock` — CI installs with
-   `uv sync --frozen` and fails on a lock that has drifted from `pyproject.toml`.
+3. If you changed dependencies, run `uv lock` and commit the result — CI installs with
+   `uv sync --locked`, which fails if the lock does not already satisfy `pyproject.toml`.
 4. If you renamed or removed an exported name, update the README and this document with it. Both
    name library functions in prose, and a grep for the old name is the check.
 5. If you changed a serialised field, increment the `schema_version` that covers it.
@@ -76,7 +81,7 @@ posterior, and draws from that posterior become a die. Each module owns one link
 | `die.py` | Wrap faces and metadata into a `Die`. |
 | `pipeline.py` | The routes a caller uses: `fit_priors`, `create_die`, `build_die_from_csv`. |
 | `fitting.py` | Run a fit across several scopes, reporting the ones too thin to fit. |
-| `errors.py` | The exception types, in two trees: fitting and sampling. |
+| `errors.py` | The exception types: `PriorFitError` and `SamplingError` with their subclasses, plus `UnreadablePriorStore`. |
 
 The chain splits in two, which is why `PriorStore` exists:
 
@@ -89,7 +94,8 @@ Online (per roll):   PriorStore + DataAdapter (one entity) -> QualitySampler
 Read the modules in the order of the table, starting with `models.py`, since every other module
 is written in terms of those four types. `pipeline.py` is the alternative starting point if you
 would rather see the whole chain before the parts. The tests are where behaviour is pinned, and
-a function's test file is usually a faster answer than its implementation.
+`tests/test_quality_sampler.py` in particular is where each model's update arithmetic is pinned,
+which is the thing hardest to read off `quality_sampler.py` itself.
 
 ## Design decisions
 
@@ -97,7 +103,8 @@ a function's test file is usually a faster answer than its implementation.
 when you ask about a different entity, so `fit_priors` computes it once and writes it to a
 `PriorStore`, and `create_die` reads it back. Twenty dice then need one fit rather than twenty.
 `build_die_from_csv` combines both for convenience, at the cost of reparsing the file and
-refitting the prior on every call — roughly seven times slower over twenty entities.
+refitting the prior on every call: 2.5 seconds against 1.6 over twenty entities on the shipped
+data.
 
 **A stored prior is keyed by entity type as well as by stat and scope.** Goals-per-player and
 goals-per-club are different populations that would otherwise collide in one store under the same
@@ -148,7 +155,8 @@ entity's observations vary around that entity's own average, and stores it as a 
 
 ### A prior is fitted on a population including the entity it is used on
 
-Haaland's four seasons are among the 639 that fit the forwards prior, so his own record helps set
+Haaland's four seasons are among the 483 that reach the forwards fit — 639 forward-seasons less
+the 156 that fall below `min_denominator` — so his own record helps set
 the average he is then shrunk toward. This is the double-use of data associated with empirical
 Bayes — estimating a prior from the same data it is then applied to. The textbook remedy is to
 leave the entity out and fit the prior from the rest.
