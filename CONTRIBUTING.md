@@ -33,8 +33,11 @@ checks that the `py.typed` marker is inside it.
 
 - **Docstrings and comments** follow [AGENTS.md](AGENTS.md): describe the thing itself — its
   structure, arguments and return — rather than its role in a story about the system.
-- **The public API** is the set of names in `die_roll_die/__init__.py`'s `__all__`. Adding to it
-  is cheap; renaming or removing from it breaks installed consumers.
+- **The public API is wider than `__all__`.** The exported names in `die_roll_die/__init__.py`
+  are one half; the other is what the library serialises — the fields of
+  `Die.model_dump_json()` and the file `JsonPriorStore` writes — because consumers parse both.
+  Each carries a `schema_version` to be incremented when a field is renamed, removed, or kept
+  while its meaning changes.
 - **Tests mirror the modules** one for one, with a sentence-long name per test describing the
   behaviour it pins.
 - **Type annotations** are expected throughout. The package ships a PEP 561 `py.typed` marker, so
