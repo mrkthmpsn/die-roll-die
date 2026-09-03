@@ -1,9 +1,92 @@
 # Contributing
 
-This file is for someone who wants to read the code rather than only use it — to change it, to
-check it, or to decide whether it does what they need. The [README](README.md) shows what the
-library produces and how to point it at your own data; this one covers how the code is arranged,
-which judgement calls sit inside it, and what those calls cost.
+This file is for anyone using or contributing to die-roll-die. The [README](README.md) covers what
+the library produces and how to point it at your own data; this one goes a level down — the
+statistical choices inside it and what they cost, how to work on the code, how it is arranged, and
+what might be worth adding.
+
+Using it does not require reading the code, but it does mean trusting some decisions someone else
+made, so the statistics come first.
+
+## The statistics, and the choices inside them
+
+What the library does statistically, in short: it estimates how much entities of one kind differ
+from each other, which is the **prior**; it combines that with one entity's own record to get a
+better estimate for them than either source gives alone, which is the **posterior**; and it turns
+the spread of that estimate into the faces of a die.
+
+Four steps in that involved a decision with a genuine alternative. None is hidden — they are all
+visible in the code — but none announces itself either, so each is written out here with what it
+costs. Read this to find out whether the library is doing something you disagree with, whether or
+not you ever open a module.
+
+### Priors are fitted by method of moments
+
+**What that means.** A gamma distribution has two parameters, `alpha` and `beta`; its average is
+`alpha/beta` and its spread is `alpha/beta²`. So you compute the average and the spread of the
+rates actually observed across entities, set them equal to those two formulas, and solve for the
+parameters. Two equations and some algebra, in one pass over the data.
+
+**The alternative.** Marginal maximum likelihood asks, for a candidate `alpha` and `beta`, how
+probable the observed dataset would be, and searches for the pair making it most probable. It is
+the more conventional choice and uses more of the data: rather than reducing each entity to a
+single rate, it works from the counts and the exposures behind them.
+
+**Why the simpler one.** This library exists to show how an estimate is made. Method of moments
+is arithmetic a reader can follow on the page, where marginal maximum likelihood puts the fit
+inside an optimiser, and the optimiser inside a dependency.
+
+**What it costs.** Method of moments gets one rate per observation however much evidence stands
+behind that rate, so a ten-appearance season and a thirty-eight-appearance season count equally.
+Two features repair that. `min_denominator` drops observations too thin for their rate to mean
+anything, and the Poisson sampling noise is subtracted from the observed spread, so that what
+reaches the prior is how much entities genuinely differ rather than how much scoring wobbles by
+chance. On the shipped data that correction accounts for 34% of the apparent spread, taking the
+forwards prior from 7.5 to 11.4 appearances' worth of evidence.
+
+`normal_normal` cannot make the same correction, because a normal distribution's spread is not
+implied by its average the way a Poisson's is. `fit_prior` estimates it instead by pooling how
+much each entity's observations vary around that entity's own average, storing it as a third
+parameter, `sigma_obs`.
+
+### A prior is fitted on a population that includes the entity it is used on
+
+Haaland's four seasons are among the 639 that fit the forwards prior, so his own record helps set
+the average he is then shrunk toward. This is the double-use of data that **empirical Bayes** —
+estimating a prior from the same data you then apply it to — is known for, and the textbook fix
+is to leave the entity out and fit the prior from everyone else.
+
+**What it costs here.** On the shipped data, very little: leaving him out moves the prior's rate
+from 0.197 to 0.192 and his die from 23.90 to 23.61 goals over 30 appearances, a 1.2% shift,
+while Saka's die does not move at two decimal places. It scales with how small the population is.
+Fitted on ten forwards rather than 329, the prior's rate moves by a median 88.7% depending on
+whether the entity is in it; 45.6% at twenty forwards, and 9.6% at a hundred.
+
+**Why it stays.** Fitting one prior and reusing it is what `PriorStore` exists for, and leaving
+one entity out means one prior per entity, which is a different pipeline rather than a flag. If
+you point this at a file of a dozen rows, the effect is there and worth knowing about.
+
+### An entity's observations are treated as interchangeable
+
+`PosteriorSampler` sums an entity's values and denominators, so a season from four years ago
+counts exactly as much as the most recent one, and nothing adjusts for how old the entity was
+when it recorded them. Both are omissions rather than positions the data supports. A recency
+weight and an ageing curve are in the ideas below, and they would enter the arithmetic at
+different points.
+
+### The model is the caller's to choose
+
+`fit_prior` takes `model` as an argument, and no function picks one for you. An earlier version
+had a table mapping stat names to models and it was removed, because a model states which values
+a stat can take *at all* — whether zero is reachable, whether there is a ceiling — and no sample
+establishes that. A value that never appeared and a value that cannot appear look identical in
+data.
+
+**What it costs.** Choosing wrong runs without complaint. Fit a 90% free-throw shooter as
+`gamma_poisson` rather than `beta_binomial` and everything works, but a gamma has no ceiling, so
+21% of the resulting die describes making more than 100 shots out of 100 attempts. Two guards
+catch part of it: the beta fit rejects a row whose value exceeds its own denominator, and the
+gamma-exponential fit rejects a value or denominator that is not positive.
 
 ## Working on it
 
@@ -76,86 +159,6 @@ filling fixed roles — which entity a row belongs to, what its value was measur
 label, and the columns you might fit separate priors along — and any numeric column can then be
 the stat, with any column at all available to filter on. One adapter therefore answers every
 question a file can support, rather than one adapter per stat.
-
-## The statistics, and the choices inside them
-
-What the library does statistically, in short: it estimates how much entities of one kind differ
-from each other, which is the **prior**; it combines that with one entity's own record to get a
-better estimate for them than either source gives alone, which is the **posterior**; and it turns
-the spread of that estimate into the faces of a die.
-
-Four steps in that involved a decision with a genuine alternative. None is hidden — they are all
-visible in the code — but none announces itself either, so each is written out here with what it
-costs. This is the section to read if you want to know whether the library is doing something you
-disagree with.
-
-### Priors are fitted by method of moments
-
-**What that means.** A gamma distribution has two parameters, `alpha` and `beta`; its average is
-`alpha/beta` and its spread is `alpha/beta²`. So you compute the average and the spread of the
-rates actually observed across entities, set them equal to those two formulas, and solve for the
-parameters. Two equations and some algebra, in one pass over the data.
-
-**The alternative.** Marginal maximum likelihood asks, for a candidate `alpha` and `beta`, how
-probable the observed dataset would be, and searches for the pair making it most probable. It is
-the more conventional choice and uses more of the data: rather than reducing each entity to a
-single rate, it works from the counts and the exposures behind them.
-
-**Why the simpler one.** This library exists to show how an estimate is made. Method of moments
-is arithmetic a reader can follow on the page, where marginal maximum likelihood puts the fit
-inside an optimiser, and the optimiser inside a dependency.
-
-**What it costs.** Method of moments gets one rate per observation however much evidence stands
-behind that rate, so a ten-appearance season and a thirty-eight-appearance season count equally.
-Two features repair that. `min_denominator` drops observations too thin for their rate to mean
-anything, and the Poisson sampling noise is subtracted from the observed spread, so that what
-reaches the prior is how much entities genuinely differ rather than how much scoring wobbles by
-chance. On the shipped data that correction accounts for 34% of the apparent spread, taking the
-forwards prior from 7.5 to 11.4 appearances' worth of evidence.
-
-`normal_normal` cannot make the same correction, because a normal distribution's spread is not
-implied by its average the way a Poisson's is. `fit_prior` estimates it instead by pooling how
-much each entity's observations vary around that entity's own average, storing it as a third
-parameter, `sigma_obs`.
-
-### A prior is fitted on a population that includes the entity it is used on
-
-Haaland's four seasons are among the 639 that fit the forwards prior, so his own record helps set
-the average he is then shrunk toward. This is the double-use of data that **empirical Bayes** —
-estimating a prior from the same data you then apply it to — is known for, and the textbook fix
-is to leave the entity out and fit the prior from everyone else.
-
-**What it costs here.** On the shipped data, very little: leaving him out moves the prior's rate
-from 0.197 to 0.192 and his die from 23.90 to 23.61 goals over 30 appearances, a 1.2% shift,
-while Saka's die does not move at two decimal places. It scales with how small the population is.
-Fitted on ten forwards rather than 329, the prior's rate moves by a median 88.7% depending on
-whether the entity is in it; 45.6% at twenty forwards, and 9.6% at a hundred.
-
-**Why it stays.** Fitting one prior and reusing it is what `PriorStore` exists for, and leaving
-one entity out means one prior per entity, which is a different pipeline rather than a flag. If
-you point this at a file of a dozen rows, the effect is there and worth knowing about.
-
-### An entity's observations are treated as interchangeable
-
-`PosteriorSampler` sums an entity's values and denominators, so a season from four years ago
-counts exactly as much as the most recent one, and nothing adjusts for how old the entity was
-when it recorded them. Both are omissions rather than positions the data supports. A recency
-weight and an ageing curve are in the ideas below, and they would enter the arithmetic at
-different points.
-
-### The model is the caller's to choose
-
-`fit_prior` takes `model` as an argument, and no function picks one for you. An earlier version
-had a table mapping stat names to models and it was removed, because a model states which values
-a stat can take *at all* — whether zero is reachable, whether there is a ceiling — and no sample
-establishes that. A value that never appeared and a value that cannot appear look identical in
-data.
-
-**What it costs.** Choosing wrong runs without complaint. Fit a 90% free-throw shooter as
-`gamma_poisson` rather than `beta_binomial` and everything works, but a gamma has no ceiling, so
-21% of the resulting die describes making more than 100 shots out of 100 attempts. Two guards
-catch part of it: the beta fit rejects a row whose value exceeds its own denominator, and the
-gamma-exponential fit rejects a value or denominator that is not positive.
 
 ## Ideas that might be fun to add
 
