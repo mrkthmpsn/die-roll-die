@@ -45,11 +45,15 @@ checks that the `py.typed` marker is inside it.
 
 ## Submitting a change
 
-1. Work on a branch.
-2. Keep `uv run pytest` green, and add tests covering the behaviour you change.
-3. Update the README or this document if the change alters what a user or a contributor needs to
-   know.
-4. Open a pull request. CI must pass before it is merged.
+1. Work on a branch, and open a pull request against `main`. CI must pass before it merges.
+2. Add tests beside the ones for the module you changed, in the file that mirrors it. Behaviour
+   in `examples/` counts: `tests/test_examples.py` exists because two defects reached those
+   scripts through the gap where nothing imported them.
+3. If you changed dependencies, commit the updated `uv.lock` — CI installs with
+   `uv sync --frozen` and fails on a lock that has drifted from `pyproject.toml`.
+4. If you renamed or removed an exported name, update the README and this document with it. Both
+   name library functions in prose, and a grep for the old name is the check.
+5. If you changed a serialised field, increment the `schema_version` that covers it.
 
 Bug reports and feature suggestions are welcome as issues. Include the version
 (`die_roll_die.__version__`), the model you were fitting, and the shape of the data if the
