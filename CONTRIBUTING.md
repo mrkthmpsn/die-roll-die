@@ -173,7 +173,7 @@ goes further.
   they rule out — a negative value rules out both gamma models and the beta; values that never
   exceed their denominator are the signature of successes out of attempts — and leave the
   decision with the person, since it cannot tell the two gamma models apart at all.
-- **A leave-one-out option on fitting**, for the small-population case above.
+- **A leave-one-out option on fitting.** For the small-population case above.
 - **A match-level dataset.** `BootstrapSampler` wants rows finer than whole seasons, and the
   shipped file is season totals, so the comparison between a shrunk die and an unshrunk one cannot
   be demonstrated on what ships here.
