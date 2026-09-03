@@ -1,122 +1,64 @@
 # Contributing
 
-This file is for anyone using or contributing to die-roll-die. The [README](README.md) covers what
-the library produces and how to point it at your own data; this one goes a level down — the
-statistical choices inside it and what they cost, how to work on the code, how it is arranged, and
-what might be worth adding.
+This document covers how to work on die-roll-die, the decisions behind its current design, and
+the directions it might take next. The [README](README.md) covers what the library does and how
+to use it.
 
-Using it does not require reading the code, but it does mean trusting some decisions someone else
-made, so the statistics come first.
+## Getting set up
 
-## The statistics, and the choices inside them
-
-What the library does statistically, in short: it estimates how much entities of one kind differ
-from each other, which is the **prior**; it combines that with one entity's own record to get a
-better estimate for them than either source gives alone, which is the **posterior**; and it turns
-the spread of that estimate into the faces of a die.
-
-Four steps in that involved a decision with a genuine alternative. None is hidden — they are all
-visible in the code — but none announces itself either, so each is written out here with what it
-costs. Read this to find out whether the library is doing something you disagree with, whether or
-not you ever open a module.
-
-### Priors are fitted by method of moments
-
-**What that means.** A gamma distribution has two parameters, `alpha` and `beta`; its average is
-`alpha/beta` and its spread is `alpha/beta²`. So you compute the average and the spread of the
-rates actually observed across entities, set them equal to those two formulas, and solve for the
-parameters. Two equations and some algebra, in one pass over the data.
-
-**The alternative.** Marginal maximum likelihood asks, for a candidate `alpha` and `beta`, how
-probable the observed dataset would be, and searches for the pair making it most probable. It is
-the more conventional choice and uses more of the data: rather than reducing each entity to a
-single rate, it works from the counts and the exposures behind them.
-
-**Why the simpler one.** This library exists to show how an estimate is made. Method of moments
-is arithmetic a reader can follow on the page, where marginal maximum likelihood puts the fit
-inside an optimiser, and the optimiser inside a dependency.
-
-**What it costs.** Method of moments gets one rate per observation however much evidence stands
-behind that rate, so a ten-appearance season and a thirty-eight-appearance season count equally.
-Two features repair that. `min_denominator` drops observations too thin for their rate to mean
-anything, and the Poisson sampling noise is subtracted from the observed spread, so that what
-reaches the prior is how much entities genuinely differ rather than how much scoring wobbles by
-chance. On the shipped data that correction accounts for 34% of the apparent spread, taking the
-forwards prior from 7.5 to 11.4 appearances' worth of evidence.
-
-`normal_normal` cannot make the same correction, because a normal distribution's spread is not
-implied by its average the way a Poisson's is. `fit_prior` estimates it instead by pooling how
-much each entity's observations vary around that entity's own average, storing it as a third
-parameter, `sigma_obs`.
-
-### A prior is fitted on a population that includes the entity it is used on
-
-Haaland's four seasons are among the 639 that fit the forwards prior, so his own record helps set
-the average he is then shrunk toward. This is the double-use of data that **empirical Bayes** —
-estimating a prior from the same data you then apply it to — is known for, and the textbook fix
-is to leave the entity out and fit the prior from everyone else.
-
-**What it costs here.** On the shipped data, very little: leaving him out moves the prior's rate
-from 0.197 to 0.192 and his die from 23.90 to 23.61 goals over 30 appearances, a 1.2% shift,
-while Saka's die does not move at two decimal places. It scales with how small the population is.
-Fitted on ten forwards rather than 329, the prior's rate moves by a median 88.7% depending on
-whether the entity is in it; 45.6% at twenty forwards, and 9.6% at a hundred.
-
-**Why it stays.** Fitting one prior and reusing it is what `PriorStore` exists for, and leaving
-one entity out means one prior per entity, which is a different pipeline rather than a flag. If
-you point this at a file of a dozen rows, the effect is there and worth knowing about.
-
-### An entity's observations are treated as interchangeable
-
-`PosteriorSampler` sums an entity's values and denominators, so a season from four years ago
-counts exactly as much as the most recent one, and nothing adjusts for how old the entity was
-when it recorded them. Both are omissions rather than positions the data supports. A recency
-weight and an ageing curve are in the ideas below, and they would enter the arithmetic at
-different points.
-
-### The model is the caller's to choose
-
-`fit_prior` takes `model` as an argument, and no function picks one for you. An earlier version
-had a table mapping stat names to models and it was removed, because a model states which values
-a stat can take *at all* — whether zero is reachable, whether there is a ceiling — and no sample
-establishes that. A value that never appeared and a value that cannot appear look identical in
-data.
-
-**What it costs.** Choosing wrong runs without complaint. Fit a 90% free-throw shooter as
-`gamma_poisson` rather than `beta_binomial` and everything works, but a gamma has no ceiling, so
-21% of the resulting die describes making more than 100 shots out of 100 attempts. Two guards
-catch part of it: the beta fit rejects a row whose value exceeds its own denominator, and the
-gamma-exponential fit rejects a value or denominator that is not positive.
-
-## Working on it
+The project requires Python 3.11 or later and uses [uv](https://docs.astral.sh/uv/) for
+dependencies.
 
 ```
 uv sync
 uv run pytest
 ```
 
-Docstring and comment conventions are in [AGENTS.md](AGENTS.md): describe the thing itself —
-its structure, arguments and return — rather than its role in a story about the system.
+`uv sync` installs the library in editable mode along with the development dependencies.
 
-Every push runs the suite on Python 3.11, 3.12 and 3.13 on Linux, installs with
-`uv sync --frozen` so a lock that has drifted from `pyproject.toml` fails, and runs both example
-scripts end to end.
+## Running the checks
 
-## Where to start reading
+The test suite is the primary check:
+
+```
+uv run pytest
+```
+
+Every push and pull request runs the same suite on Python 3.11, 3.12 and 3.13 on Linux. The
+workflow installs with `uv sync --frozen`, so a `uv.lock` that has drifted from `pyproject.toml`
+fails the run; it then executes both scripts in `examples/` end to end, builds the wheel, and
+checks that the `py.typed` marker is inside it.
+
+## Conventions
+
+- **Docstrings and comments** follow [AGENTS.md](AGENTS.md): describe the thing itself — its
+  structure, arguments and return — rather than its role in a story about the system.
+- **The public API** is the set of names in `die_roll_die/__init__.py`'s `__all__`. Adding to it
+  is cheap; renaming or removing from it breaks installed consumers.
+- **Tests mirror the modules** one for one, with a sentence-long name per test describing the
+  behaviour it pins.
+- **Type annotations** are expected throughout. The package ships a PEP 561 `py.typed` marker, so
+  an installed consumer's type checker reads them.
+
+## Submitting a change
+
+1. Work on a branch.
+2. Keep `uv run pytest` green, and add tests covering the behaviour you change.
+3. Update the README or this document if the change alters what a user or a contributor needs to
+   know.
+4. Open a pull request. CI must pass before it is merged.
+
+Bug reports and feature suggestions are welcome as issues. Include the version
+(`die_roll_die.__version__`), the model you were fitting, and the shape of the data if the
+problem involves a fit that failed or produced something unexpected.
+
+## Where the code lives
 
 The library is about 1,450 lines over twelve modules and runs as a chain: a file becomes
 observations, observations become a prior, a prior plus one entity's observations become a
 posterior, and draws from that posterior become a die. Each module owns one link.
 
-The chain splits in two, and the split is why `PriorStore` exists:
-
-```
-Offline (periodic):  DataAdapter (population) -> fit_prior -> PriorStore          [fit_priors]
-Online (per roll):   PriorStore + DataAdapter (one entity) -> QualitySampler
-                       -> Discretizer -> Die                                     [create_die]
-```
-
-| Module | What it does |
+| Module | Responsibility |
 | --- | --- |
 | `models.py` | The shapes everything else passes around: `Record`, `PriorParams`, `Face`, `Die`. |
 | `data_adapter.py`, `csv_adapter.py` | Turn a source into `Record`s. The only modules that know what a CSV is. |
@@ -125,60 +67,134 @@ Online (per roll):   PriorStore + DataAdapter (one entity) -> QualitySampler
 | `quality_sampler.py` | Update a prior with one entity's records, and draw from the result. |
 | `discretizer.py` | Cut a list of draws into weighted faces. |
 | `die.py` | Wrap faces and metadata into a `Die`. |
-| `pipeline.py` | The routes a caller actually uses: `fit_priors`, `create_die`, `build_die_from_csv`. |
+| `pipeline.py` | The routes a caller uses: `fit_priors`, `create_die`, `build_die_from_csv`. |
 | `fitting.py` | Run a fit across several scopes, reporting the ones too thin to fit. |
 | `errors.py` | The exception types, in two trees: fitting and sampling. |
 
-That order is a reasonable read, `models.py` first because every other module is written in
-terms of those four types. Start at `pipeline.py` instead if you would rather see the whole
-chain before the parts.
+The chain splits in two, which is why `PriorStore` exists:
 
-The tests mirror the modules one for one and are where the behaviour is pinned: 187 of them,
-most a few lines under a sentence-long name. To find out what a function is meant to do, its
-test file is usually a faster answer than its implementation.
+```
+Offline (periodic):  DataAdapter (population) -> fit_prior -> PriorStore          [fit_priors]
+Online (per roll):   PriorStore + DataAdapter (one entity) -> QualitySampler
+                       -> Discretizer -> Die                                     [create_die]
+```
 
-## Why the code is arranged this way
+Read the modules in the order of the table, starting with `models.py`, since every other module
+is written in terms of those four types. `pipeline.py` is the alternative starting point if you
+would rather see the whole chain before the parts. The tests are where behaviour is pinned, and
+a function's test file is usually a faster answer than its implementation.
 
-Three arrangements look arbitrary until you know what they are for, and each comes up within a
-few minutes of reading.
+## Design decisions
 
-**Fitting and rolling are separate steps.** A prior describes a population — what forwards in
-general score — and does not change when you ask about a different player, so `fit_priors`
-computes it once and writes it to a `PriorStore`, and `create_die` reads it back. Dice for
-twenty players then need one fit rather than twenty. `build_die_from_csv` does both in a single
-call for convenience and pays for it each time, reparsing the file and refitting the prior, which
-is about seven times slower over twenty players.
+**Fitting and rolling are separate steps.** A prior describes a population and does not change
+when you ask about a different entity, so `fit_priors` computes it once and writes it to a
+`PriorStore`, and `create_die` reads it back. Twenty dice then need one fit rather than twenty.
+`build_die_from_csv` combines both for convenience, at the cost of reparsing the file and
+refitting the prior on every call — roughly seven times slower over twenty entities.
 
 **A stored prior is keyed by entity type as well as by stat and scope.** Goals-per-player and
 goals-per-club are different populations that would otherwise collide in one store under the same
-stat name, and shrinking a player toward a club's average is the kind of mistake that produces a
-plausible number rather than an error — so `PosteriorSampler` refuses when the two disagree.
+stat name. Shrinking a player toward a club's average produces a plausible number rather than an
+error, so `PosteriorSampler` rejects a prior whose entity type does not match the observations.
 
-**The stat is chosen per call, not named in the column map.** `ColumnMap` names the columns
-filling fixed roles — which entity a row belongs to, what its value was measured against, a
-label, and the columns you might fit separate priors along — and any numeric column can then be
-the stat, with any column at all available to filter on. One adapter therefore answers every
-question a file can support, rather than one adapter per stat.
+**The stat is chosen per call rather than named in the column map.** `ColumnMap` names the columns
+filling fixed roles — entity, denominator, label, and the dimensions priors may be fitted along —
+and any numeric column can then be the stat, with any column available to filter on. One adapter
+therefore serves every question a file supports.
 
-## Ideas that might be fun to add
+## Statistical decisions
 
-Nothing here is committed to. They are the directions that seemed worth having if the project
-goes further.
+The library estimates how much entities of one kind differ from each other, which is the prior;
+combines that with one entity's own record to produce a better estimate than either source gives
+alone, which is the posterior; and turns the spread of that estimate into the faces of a die.
 
-- **Recency weights on the posterior update.** One multiplier per observation applied to both its
-  value and its denominator, so a four-year-old season moves the posterior less than last season
-  without asserting the entity was worse back then.
-- **An ageing curve.** Different from a recency weight: it says the entity's true rate was
-  predictably different at that age, so it converts the denominator into peak-equivalent exposure
+Four steps in that process involved a choice with a genuine alternative. Each is recorded here
+with what it costs.
+
+### Priors are fitted by method of moments
+
+A gamma distribution has two parameters, `alpha` and `beta`; its average is `alpha/beta` and its
+spread is `alpha/beta²`. The fit computes the average and spread of the rates observed across
+entities, sets them equal to those formulas, and solves for the parameters — two equations and
+some algebra, in one pass over the data.
+
+The conventional alternative is marginal maximum likelihood, which asks how probable the observed
+dataset would be for a candidate `alpha` and `beta`, and searches for the pair making it most
+probable. It uses more of the data: rather than reducing each entity to a single rate, it works
+from the counts and the exposures behind them.
+
+Method of moments was chosen because it is arithmetic a reader can follow, where marginal maximum
+likelihood puts the fit inside an optimiser and adds a dependency.
+
+**The cost.** Method of moments takes one rate per observation however much evidence stands behind
+that rate, so a ten-appearance season and a thirty-eight-appearance season count equally. Two
+features repair this. `min_denominator` drops observations too thin for their rate to be
+meaningful, and the Poisson sampling noise is subtracted from the observed spread, so that what
+reaches the prior is how much entities genuinely differ rather than how much scoring varies by
+chance. On the shipped data that correction accounts for 34% of the apparent spread, taking the
+forwards prior from 7.5 to 11.4 appearances' worth of evidence.
+
+`normal_normal` cannot make the same correction, because a normal distribution's spread is not
+implied by its average as a Poisson's is. `fit_prior` estimates it by pooling how much each
+entity's observations vary around that entity's own average, and stores it as a third parameter,
+`sigma_obs`.
+
+### A prior is fitted on a population including the entity it is used on
+
+Haaland's four seasons are among the 639 that fit the forwards prior, so his own record helps set
+the average he is then shrunk toward. This is the double-use of data associated with empirical
+Bayes — estimating a prior from the same data it is then applied to. The textbook remedy is to
+leave the entity out and fit the prior from the rest.
+
+**The cost.** On the shipped data it is small: leaving Haaland out moves the prior's rate from
+0.197 to 0.192 and his die from 23.90 to 23.61 goals over 30 appearances, a 1.2% shift, while
+Saka's die does not move at two decimal places. The effect scales with population size. Fitted on
+ten forwards rather than 329, the prior's rate moves by a median 88.7% depending on whether the
+entity is included; 45.6% at twenty forwards, and 9.6% at a hundred.
+
+The default remains as it is because fitting one prior and reusing it is what `PriorStore` exists
+for, and leaving one entity out requires a prior per entity. Users pointing the library at small
+populations should be aware of the effect.
+
+### An entity's observations are treated as interchangeable
+
+`PosteriorSampler` sums an entity's values and denominators, so a season from four years ago
+counts as much as the most recent one, and no adjustment is made for the entity's age at the time.
+Both are omissions rather than positions the data supports; a recency weight and an ageing curve
+appear in the roadmap below.
+
+### The model is the caller's to choose
+
+`fit_prior` takes `model` as an argument and no function selects one automatically. An earlier
+version mapped stat names to models and was removed: a model states which values a stat can take
+at all — whether zero is reachable, whether there is a ceiling — and no sample establishes that,
+since a value that never appeared and a value that cannot appear are identical in data.
+
+**The cost.** Choosing wrongly runs without complaint. A 90% free-throw shooter fitted as
+`gamma_poisson` rather than `beta_binomial` produces a die of which 21% describes making more than
+100 shots out of 100 attempts, because a gamma has no ceiling. Two guards catch part of this: the
+beta fit rejects a row whose value exceeds its own denominator, and the gamma-exponential fit
+rejects a value or denominator that is not positive.
+
+## Roadmap
+
+Possible directions rather than commitments, listed roughly in order of how much they would
+change the numbers the library produces.
+
+- **Recency weights on the posterior update.** One multiplier per observation, applied to both
+  its value and its denominator, so an older season moves the posterior less than a recent one
+  without asserting the entity was worse at the time.
+- **An ageing curve.** Distinct from a recency weight: it holds that the entity's true rate was
+  predictably different at that age, and converts the denominator into peak-equivalent exposure
   rather than discounting the evidence. Comparing players against their own career average on the
   shipped data puts the peak at 25-26, with decline arriving at 32.
-- **A model adviser that reports evidence rather than choosing.** Given observations, say what
+- **A leave-one-out option on fitting.** For the small-population case described above.
+- **A model adviser that reports evidence rather than choosing.** Given observations, report what
   they rule out — a negative value rules out both gamma models and the beta; values that never
-  exceed their denominator are the signature of successes out of attempts — and leave the
-  decision with the person, since it cannot tell the two gamma models apart at all.
-- **A leave-one-out option on fitting.** For the small-population case above.
-- **A match-level dataset.** `BootstrapSampler` wants rows finer than whole seasons, and the
-  shipped file is season totals, so the comparison between a shrunk die and an unshrunk one cannot
-  be demonstrated on what ships here.
-- **An `extra` argument on `create_die`**, so a caller can put something in a die's metadata
-  without writing onto the object after it is returned.
+  exceed their denominator are the signature of successes out of attempts — leaving the decision
+  with the user, since it cannot distinguish the two gamma models at all.
+- **A match-level dataset.** `BootstrapSampler` requires rows finer than whole seasons, and the
+  shipped file holds season totals, so the comparison between a shrunk die and an unshrunk one
+  cannot be demonstrated on the data included here.
+- **An `extra` argument on `create_die`.** So a caller can populate a die's metadata without
+  writing to the object after it is returned.
