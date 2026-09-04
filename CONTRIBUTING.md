@@ -99,9 +99,9 @@ which is the thing hardest to read off `quality_sampler.py` itself.
 
 ## Design decisions
 
-**Fitting and rolling are separate steps.** A prior describes a population and does not change
-when you ask about a different entity, so `fit_priors` computes it once and writes it to a
-`PriorStore`, and `create_die` reads it back. Twenty dice then need one fit rather than twenty.
+**Fitting priors and rolling a die are separate steps.** A prior describes a population and does 
+not change when you ask about a different entity, so `fit_priors` computes it once and writes it 
+to a `PriorStore`, and `create_die` reads it back. Twenty dice then need one fit rather than twenty.
 `build_die_from_csv` combines both for convenience, at the cost of reparsing the file and
 refitting the prior on every call: 2.5 seconds against 1.6 over twenty entities on the shipped
 data.
@@ -113,8 +113,8 @@ error, so `PosteriorSampler` rejects a prior whose entity type does not match th
 
 **The stat is chosen per call rather than named in the column map.** `ColumnMap` names the columns
 filling fixed roles — entity, denominator, label, and the dimensions priors may be fitted along —
-and any numeric column can then be the stat, with any column available to filter on. One adapter
-therefore serves every question a file supports.
+and any numeric column can then be the stat, with any column available to filter on. This reduces
+overhead when writing the `ColumnMap`.
 
 ## Statistical decisions
 
@@ -142,11 +142,19 @@ likelihood puts the fit inside an optimiser and adds a dependency.
 
 **The cost.** Method of moments takes one rate per observation however much evidence stands behind
 that rate, so a ten-appearance season and a thirty-eight-appearance season count equally. Two
-features repair this. `min_denominator` drops observations too thin for their rate to be
-meaningful, and the Poisson sampling noise is subtracted from the observed spread, so that what
-reaches the prior is how much entities genuinely differ rather than how much scoring varies by
-chance. On the shipped data that correction accounts for 34% of the apparent spread, taking the
-forwards prior from 7.5 to 11.4 appearances' worth of evidence.
+things limit the damage, neither of them removing the equal weighting itself.
+
+The first is `min_denominator`, 10 by default, which excludes any observation whose denominator
+falls below it, so the rates most distorted by a small denominator never enter the fit at all. On
+the shipped data that drops 156 of the 639 forward-seasons.
+
+The second corrects the spread. A rate measured over few appearances is noisy, so the observed
+spread of rates across entities is wider than the real spread between them — part of it is the
+randomness of scoring rather than any difference in ability. For counts that part is calculable,
+a Poisson's variance being fixed by its mean, so the fit subtracts it. On the shipped data it
+accounts for 34% of the apparent spread, and removing it takes the forwards prior from 7.5 to
+11.4 appearances' worth of evidence: correcting for noise makes the prior stronger, because the
+entities are revealed to differ less than they first appeared.
 
 `normal_normal` cannot make the same correction, because a normal distribution's spread is not
 implied by its average as a Poisson's is. `fit_prior` estimates it by pooling how much each
