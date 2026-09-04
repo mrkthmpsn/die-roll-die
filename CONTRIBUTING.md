@@ -176,7 +176,7 @@ populations should be aware of the effect.
 `PosteriorSampler` sums an entity's values and denominators, so a season from four years ago
 counts as much as the most recent one, and no adjustment is made for the entity's age at the time.
 Both are omissions rather than positions the data supports; a recency weight and an ageing curve
-appear in the roadmap below.
+appear in the [roadmap](#roadmap).
 
 ### The model is the caller's to choose
 
@@ -201,9 +201,10 @@ change the numbers the library produces.
   without asserting the entity was worse at the time.
 - **An ageing curve.** Distinct from a recency weight: it holds that the entity's true rate was
   predictably different at that age, and converts the denominator into peak-equivalent exposure
-  rather than discounting the evidence. Comparing players against their own career average on the
-  shipped data puts the peak at 25-26, with decline arriving at 32.
-- **A leave-one-out option on fitting.** For the small-population case described above.
+  rather than discounting the evidence.
+- **A leave-one-out option on fitting.** Fitting each entity's prior from every other entity,
+  removing the double-use of data described under [statistical decisions](#a-prior-is-fitted-on-a-population-including-the-entity-it-is-used-on). It only matters on
+  small populations, where it matters a great deal.
 - **A model adviser that reports evidence rather than choosing.** Given observations, report what
   they rule out — a negative value rules out both gamma models and the beta; values that never
   exceed their denominator are the signature of successes out of attempts — leaving the decision
