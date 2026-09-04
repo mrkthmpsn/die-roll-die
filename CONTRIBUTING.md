@@ -118,37 +118,30 @@ overhead when writing the `ColumnMap`.
 
 ## Statistical decisions
 
-The library estimates how much entities of one kind differ from each other, which is the prior;
-combines that with one entity's own record to produce a better estimate than either source gives
-alone, which is the posterior; and turns the spread of that estimate into the faces of a die.
-
-Four steps in that process involved a choice with a genuine alternative. Each is recorded here
-with what it costs.
+The library calculates a prior and posterior; and turns the spread of that estimate into the
+faces of a die. Several steps in that process involved some choices.
 
 ### Priors are fitted by method of moments
 
-The fit takes each entity's observed rate, computes the mean and variance of those rates across
-the population, and solves for the parameters matching them. Before solving, it subtracts the
-variance the sampling itself contributed: an observed rate varies both because entities genuinely
-differ and because a count over a finite denominator is random, and only the first belongs in a
-prior. Each model subtracts its own version — Poisson noise for counts, binomial for proportions,
-the pooled within-entity spread for `normal_normal`, and for `gamma_exponential` the variance of
-its rate estimator, which is undefined below three events and is why observations of fewer are
-dropped. Where the subtraction leaves nothing positive the uncorrected variance stands, giving a
-wider prior rather than a failure.
+Priors are fitted by method of moments (matching the mean and variance of the observed rates to
+the distribution's own formulas for its mean and variance, then solving for the parameters). The
+conventional alternative is marginal maximum likelihood: fitting the compound distribution —
+negative binomial for gamma-Poisson, beta-binomial for the beta — to the counts directly, which
+uses the exposure behind each rate rather than reducing each entity to a single number.
 
-The conventional alternative is marginal maximum likelihood: fitting the compound distribution —
-negative binomial for gamma-Poisson, beta-binomial for the beta — directly to the counts, which
-uses the exposures rather than reducing each entity to a single rate. Method of moments was chosen
-for inspectability: closed form, no optimiser to converge, no dependency.
+Method of moments was chosen because it is closed form: the arithmetic can be followed, there is
+no optimiser to fail to converge, and no solver dependency to add — the fitting code uses the
+standard library's `statistics` module and nothing else.
 
 **The cost.** Rates enter unweighted, so a ten-appearance season counts as much as a
-thirty-eight-appearance one and the estimator is sensitive to small denominators. `min_denominator`
-(10) excludes those rather than downweighting them, dropping 156 of 639 forward-seasons on the
-shipped data, and the noise subtraction is an average across observations rather than one per
-observation. On that data it removes 34% of the observed spread, taking the forwards prior from 7.5
-to 11.4 appearances' worth of evidence — a stronger prior, the genuine spread between entities
-being smaller than the raw one suggested.
+thirty-eight-appearance one and the fit is sensitive to small denominators. Two things limit that,
+neither removing it. `min_denominator` (10) excludes the thinnest observations rather than
+downweighting them, dropping 156 of 639 forward-seasons on the shipped data. And the variance the
+sampling itself contributes is subtracted before solving, since an observed rate varies both
+because entities differ and because a count over a finite denominator is random — on the shipped
+data that removes 34% of the observed spread, taking the forwards prior from 7.5 to 11.4
+appearances' worth of evidence, a stronger prior because the genuine spread between entities is
+smaller than the raw one suggested.
 
 ### The prior is fitted on a population containing the entity it is applied to
 
