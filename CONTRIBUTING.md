@@ -118,86 +118,71 @@ overhead when writing the `ColumnMap`.
 
 ## Statistical decisions
 
-The library estimates how much entities of one kind differ from each other, which is the prior;
-combines that with one entity's own record to produce a better estimate than either source gives
-alone, which is the posterior; and turns the spread of that estimate into the faces of a die.
+The library is a parametric empirical-Bayes estimator: a conjugate prior fitted to the population
+by moment matching, updated with one entity's sufficient statistics, and discretised into faces.
+Four choices in that are worth stating, with what each costs.
 
-Four steps in that process involved a choice with a genuine alternative. Each is recorded here
-with what it costs.
+### Priors are fitted by moment matching, with the sampling variance removed
 
-### Priors are fitted by method of moments
+Each fit works from entity-level rates and matches the family's first two moments, subtracting the
+within-entity sampling component from the observed variance — `Var(r) = Var(lambda) + E[Var(r |
+lambda)]`, with the second term estimated as:
 
-A gamma distribution has two parameters, `alpha` and `beta`; its average is `alpha/beta` and its
-spread is `alpha/beta²`. The fit computes the average and spread of the rates observed across
-entities, sets them equal to those formulas, and solves for the parameters — two equations and
-some algebra, in one pass over the data.
+| Model | Rate | Sampling term subtracted |
+| --- | --- | --- |
+| `gamma_poisson` | `y / n` | `mean(r) * mean(1/n)` |
+| `beta_binomial` | `y / n` | `p(1 - p) * mean(1/n)` |
+| `normal_normal` | `y / n` | `sigma_obs² * mean(1/n)`, `sigma_obs²` pooled within-entity |
+| `gamma_exponential` | `(k - 1) / T` | `mean(r)² * mean(1/(k - 2))` |
 
-The conventional alternative is marginal maximum likelihood, which asks how probable the observed
-dataset would be for a candidate `alpha` and `beta`, and searches for the pair making it most
-probable. It uses more of the data: rather than reducing each entity to a single rate, it works
-from the counts and the exposures behind them.
+`gamma_exponential` uses the unbiased `(k - 1) / T` rather than `k / T`; its variance
+`lambda² / (k - 2)` is why observations of fewer than three events are dropped. Where a subtraction
+is non-positive the uncorrected variance stands, widening the prior rather than failing.
+`beta_binomial` raises `UnsuitableModel` when the implied concentration `p(1 - p) / Var - 1` is
+non-positive, which is dispersion beyond any beta with that mean.
 
-Method of moments was chosen because it is arithmetic a reader can follow, where marginal maximum
-likelihood puts the fit inside an optimiser and adds a dependency.
+The alternative is marginal maximum likelihood on the compound marginal — negative binomial for
+gamma-Poisson, beta-binomial for the beta — which weights entities by exposure instead of treating
+each rate as one observation. Moment matching was chosen for inspectability: closed form, no
+optimiser to converge, no dependency.
 
-**The cost.** Method of moments takes one rate per observation however much evidence stands behind
-that rate, so a ten-appearance season and a thirty-eight-appearance season count equally. Two
-things limit the damage, neither of them removing the equal weighting itself.
+**The cost.** Rates enter unweighted, so the estimator is inefficient under unequal exposure and
+sensitive to small denominators. `min_denominator` (10) truncates rather than downweights, dropping
+156 of 639 forward-seasons on the shipped data, and the variance correction is an average rather
+than per-observation. On that data it removes 34% of the observed spread, taking the forwards prior
+from 7.5 to 11.4 appearances of prior evidence — a stronger prior, the between-entity spread being
+smaller than the raw one implied.
 
-The first is `min_denominator`, 10 by default, which excludes any observation whose denominator
-falls below it, so the rates most distorted by a small denominator never enter the fit at all. On
-the shipped data that drops 156 of the 639 forward-seasons.
+### The prior is fitted on a population containing the entity it is applied to
 
-The second corrects the spread. A rate measured over few appearances is noisy, so the observed
-spread of rates across entities is wider than the real spread between them — part of it is the
-randomness of scoring rather than any difference in ability. For counts that part is calculable,
-a Poisson's variance being fixed by its mean, so the fit subtracts it. On the shipped data it
-accounts for 34% of the apparent spread, and removing it takes the forwards prior from 7.5 to
-11.4 appearances' worth of evidence: correcting for noise makes the prior stronger, because the
-entities are revealed to differ less than they first appeared.
+Empirical-Bayes double use. Haaland's four seasons are among the 483 reaching the forwards fit, and
+the posterior mean `(alpha + sum(y)) / (beta + sum(n))` shrinks him toward a prior he helped set.
 
-`normal_normal` cannot make the same correction, because a normal distribution's spread is not
-implied by its average as a Poisson's is. `fit_prior` estimates it by pooling how much each
-entity's observations vary around that entity's own average, and stores it as a third parameter,
-`sigma_obs`.
+Measured: excluding him moves the prior rate from 0.197 to 0.192 and his 30-appearance die from
+23.90 to 23.61 goals, 1.2%; Saka's die is unchanged to two decimals. The effect scales inversely
+with population size — at ten forwards the fitted rate moves by a median 88.7% on his inclusion,
+45.6% at twenty, 9.6% at a hundred.
 
-### A prior is fitted on a population including the entity it is used on
+Leave-one-out requires a prior per entity, which the fit-once-and-store design exists to avoid, so
+the default stands. On small populations it is not negligible.
 
-Haaland's four seasons are among the 483 that reach the forwards fit — 639 forward-seasons less
-the 156 that fall below `min_denominator` — so his own record helps set
-the average he is then shrunk toward. This is the double-use of data associated with empirical
-Bayes — estimating a prior from the same data it is then applied to. The textbook remedy is to
-leave the entity out and fit the prior from the rest.
+### Observations enter only through their sums
 
-**The cost.** On the shipped data it is small: leaving Haaland out moves the prior's rate from
-0.197 to 0.192 and his die from 23.90 to 23.61 goals over 30 appearances, a 1.2% shift, while
-Saka's die does not move at two decimal places. The effect scales with population size. Fitted on
-ten forwards rather than 329, the prior's rate moves by a median 88.7% depending on whether the
-entity is included; 45.6% at twenty forwards, and 9.6% at a hundred.
+The conjugate updates use `sum(y)` and `sum(n)`; nothing else about an entity's record reaches the
+posterior. Recency, ordering and age cannot enter without changing the update rule — a discount
+weight multiplies both sums, an ageing curve rescales the denominator alone. Both are in the
+[roadmap](#roadmap) and neither is implemented, so an entity's observations are exchangeable.
 
-The default remains as it is because fitting one prior and reusing it is what `PriorStore` exists
-for, and leaving one entity out requires a prior per entity. Users pointing the library at small
-populations should be aware of the effect.
+### The sampling model is not identified by the data
 
-### An entity's observations are treated as interchangeable
+`fit_prior` requires `model` because the support is a modelling claim rather than an estimable
+quantity: no sample separates an unobserved value from an impossible one. A stat-name-to-model
+table existed and was removed for that reason.
 
-`PosteriorSampler` sums an entity's values and denominators, so a season from four years ago
-counts as much as the most recent one, and no adjustment is made for the entity's age at the time.
-Both are omissions rather than positions the data supports; a recency weight and an ageing curve
-appear in the [roadmap](#roadmap).
-
-### The model is the caller's to choose
-
-`fit_prior` takes `model` as an argument and no function selects one automatically. An earlier
-version mapped stat names to models and was removed: a model states which values a stat can take
-at all — whether zero is reachable, whether there is a ceiling — and no sample establishes that,
-since a value that never appeared and a value that cannot appear are identical in data.
-
-**The cost.** Choosing wrongly runs without complaint. A 90% free-throw shooter fitted as
-`gamma_poisson` rather than `beta_binomial` produces a die of which 21% describes making more than
-100 shots out of 100 attempts, because a gamma has no ceiling. Two guards catch part of this: the
-beta fit rejects a row whose value exceeds its own denominator, and the gamma-exponential fit
-rejects a value or denominator that is not positive.
+Three guards catch part of a wrong choice — the beta rejects rows with `y > n` and the
+over-dispersion case above, and `gamma_exponential` rejects non-positive values or counts — but a
+90% free-throw shooter fitted as `gamma_poisson` yields a die with 21% of its mass above 100 makes
+from 100 attempts, and nothing in the output says so.
 
 ## Roadmap
 
