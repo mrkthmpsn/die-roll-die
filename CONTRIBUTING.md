@@ -118,71 +118,70 @@ overhead when writing the `ColumnMap`.
 
 ## Statistical decisions
 
-The library is a parametric empirical-Bayes estimator: a conjugate prior fitted to the population
-by moment matching, updated with one entity's sufficient statistics, and discretised into faces.
-Four choices in that are worth stating, with what each costs.
+The library estimates how much entities of one kind differ from each other, which is the prior;
+combines that with one entity's own record to produce a better estimate than either source gives
+alone, which is the posterior; and turns the spread of that estimate into the faces of a die.
 
-### Priors are fitted by moment matching, with the sampling variance removed
+Four steps in that process involved a choice with a genuine alternative. Each is recorded here
+with what it costs.
 
-Each fit works from entity-level rates and matches the family's first two moments, subtracting the
-within-entity sampling component from the observed variance — `Var(r) = Var(lambda) + E[Var(r |
-lambda)]`, with the second term estimated as:
+### Priors are fitted by method of moments
 
-| Model | Rate | Sampling term subtracted |
-| --- | --- | --- |
-| `gamma_poisson` | `y / n` | `mean(r) * mean(1/n)` |
-| `beta_binomial` | `y / n` | `p(1 - p) * mean(1/n)` |
-| `normal_normal` | `y / n` | `sigma_obs² * mean(1/n)`, `sigma_obs²` pooled within-entity |
-| `gamma_exponential` | `(k - 1) / T` | `mean(r)² * mean(1/(k - 2))` |
+The fit takes each entity's observed rate, computes the mean and variance of those rates across
+the population, and solves for the parameters matching them. Before solving, it subtracts the
+variance the sampling itself contributed: an observed rate varies both because entities genuinely
+differ and because a count over a finite denominator is random, and only the first belongs in a
+prior. Each model subtracts its own version — Poisson noise for counts, binomial for proportions,
+the pooled within-entity spread for `normal_normal`, and for `gamma_exponential` the variance of
+its rate estimator, which is undefined below three events and is why observations of fewer are
+dropped. Where the subtraction leaves nothing positive the uncorrected variance stands, giving a
+wider prior rather than a failure.
 
-`gamma_exponential` uses the unbiased `(k - 1) / T` rather than `k / T`; its variance
-`lambda² / (k - 2)` is why observations of fewer than three events are dropped. Where a subtraction
-is non-positive the uncorrected variance stands, widening the prior rather than failing.
-`beta_binomial` raises `UnsuitableModel` when the implied concentration `p(1 - p) / Var - 1` is
-non-positive, which is dispersion beyond any beta with that mean.
+The conventional alternative is marginal maximum likelihood: fitting the compound distribution —
+negative binomial for gamma-Poisson, beta-binomial for the beta — directly to the counts, which
+uses the exposures rather than reducing each entity to a single rate. Method of moments was chosen
+for inspectability: closed form, no optimiser to converge, no dependency.
 
-The alternative is marginal maximum likelihood on the compound marginal — negative binomial for
-gamma-Poisson, beta-binomial for the beta — which weights entities by exposure instead of treating
-each rate as one observation. Moment matching was chosen for inspectability: closed form, no
-optimiser to converge, no dependency.
-
-**The cost.** Rates enter unweighted, so the estimator is inefficient under unequal exposure and
-sensitive to small denominators. `min_denominator` (10) truncates rather than downweights, dropping
-156 of 639 forward-seasons on the shipped data, and the variance correction is an average rather
-than per-observation. On that data it removes 34% of the observed spread, taking the forwards prior
-from 7.5 to 11.4 appearances of prior evidence — a stronger prior, the between-entity spread being
-smaller than the raw one implied.
+**The cost.** Rates enter unweighted, so a ten-appearance season counts as much as a
+thirty-eight-appearance one and the estimator is sensitive to small denominators. `min_denominator`
+(10) excludes those rather than downweighting them, dropping 156 of 639 forward-seasons on the
+shipped data, and the noise subtraction is an average across observations rather than one per
+observation. On that data it removes 34% of the observed spread, taking the forwards prior from 7.5
+to 11.4 appearances' worth of evidence — a stronger prior, the genuine spread between entities
+being smaller than the raw one suggested.
 
 ### The prior is fitted on a population containing the entity it is applied to
 
-Empirical-Bayes double use. Haaland's four seasons are among the 483 reaching the forwards fit, and
-the posterior mean `(alpha + sum(y)) / (beta + sum(n))` shrinks him toward a prior he helped set.
+Empirical-Bayes double use of the data. Haaland's four seasons are among the 483 that reach the
+forwards fit, so the prior he is then shrunk toward is one his own record helped set.
 
-Measured: excluding him moves the prior rate from 0.197 to 0.192 and his 30-appearance die from
-23.90 to 23.61 goals, 1.2%; Saka's die is unchanged to two decimals. The effect scales inversely
-with population size — at ten forwards the fitted rate moves by a median 88.7% on his inclusion,
-45.6% at twenty, 9.6% at a hundred.
+Excluding him moves the prior's rate from 0.197 to 0.192 and his 30-appearance die from 23.90 to
+23.61 goals, a 1.2% shift, while Saka's die is unchanged to two decimal places. The effect scales
+with how small the population is: fitted on ten forwards rather than 329, the rate moves by a
+median 88.7% depending on whether he is included, 45.6% at twenty, and 9.6% at a hundred.
 
-Leave-one-out requires a prior per entity, which the fit-once-and-store design exists to avoid, so
-the default stands. On small populations it is not negligible.
+Leaving an entity out means a prior per entity, which the fit-once-and-store design exists to
+avoid, so the default stands. On small populations it is not negligible.
 
 ### Observations enter only through their sums
 
-The conjugate updates use `sum(y)` and `sum(n)`; nothing else about an entity's record reaches the
-posterior. Recency, ordering and age cannot enter without changing the update rule — a discount
-weight multiplies both sums, an ageing curve rescales the denominator alone. Both are in the
-[roadmap](#roadmap) and neither is implemented, so an entity's observations are exchangeable.
+The update adds an entity's total value to one parameter and its total denominator to the other,
+so nothing else about the record reaches the posterior. Recency, ordering and age cannot enter
+without changing the update itself — a discount weight would multiply both totals, an ageing curve
+only the denominator. Both are in the [roadmap](#roadmap), so for now an entity's seasons count
+equally.
 
-### The sampling model is not identified by the data
+### The model is not something the data can settle
 
-`fit_prior` requires `model` because the support is a modelling claim rather than an estimable
-quantity: no sample separates an unobserved value from an impossible one. A stat-name-to-model
-table existed and was removed for that reason.
+`fit_prior` requires `model` because the choice states which values a stat can take at all, and no
+sample establishes that: an unobserved value and an impossible one are identical in a file. A table
+mapping stat names to models existed and was removed for that reason.
 
-Three guards catch part of a wrong choice — the beta rejects rows with `y > n` and the
-over-dispersion case above, and `gamma_exponential` rejects non-positive values or counts — but a
-90% free-throw shooter fitted as `gamma_poisson` yields a die with 21% of its mass above 100 makes
-from 100 attempts, and nothing in the output says so.
+Three guards catch part of a wrong choice. The beta fit rejects a row whose value exceeds its own
+denominator, and rejects proportions more spread than any beta with their mean; `gamma_exponential`
+rejects a value or count that is not positive. None catches the main case: a 90% free-throw shooter
+fitted as `gamma_poisson` gives a die with 21% of its mass above 100 makes from 100 attempts, and
+nothing in the output says so.
 
 ## Roadmap
 
