@@ -126,21 +126,23 @@ faces of a die. Several steps in that process involved some choices.
 Priors are fitted by method of moments (matching the mean and variance of the observed rates to
 the distribution's own formulas for its mean and variance, then solving for the parameters). This approach was taken because the arithmetic can be easily followed, which feels more accessible and in keeping with the general aim of demonstrating probabilities with weighted dice. 
 
-
 Although, in this method, rates enter unweighted, `min_denominator` is used to exclude the thinnest observations (e.g. players with fewer than 10 appearances). This, for example, drops 156 of 639 forward-seasons on the shipped data.
 
 ### The prior is fitted on a population containing the entity it is applied to
 
-Haaland's four seasons are among the 483 that reach the forwards fit, so the prior shrinking him
-is one his own record helped set — the double use of data that empirical Bayes is known for.
+An entity's record is used twice. Haaland's four seasons are among the 483 that reach the forwards
+fit, and those same seasons then update the prior they helped set, so he is shrunk toward a mean
+that has already moved toward him. The shrinkage is weaker than it appears, and more so the more
+of the population one entity accounts for.
 
 Excluding him moves the prior's rate from 0.197 to 0.192 and his 30-appearance die from 23.90 to
 23.61 goals, a 1.2% shift, while Saka's die is unchanged to two decimal places. The effect scales
 with how small the population is: fitted on ten forwards rather than 329, the rate moves by a
 median 88.7% depending on whether he is included, 45.6% at twenty, and 9.6% at a hundred.
 
-Leaving an entity out means a prior per entity, which the fit-once-and-store design exists to
-avoid, so the default stands. On small populations it is not negligible.
+The fix is to fit each entity's prior from every other entity. That means a prior per entity,
+which the fit-once-and-store design exists to avoid, so the default stands — but on a small
+population the effect is not negligible.
 
 ### Observations enter only through their sums
 
