@@ -124,29 +124,15 @@ faces of a die. Several steps in that process involved some choices.
 ### Priors are fitted by method of moments
 
 Priors are fitted by method of moments (matching the mean and variance of the observed rates to
-the distribution's own formulas for its mean and variance, then solving for the parameters). The
-conventional alternative is marginal maximum likelihood: fitting the compound distribution —
-negative binomial for gamma-Poisson, beta-binomial for the beta — to the counts directly, which
-uses the exposure behind each rate rather than reducing each entity to a single number.
+the distribution's own formulas for its mean and variance, then solving for the parameters). This approach was taken because the arithmetic can be easily followed, which feels more accessible and in keeping with the general aim of demonstrating probabilities with weighted dice. 
 
-Method of moments was chosen because it is closed form: the arithmetic can be followed, there is
-no optimiser to fail to converge, and no solver dependency to add — the fitting code uses the
-standard library's `statistics` module and nothing else.
 
-**The cost.** Rates enter unweighted, so a ten-appearance season counts as much as a
-thirty-eight-appearance one and the fit is sensitive to small denominators. Two things limit that,
-neither removing it. `min_denominator` (10) excludes the thinnest observations rather than
-downweighting them, dropping 156 of 639 forward-seasons on the shipped data. And the variance the
-sampling itself contributes is subtracted before solving, since an observed rate varies both
-because entities differ and because a count over a finite denominator is random — on the shipped
-data that removes 34% of the observed spread, taking the forwards prior from 7.5 to 11.4
-appearances' worth of evidence, a stronger prior because the genuine spread between entities is
-smaller than the raw one suggested.
+Although, in this method, rates enter unweighted, `min_denominator` is used to exclude the thinnest observations (e.g. players with fewer than 10 appearances). This, for example, drops 156 of 639 forward-seasons on the shipped data.
 
 ### The prior is fitted on a population containing the entity it is applied to
 
-Empirical-Bayes double use of the data. Haaland's four seasons are among the 483 that reach the
-forwards fit, so the prior he is then shrunk toward is one his own record helped set.
+Haaland's four seasons are among the 483 that reach the forwards fit, so the prior shrinking him
+is one his own record helped set — the double use of data that empirical Bayes is known for.
 
 Excluding him moves the prior's rate from 0.197 to 0.192 and his 30-appearance die from 23.90 to
 23.61 goals, a 1.2% shift, while Saka's die is unchanged to two decimal places. The effect scales
