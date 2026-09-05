@@ -72,9 +72,18 @@ def column_map(args) -> ColumnMap:
 
 
 def read_prior(path: Path, entity_type: str, stat_id: str, scope: dict[str, str]):
-    """Return the stored prior for this entity type, stat and scope, or exit listing what
-    is stored.
+    """Return the stored prior for this entity type, stat and scope, or exit: naming
+    `examples/fit.py` where `path` does not exist, and listing what is stored where it does.
+
+    A `JsonPriorStore` reads a missing path as an empty store, so the two cases reach the
+    same lookup and are told apart here rather than by it.
     """
+    if not path.exists():
+        raise SystemExit(
+            f"no prior store at {path}\n"
+            "run `uv run python examples/fit.py` to fit one, or drop --priors to fit from "
+            "the population"
+        )
     try:
         store = JsonPriorStore(path)
     except UnreadablePriorStore as error:

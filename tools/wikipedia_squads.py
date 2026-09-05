@@ -41,7 +41,10 @@ seasons 2021-22 to 2025-26.
 """
 
 API = "https://en.wikipedia.org/w/api.php"
-USER_AGENT = "die-roll-die/0.1 (https://github.com/; wikipedia squad statistics scraper)"
+USER_AGENT = (
+    "die-roll-die/0.1 (https://github.com/mrkthmpsn/die-roll-die; "
+    "wikipedia squad statistics scraper)"
+)
 REQUEST_DELAY = 0.25
 
 SEASONS = ("2021–22", "2022–23", "2023–24", "2024–25", "2025–26")

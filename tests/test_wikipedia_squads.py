@@ -7,12 +7,19 @@ from bs4 import BeautifulSoup
 
 from tools.wikipedia_squads import (
     Entry,
+    USER_AGENT,
     league_rows,
     merge,
     parse_table,
     reconcile,
     _headings_for,
 )
+
+
+def test_the_user_agent_names_the_repository():
+    """Wikimedia's User-Agent policy asks for a URL its operators can make contact through,
+    which a bare host is not."""
+    assert "github.com/mrkthmpsn/die-roll-die" in USER_AGENT
 
 COMBINED = """
 <h2>Statistics</h2><h3>Appearances and goals</h3>

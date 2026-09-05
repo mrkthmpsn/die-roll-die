@@ -10,9 +10,9 @@ from __future__ import annotations
 
 import pytest
 
-from die_roll_die import POSTERIOR_PARAM_NAMES
+from die_roll_die import POSTERIOR_PARAM_NAMES, JsonPriorStore, PriorParams
 from examples.fit import describe
-from examples.roll import _summarise, parse_scope
+from examples.roll import _summarise, parse_scope, read_prior
 
 
 @pytest.mark.parametrize("model", sorted(POSTERIOR_PARAM_NAMES))
@@ -57,3 +57,33 @@ def test_parse_scope_rejects_a_pair_with_no_value():
 def test_describe_names_the_unscoped_prior():
     assert describe({}) == "global"
     assert describe({"position_general": "Forward"}) == "position_general=Forward"
+
+
+def test_a_missing_prior_store_names_the_script_that_writes_one(tmp_path):
+    """A fresh clone has no `data/priors.json`, `JsonPriorStore` reads a missing path as an
+    empty store, and the message for a store lacking one scope would describe that as a fit
+    that produced nothing."""
+    with pytest.raises(SystemExit) as exit_info:
+        read_prior(tmp_path / "priors.json", "player", "goals", {})
+    message = str(exit_info.value)
+    assert "no prior store at" in message
+    assert "examples/fit.py" in message
+
+
+def test_a_store_lacking_the_scope_lists_the_scopes_it_holds(tmp_path):
+    path = tmp_path / "priors.json"
+    store = JsonPriorStore(path)
+    store.save(
+        PriorParams(
+            stat_id="goals",
+            entity_type="player",
+            scope={"position_general": "Forward"},
+            model="gamma_poisson",
+            params={"alpha": 2.0, "beta": 11.0},
+        )
+    )
+    with pytest.raises(SystemExit) as exit_info:
+        read_prior(path, "player", "goals", {"position_general": "Goalkeeper"})
+    message = str(exit_info.value)
+    assert "holds no prior for 'goals'" in message
+    assert "position_general" in message and "Forward" in message
