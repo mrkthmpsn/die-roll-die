@@ -1,0 +1,14 @@
+die-roll-die
+
+The MIT licence in LICENSE covers the software: `die_roll_die/`, `examples/`,
+`tools/` and `tests/`.
+
+It does not cover `data/`, which is derived from English Wikipedia and carries
+the Creative Commons Attribution-ShareAlike 4.0 International licence instead.
+`data/LICENSE` states that licence, what the material is, and the attribution
+that travels with it; `data/sources.json` lists the 100 articles it was built
+from with the revision id each was read at.
+
+Redistributing anything from `data/`, modified or not, means keeping CC BY-SA
+4.0 and those notices with it. Nothing there restricts what you may do with the
+software.

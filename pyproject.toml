@@ -4,7 +4,7 @@ dynamic = ["version"]
 description = "Bayesian quality distributions turned into weighted dice, illustrating uncertainty in per-entity estimates."
 readme = "README.md"
 license = "MIT"
-license-files = ["LICENSE"]
+license-files = ["LICENSE", "NOTICE"]
 requires-python = ">=3.11"
 authors = [{ name = "Mark Thompson" }]
 dependencies = [
@@ -45,6 +45,11 @@ build-backend = "hatchling.build"
 
 [tool.hatch.version]
 path = "die_roll_die/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+# data/ is CC BY-SA rather than MIT, so it stays in the repository and out of the
+# published distribution; see NOTICE.
+exclude = ["/data"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["die_roll_die"]
