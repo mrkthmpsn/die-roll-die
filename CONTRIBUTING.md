@@ -99,8 +99,8 @@ which is the thing hardest to read off `quality_sampler.py` itself.
 
 ## Design decisions
 
-**Fitting priors and rolling a die are separate steps.** A prior describes a population and does 
-not change when you ask about a different entity, so `fit_priors` computes it once and writes it 
+**Fitting priors and rolling a die are separate steps.** A prior describes a population and does
+not change when you ask about a different entity, so `fit_priors` computes it once and writes it
 to a `PriorStore`, and `create_die` reads it back. Twenty dice then need one fit rather than twenty.
 `build_die_from_csv` combines both for convenience, at the cost of reparsing the file and
 refitting the prior on every call: 2.5 seconds against 1.6 over twenty entities on the shipped
@@ -124,7 +124,7 @@ faces of a die. Several steps in that process involved some choices.
 ### Priors are fitted by method of moments
 
 Priors are fitted by method of moments (matching the mean and variance of the observed rates to
-the distribution's own formulas for its mean and variance, then solving for the parameters). This approach was taken because the arithmetic can be easily followed, which feels more accessible and in keeping with the general aim of demonstrating probabilities with weighted dice. 
+the distribution's own formulas for its mean and variance, then solving for the parameters). This approach was taken because the arithmetic can be easily followed, which feels more accessible and in keeping with the general aim of demonstrating probabilities with weighted dice.
 
 Although, in this method, rates enter unweighted, `min_denominator` is used to exclude the thinnest observations (e.g. players with fewer than 10 appearances). This, for example, drops 156 of 639 forward-seasons on the shipped data.
 
@@ -132,33 +132,25 @@ Although, in this method, rates enter unweighted, `min_denominator` is used to e
 
 An entity's record is used twice. Haaland's four seasons are among the 483 that reach the forwards
 fit, and those same seasons then update the prior they helped set, so he is shrunk toward a mean
-that has already moved toward him. The shrinkage is weaker than it appears, and more so the more
-of the population one entity accounts for.
+that has already moved toward him.
 
-Excluding him moves the prior's rate from 0.197 to 0.192 and his 30-appearance die from 23.90 to
-23.61 goals, a 1.2% shift, while Saka's die is unchanged to two decimal places. The effect scales
-with how small the population is: fitted on ten forwards rather than 329, the rate moves by a
+The effect scales with how small the population is: fitted on ten forwards rather than 329, the rate moves by a
 median 88.7% depending on whether he is included, 45.6% at twenty, and 9.6% at a hundred.
 
-The fix is to fit each entity's prior from every other entity. That means a prior per entity,
-which the fit-once-and-store design exists to avoid, so the default stands — but on a small
-population the effect is not negligible.
+This is, though, the simplest approach. As for method of moments, this seems most in-keeping with the general demonstrative aim of the repo/project.
 
 ### Observations enter only through their sums
 
 The update adds an entity's total value to one parameter and its total denominator to the other,
 so nothing else about the record reaches the posterior. Recency, ordering and age cannot enter
-without changing the update itself — a discount weight would multiply both totals, an ageing curve
-only the denominator. Both are in the [roadmap](#roadmap), so for now an entity's seasons count
+the equation. Weighting for recency or age curve is in the [roadmap](#roadmap), but for now an entity's seasons count
 equally.
 
 ### The model is not something the data can settle
 
-`fit_prior` requires `model` because the choice states which values a stat can take at all, and no
-sample establishes that: an unobserved value and an impossible one are identical in a file. A table
-mapping stat names to models existed and was removed for that reason.
+`fit_prior` requires the `model` parameter rather than trying to determine the type programmatically.
 
-Three guards catch part of a wrong choice. The beta fit rejects a row whose value exceeds its own
+Three guards catch part of a wrong choice though. The beta fit rejects a row whose value exceeds its own
 denominator, and rejects proportions more spread than any beta with their mean; `gamma_exponential`
 rejects a value or count that is not positive. None catches the main case: a 90% free-throw shooter
 fitted as `gamma_poisson` gives a die with 21% of its mass above 100 makes from 100 attempts, and
@@ -176,7 +168,7 @@ change the numbers the library produces.
   predictably different at that age, and converts the denominator into peak-equivalent exposure
   rather than discounting the evidence.
 - **A leave-one-out option on fitting.** Fitting each entity's prior from every other entity,
-  removing the double-use of data described under [statistical decisions](#a-prior-is-fitted-on-a-population-including-the-entity-it-is-used-on). It only matters on
+  removing the double-use of data described under [statistical decisions](#the-prior-is-fitted-on-a-population-containing-the-entity-it-is-applied-to). It only matters on
   small populations, where it matters a great deal.
 - **A model adviser that reports evidence rather than choosing.** Given observations, report what
   they rule out — a negative value rules out both gamma models and the beta; values that never

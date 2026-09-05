@@ -9,7 +9,7 @@ A prior is fitted from a population's data (e.g. the goal-scoring rate of forwar
 The repo includes five seasons of Premier League goals and appearances data taken from Wikipedia, but the underlying framework can be used with your own dataset(s).
 
 ## Example
-Using the Wikipedia data, here is a die for Erling Haaland's goals over his next 30 appearances, scoped against the prior distribution of forwards in the dataset:
+Using the Wikipedia data, here is a die for Erling Haaland's goals over his next 30 appearances, scoped against the prior distribution of forwards in the dataset. `data/priors.json` is generated rather than committed, so `uv run python examples/fit.py` writes it before this runs:
 
 ```
 $ uv run python examples/roll.py Erling_Haaland --scope position_general=Forward --priors data/priors.json
@@ -28,19 +28,20 @@ Erling Haaland (Erling_Haaland) - goals, scope {'position_general': 'Forward'}
       6  32.8-37.0    5.3%
 ```
 
-The `prior` line is what forwards in general score, fitted from the data: 0.197 goals per appearance, carrying as much weight as 11 appearances would. The `posterior` adds Haaland's own 112 goals in 132 appearances, giving 0.797 goals per appearance on 143 appearances of evidence.
+The `prior` line is what forwards in general score, fitted from the data: 0.197 goals per appearance. A prior's strength is measured in the same units as the denominator, so this one counts for about as much as watching a player for 11 appearances — and a player's own record outweighs it from there. The `posterior` adds Haaland's own 112 goals in 132 appearances, giving 0.797 goals per appearance on 143 appearances of evidence.
 
-Each face of the die covers about four goals and carries its own chance of coming up. A season of 20 to 25 goals (across an imaginary 30 appearances) is the likeliest single outcome at 29%, while 12 to 16 comes up 7% of the time and 33 to 37 comes up 5%. Read down the right-hand column and you are reading the shape of the distribution.
+In this example, each face of the die covers about four goals but is weighted with its own chance of coming up. A season of 20 to 25 goals (across an imaginary 30 appearances) is the likeliest single outcome at 29%, while 12 to 16 comes up 7% of the time and 33 to 37 comes up 5%. Read down the right-hand column and you are reading the shape of the distribution.
 
-That is a weighted die: goal values on each face evenly split, uneven chances of landing on each face. `--strategy equal_weight` cuts the same numbers the other way — every face equally likely, with the value ranges uneven instead.
+That is the default strategy, a weighted die approach: goal values on each face evenly split, uneven chances of landing on each face. `--strategy equal_weight` cuts the same numbers the _other_ way: every face on the die becomes equally likely, but with the value ranges uneven instead.
 
 ## Install
 
 ```
-uv add die-roll-die
+uv add git+https://github.com/mrkthmpsn/die-roll-die
 ```
 
-or `pip install die-roll-die`. The distribution is `die-roll-die` and the import is
+or `pip install git+https://github.com/mrkthmpsn/die-roll-die`. The library is not on PyPI, so
+the install comes from the repository; the distribution is `die-roll-die` and the import is
 `die_roll_die`:
 
 ```python
@@ -62,51 +63,47 @@ uv run python examples/roll.py Bukayo_Saka --scope position_general=Forward --pr
 
 The first command fits a prior for each position group and writes them to `data/priors.json`; the second builds a die for one player. A dataset of 2,804 Premier League player-seasons ships with the repo, so both work on a fresh clone.
 
-Useful flags on `roll.py`: `--faces 20` for a D20, `--denominator 38` to predict over a full 38-appearance season, `--strategy equal_width` for the histogram view.
+Useful flags on `roll.py`: `--faces 20` for a D20 (for all you D&D fans), `--denominator 38` to predict over a full 38-appearance season, `--strategy equal_weight` for six equally likely faces instead.
 
 ## What you can point it at
 
-Football is used as an example, but the library is built around the shape of the measurement. There are four shapes it handles, and your data decides which one you have:
+Football is used as an example, but the library is built around data rather than anything sport-specific. There are four shapes the library handles:
 
-**A count over an 'exposure'.** Goals in appearances, tackles in minutes, defects in production hours, support tickets in weeks on the team. You choose how much exposure to predict over — 30 appearances, 900 minutes — and the die is over how many events fall in it.
+**A count over an 'exposure' (`gamma_poisson`).** E.g. goals in appearances, tackles in minutes, defects in production hours, support tickets in weeks on the team. You choose how much exposure to predict over — 30 appearances, 900 minutes — and the die faces are therefore how many events fall in that exposure time.
 
-**A time to an event.** Hours between machine failures, days to close a support ticket, minutes between goals conceded. You choose how many events to predict over — five failures, ten tickets — and the die is over the total time they take. This is the same two quantities as a count over an exposure, with the roles reversed: there you fix the time and count the events, here you fix the events and measure the time.
+**A time to an event (`gamma_exponential`).** E.g. hours between machine failures, days to close a support ticket, minutes between goals conceded. You choose how many events to predict over — five failures, ten tickets — and values of the die faces are the total time they take. This is the role reversal of the above, a count over an exposure: there you fix the time and count the events, here you fix the events and measure the time.
 
-**Successes out of attempts.** Shots on target out of shots, passes completed out of attempted, free throws made out of taken. You choose how many attempts, and the die is over how many of them come off.
+**Successes out of attempts (`beta_binomial`).** E.g. shots on target out of shots, passes completed out of attempted, free throws made out of taken. You choose how many attempts, and the die face values relate to how many of them come off.
 
-**A measured quantity.** Distance covered per match, revenue per week, hours of downtime per month. You choose how many periods, and the die is over the total across them — so this shape wants quantities that add up to something meaningful.
-
-A composite score — an "inverted full-back suitability out of 10" computed however you like — is consumed rather than modelled here: work out the score per match by whatever formula you please, and feed the scores in as the stat. Note that a score bounded at 0 and 10 is a beta after rescaling to 0-1, not a normal, and that the die will be over the total across the periods you choose rather than the average.
+**A measured continuous quantity (`normal_normal`).** E.g. distance covered per match, revenue per week, hours of downtime per month. You choose how many periods, and the die face values are based on the total across them — so this shape wants quantities that add up to something meaningful.
 
 ## Use your own data
 
-`CsvDataAdapter` reads any CSV of one row per entity per period. You tell it which columns fill which role:
+`CsvDataAdapter` reads any CSV file arranged as one row per entity per period. You tell it which columns fill four fixed roles using the `ColumnMap` schema:
 
 ```python
 from die_roll_die import ColumnMap, CsvDataAdapter
 
 columns = ColumnMap(
     entity="player_ref",         # which entity a row belongs to
-    entity_type="player",        # what that id names — a literal, not a column
+    entity_type="player",        # [*not* a column] what that id names — an actual string literal
     denominator="attempts",      # what the value was measured against
     name="player",               # a label, for lookups and display
-    dimensions=("team", "season"),  # columns you might fit separate priors along
+    dimensions=("team", "position"),  # columns you might fit separate priors along
 )
 adapter = CsvDataAdapter("shooting.csv", columns)
 ```
 
-Nothing is guessed from a column's name, so a file with its own conventions needs a map rather than a rename. A column you do not map is not lost — it is used one of two other ways:
+There's no auto-determination of column type based on its name or contents, so a file with its own conventions needs a map. A column you do not map is not necessarily lost though; it can be used one of two other ways:
 
-- **The stat is chosen per question**, not in the map: `get_population_observations("three_pointers")`. One adapter serves every numeric column in the file.
-- **A scope may filter on any column**, mapped or not: `{"team": "Harriers"}` works whether or not `team` is a dimension.
-
-Only `scopes_for` is restricted to the mapped dimensions, because it works from `Record`s rather than from the file and a `Record` carries only what the map told it to.
+- **Chosen as the stat in a call**: e.g. `get_population_observations("three_pointers")`. Any column holding numbers can be the stat, so one adapter answers every numeric question the file supports.
+- **Named in a scope**: e.g. `{"game_type": "playoff"}` filters on a column the map never mentions. A scope is a set of column-value pairs narrowing which rows a prior is fitted from, and the same filter later picks which of an entity's own rows update it. Scope keys are checked against the file's header rather than the map, and matched as exact text against the cell.
 
 **Choosing the denominator is a modelling decision, not a lookup.** If your file has both `attempts` and `minutes`, then `denominator="attempts"` asks what share of his shots go in, and `denominator="minutes"` asks how many he hits per minute on court. Both are legitimate, they are different questions, and the choice decides which model you want.
 
 ## From a CSV to a die
 
-One call does the whole thing:
+If you want one function to do the end-to-end process...
 
 ```python
 from die_roll_die import build_die_from_csv
@@ -119,72 +116,42 @@ die = build_die_from_csv(
 print(die.model_dump_json(indent=2))
 ```
 
-It refits the prior from the whole file on every call, so for more than one entity, fit once and reuse:
+The function refits the prior from the whole file on every call, so for more than one entity it's recommended to fit once and reuse, as below:
 
 ```python
-from die_roll_die import InMemoryPriorStore, create_die, fit_priors
+from die_roll_die import CsvDataAdapter, InMemoryPriorStore, create_die, fit_priors
 
+adapter = CsvDataAdapter("shooting.csv", columns)   # `columns` from "Use your own data"
 store = InMemoryPriorStore()
 report = fit_priors(adapter, store, "three_pointers", "beta_binomial", dimension="position")
 prior = store.get("player", "three_pointers", {"position": "Guard"})
 
-for entity_id in squad:
+for entity_id in ["player-17", "player-22", "player-38"]:
     die = create_die(adapter, prior, entity_id, denominator=200)
 ```
 
-`fit_priors` returns a `FitReport` naming the scopes it fitted and the ones it skipped, a slice with too few entities being expected when scopes come from a column. `create_die` reads the stat, entity type, scope and model off the prior, so the only thing left to choose is how much opportunity to predict over.
-
-## How it works
-
-**Observations.** Every row becomes a `Record`: an entity, a value, and the denominator that value was measured against. Haaland's four seasons are 36 goals in 35 appearances, 27 in 31, 22 in 31, 27 in 35. The denominator is what separates a rate you can trust from one you cannot.
-
-**A prior** is what you believe about a player before looking at their record — here, what scoring rates Premier League forwards have in general. It is not hand-picked: `fit_prior` reads every forward-season in the file and fits a distribution to the spread of their rates. For goals it comes out as `alpha=2.26, beta=11.44`, which describes a typical forward scoring 0.20 goals per appearance.
-
-**`beta` is evidence measured in appearances**: this prior is worth about 11 appearances of watching someone play, which is what sets how far a player's own record can move it.
-
-**The posterior** is the prior updated with one player's own record, and for this model the update is two additions:
-
-```
-alpha:  2.26 + 112 goals       = 114.26
-beta:  11.44 + 132 appearances = 143.44
-        rate = 114.26 / 143.44 = 0.797 goals per appearance
-```
-
-Haaland's raw rate is 112/132 = 0.848, and the posterior says 0.797 — pulled slightly toward the population, because 11 appearances of prior sit against his 132 of evidence. A player with 11 appearances of their own would be pulled halfway instead. That is the whole purpose of the prior: it stops a hot fortnight from reading as greatness, without stopping a long record from speaking for itself.
-
-**Draws.** The posterior is a curve, not a number, so we sample it 100,000 times. Two things vary, and the difference matters:
-
-```
-rate draws     10th 0.703   50th 0.794   90th 0.894   ← how sure we are of his rate
-count draws    10th 17      50th 24      90th 31      ← what he'd actually score in 30
-```
-
-The first is uncertainty about Haaland. The second adds the randomness of football itself: even knowing his rate exactly, thirty appearances is a small sample and goals arrive irregularly. The die is built from the second, which is why it is wider than the first — most of what it shows you is the sport, not your ignorance.
-
-**Faces.** The 100,000 counts are cut into six groups, and there are two ways to do the cutting.
-
-`equal_width`, the default, slices the range of outcomes into six equal spans. **Every face covers the same number of goals and the chances differ** — which is what makes it a weighted die, and why reading down the percentages shows you the distribution's shape.
-
-`equal_weight` sorts the counts and splits them into six piles of the same size instead. **Every face then has the same 1-in-6 chance and the value ranges differ**, narrow where outcomes bunch together and wide out in the tails. That is an unweighted die with uneven faces, and it has one property the other lacks: a physical D6 rolled by hand gives a genuine draw from the posterior, because each face really is equally likely.
+`fit_priors` returns a `FitReport` naming the scopes it fitted and the ones it skipped (e.g. all values are zero, like creating priors for player position but all goalkeepers have a 0 value for goals scored). `create_die` reads the stat, entity type, scope and model off the prior, so the only thing left to choose is how much opportunity to predict over.
 
 ## Choosing a model
 
-`fit_prior` makes you name the model, and will not guess. A model is a pair — a prior distribution, and an assumption about what your observations do given it — and it states which values your stat can take **at all**, which no amount of data establishes: a value nobody has recorded and a value nobody can record look identical in a file.
+`fit_prior` makes you name the model that should be used. The accepted values are a pair of a prior distribution and an assumption about what your observations do given it (allowing two versions of gamma distribution).
 
-| Model | Rate covers | `value` | `denominator` | Use when |
-| --- | --- | --- | --- | --- |
-| `gamma_poisson` | positive, no ceiling | count of events | exposure they occurred in | you fixed the time and counted — goals per appearance |
-| `gamma_exponential` | positive, no ceiling | amount of time | count of events | you fixed the count and timed it — hours per five incidents |
-| `beta_binomial` | 0 to 1, nothing outside | successes | attempts | successes out of attempts — shots on target per shot |
-| `normal_normal` | anything, symmetric | measured quantity | weight | measurements away from zero — distance per match |
+The four shapes in [What you can point it at](#what-you-can-point-it-at) are these four models:
 
-The two gamma models describe the same quantities, events and time, and differ only in which one your data holds fixed. Their update is identical; what changes is which field holds which, and what `sample_predictive` gives back — a count of events for `gamma_poisson`, a total time for `gamma_exponential`.
+| Model | Rate covers | `value` | `denominator` |
+| --- | --- | --- | --- |
+| `gamma_poisson` | positive, no ceiling | count of events | exposure they occurred in |
+| `gamma_exponential` | positive, no ceiling | amount of time | count of events |
+| `beta_binomial` | 0 to 1, nothing outside | successes | attempts |
+| `normal_normal` | anything, symmetric | measured quantity | weight |
 
-Each name joins the prior to the likelihood. "Gamma" and "beta" come from the gamma and beta functions in their formulas rather than from anything about your data, so "beta is the bounded one" is a fact to memorise rather than derive.
+The two gamma models describe the same quantities, events and time, and differ only in which one your data holds fixed. Both add your events to `alpha` and your time to `beta`; what changes is which field holds which, and what the library draws from the finished posterior — a count of events for `gamma_poisson`, a total time for `gamma_exponential`.
+
+Each name joins the prior distribution to that assumption about the observations, which is called the likelihood. "Gamma" and "beta" come from the gamma and beta functions in their formulas rather than from anything about your data, so "beta is the bounded one" is a fact to memorise rather than derive.
 
 ### What the parameters are called
 
-Every model's prior and posterior are two numbers, and their names come from the same Greek convention as the model names. `POSTERIOR_PARAM_NAMES` in the library maps each model to the pair it uses, and `DieMetadata.posterior_params` labels its two numbers with it:
+Every model's prior, and the posterior it becomes once an entity's record is added, are two numbers, and their names come from the same Greek convention as the model names. `POSTERIOR_PARAM_NAMES` in the library maps each model to the pair it uses, and `DieMetadata.posterior_params` labels its two numbers with it:
 
 | Model | First | Second |
 | --- | --- | --- |
@@ -193,35 +160,11 @@ Every model's prior and posterior are two numbers, and their names come from the
 | `beta_binomial` | `alpha`, successes | `beta`, failures |
 | `normal_normal` | `mu`, the estimated mean | `sigma`, how uncertain that mean is |
 
-Three of the four call their pair `alpha` and `beta`, so **`beta` is a parameter of three models and the name of one**, and a `gamma_poisson` prior has a parameter called `beta` while having nothing to do with the beta distribution. The gamma arithmetic worked through [above](#how-it-works) is what the first two rows look like in practice: goals added to `alpha`, appearances added to `beta`, and `alpha / beta` the rate that comes out. For `beta_binomial` the equivalent is `alpha / (alpha + beta)`, the share of attempts that succeeded.
+Three of the four call their pair `alpha` and `beta`, so **`beta` is a parameter of three models and the name of one**, and a `gamma_poisson` prior has a parameter called `beta` while having nothing to do with the beta distribution. For the two gamma models that is goals added to `alpha`, appearances added to `beta`, and `alpha / beta` the rate that comes out. For `beta_binomial` the equivalent is `alpha / (alpha + beta)`, the share of attempts that succeeded.
 
 A `normal_normal` prior carries a third number, `sigma_obs`, which is how much individual observations vary rather than how uncertain the mean is — the two `sigma`s answer different questions. `fit_prior` estimates the third by pooling how much each entity's observations vary around that entity's own mean, so it needs entities appearing more than once.
 
-**Getting it wrong does not fail loudly.** Fit a 90% free-throw shooter as `gamma_poisson` instead of `beta_binomial` and everything runs — but a gamma has no ceiling, so 21% of the resulting die describes making more than 100 shots out of 100 attempts, and nothing in the output says so. Two guards exist: the beta fit rejects any row whose value exceeds its own denominator, and the gamma-exponential fit rejects a value or denominator that is not positive.
-
-## Modules
-
-**DataAdapter** — the only domain-aware module. Supplies one entity's observations, and the population's, as `Record`s. `CsvDataAdapter` implements it over a CSV; anything else — a database, an HTTP API — implements the same two methods. `CsvDataAdapter` drops rows whose denominator is zero, blank or unparseable, a rate over no exposure being nothing to fit from, and counts them in `dropped_rows` so a caller can see how much of their file was read.
-
-**PriorDiscovery** — `fit_prior` fits a model's parameters from population-wide observations by method of moments. `scopes_for` and `fit_scopes` run it across a list of scopes, saving what fits and reporting the slices too thin to fit.
-
-**PriorStore** — persists fitted priors, keyed by `(entity_type, stat_id, scope)`. `InMemoryPriorStore` for a process, `JsonPriorStore` for a file. Asking for a prior nobody fitted is an error listing the scopes that exist rather than a fallback to the next broadest one, two such dice being different answers that nothing downstream could tell apart; `list_scopes` shows what is available. That file carries a `schema_version` of its own, and one stating a version the library does not read raises rather than being read as the current shape; the key is rebuilt from each prior on load rather than written down, so changing how it is built cannot strand entries behind a lookup that misses. Fitting is an offline job; rolling a die reads what it wrote.
-
-**QualitySampler** — `sample(entity_id, n_draws)` returning draws of an entity's underlying quality. `PosteriorSampler` does the conjugate update and also offers `sample_predictive(entity_id, n_draws, denominator)`, which is what a die is built from. That denominator has to be positive: over zero opportunity every draw is the same number, which is one outcome rather than the spread a die represents. Its `posterior_params` returns the two numbers as a bare tuple, which `POSTERIOR_PARAM_NAMES` gives the names of. `BootstrapSampler` draws without a prior, resampling the entity's own records with replacement and taking summed values over summed denominators each time. It draws whole rows, so what a row is becomes a modelling choice: a player's posterior die is identical whether their record arrives as four seasons or 150 matches, while their bootstrap die is not, and it wants the finer unit. Three to six season rows are too few for the spread to mean much, and the ratio of sums it draws is biased upward when the denominators differ — by 7% over three seasons, falling away roughly as one over the row count.
-
-**Errors** — two trees, both under `ValueError` so a caller catching that keeps working. `PriorFitError` covers fitting, with `InsufficientData` for a scope holding too little to estimate from and `UnsuitableModel` for observations that contradict the model asked for. `SamplingError` covers drawing, with `EntityTypeMismatch`, `MissingPriorParam`, `UnsuitableDenominator` and `InsufficientObservations`. Neither tree is under the other, so a handler around `create_die` can tell a prior that would not fit from a die that cannot be rolled.
-
-**Pipeline** — `fit_priors` fits the global scope plus one per value of a dimension and saves them to a store; `create_die` turns an entity and a prior into a `Die` with its metadata filled in; `build_die_from_csv` runs both against a CSV in one call, refitting the prior each time.
-
-**Discretizer** — `discretize(samples, n_faces, strategy)` turns a sample array into weighted faces. `equal_weight` holds the probabilities equal and lets the value ranges vary; `equal_width` holds the value ranges equal and lets the probabilities vary. It knows nothing about what the numbers mean. Draws outside the 1st and 99th percentiles are dropped before binning, since an outer face would otherwise report the most extreme single draw as its bound and move as you ask for more draws; pass `clip=None` to keep everything. Adjacent equal-mass faces can share an integer bound — a D20 over goals showing `21`, `21-22` and `22` — which is a count distribution having fewer distinct values than the die has faces, with the weights still correct.
-
-**Die** — `{schema_version, faces, metadata}`, serialising with `model_dump_json()`. The version is the payload's first key, so a consumer can branch on it before parsing the rest; it rises when a field is renamed, removed or changes meaning, and stays put when an optional field is added. `assemble_die_from_samples` is the last step, cutting a list of samples into faces; `DieMetadata` is typed rather than a free dict, so a consumer can rely on the names: entity, stat, scope, the prior behind it, the posterior's parameters, the record it was built from and how many observations that spans, and what denominator it predicts over. The posterior's two parameters are keyed by `POSTERIOR_PARAM_NAMES` under the prior's model, and `PriorParams.ordered_params` reads a prior's own pair out in the same order.
-
-```
-Offline (periodic):  DataAdapter (population) -> fit_prior -> PriorStore          [fit_priors]
-Online (per roll):   PriorStore + DataAdapter (one entity) -> QualitySampler
-                       -> Discretizer -> Die                                     [create_die]
-```
+**Getting it wrong does not fail loudly.** Fit a 90% free-throw shooter as `gamma_poisson` instead of `beta_binomial` and everything runs — but a gamma has no ceiling, so 21% of the resulting die describes making more than 100 shots out of 100 attempts, and nothing in the output says so. Three guards exist: the beta fit rejects any row whose value is negative or exceeds its own denominator, and rejects proportions more spread than any beta with their mean; the gamma-exponential fit rejects a value or denominator that is not positive.
 
 ## Data
 
@@ -242,17 +185,4 @@ uv sync
 uv run pytest
 ```
 
-[CONTRIBUTING.md](CONTRIBUTING.md) covers why the library is built as it is, which statistical choices were made and what each costs, and ideas that might be worth adding.
-
-Every push runs the suite on Python 3.11, 3.12 and 3.13 on Linux, installing with
-`uv sync --frozen` so that a lock which has drifted from `pyproject.toml` fails the run, then
-fits priors and rolls a die through the two example scripts. A second job builds the wheel
-and checks the typing marker is inside it.
-
-The package ships a PEP 561 `py.typed` marker, so an install carries its annotations and
-`Die`, `PriorParams` and the rest keep their field types under mypy or pyright rather than
-resolving to `Any`.
-
-`die_roll_die.__version__` reports the version, so a bug report can name one. It is the
-single source: `pyproject.toml` declares the version dynamic and `[tool.hatch.version]`
-reads it out of `die_roll_die/__init__.py` at build time.
+See [CONTRIBUTING.md](CONTRIBUTING.md)
