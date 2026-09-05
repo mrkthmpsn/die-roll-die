@@ -2,7 +2,7 @@
 
 [![test](https://github.com/mrkthmpsn/die-roll-die/actions/workflows/test.yml/badge.svg)](https://github.com/mrkthmpsn/die-roll-die/actions/workflows/test.yml)
 
-die-roll-die is a demonstration of probabilistic statistics (and a Sideshow Bob reference). It takes a set of statistics — for example, a footballer's goals across several seasons — works out a distribution of what the underlying rate might be, then turns that distribution into a weighted die.
+die-roll-die is a demonstration of probabilistic statistics (and a Sideshow Bob reference). It takes a set of statistics — for example, a footballer's goals across several seasons — works out a distribution of what the underlying rate might be, then turns that distribution into a weighted die (like [here](https://lucky-scout.vercel.app)).
 
 A prior is fitted from a population's data (e.g. the goal-scoring rate of forwards in general) and updated with an entity's individual record (e.g. a striker's goals and appearances) to give a posterior over their true rate. To make this easier to conceptualise, the posterior can be turned into a virtual die, to be virtually rolled with results reflecting the probabilities of the data.
 
